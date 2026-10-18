@@ -91,6 +91,9 @@ func viewKey(scope string, p editor.FilePatch) string {
 
 // reviewScope is what the files shown are viewed in.
 func (a *app) reviewScope() string {
+	if pr := a.detail.pr; pr != nil {
+		return fmt.Sprintf("pr#%d", pr.pull.Number)
+	}
 	if a.detail.commit != nil {
 		return a.detail.commit.Hash
 	}

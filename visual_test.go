@@ -92,3 +92,29 @@ func TestDumpFeatures(t *testing.T) {
 	tt.a.saveComment()
 	save(tt, "comment")
 }
+
+// TestDumpPull renders a pull request's review into MYGIT_DUMP: its
+// header, a thread under its line and a comment of the review pending.
+func TestDumpPull(t *testing.T) {
+	out := os.Getenv("MYGIT_DUMP")
+	if out == "" {
+		t.Skip()
+	}
+	tt, _ := pullTester(t)
+	tt.SetDark(true)
+	tt.a.openPull(7)
+	tt.settle()
+	line, _ := tt.a.toDiff(editor.DiffNew, 3)
+	tt.a.detail.diff.OnGutterButton(editor.DiffLineRange{Side: editor.DiffNew, Start: line, End: line})
+	tt.a.composer.draft.Body = "导出它，别的包要用。"
+	tt.a.saveComment()
+	tt.Frame()
+	f, _ := os.Create(out + "/pull.png")
+	png.Encode(f, tt.Image())
+	f.Close()
+	tt.a.openPulls()
+	tt.settle()
+	f, _ = os.Create(out + "/pulls.png")
+	png.Encode(f, tt.Image())
+	f.Close()
+}

@@ -68,6 +68,8 @@ func (a *app) view(c *ui.Context) {
 	a.cred.view(c)
 	a.paletteView(c)
 	a.composerView(c)
+	a.pullsView(c)
+	a.submitView(c)
 	c.OnShortcut(ui.Cmd, ui.KeyR, a.refresh)
 	c.OnShortcut(ui.Cmd, ui.KeyP, a.openFiles)
 	c.OnShortcut(ui.Cmd, ui.KeyK, a.openCommands)
@@ -344,7 +346,11 @@ func (a *app) detailView(c *ui.Context) {
 	ui.Column(c).Fill().BorderWidth(1, 0, 0, 0).BorderColor(t.Border).Children(func() {
 		switch {
 		case d.commit != nil:
-			a.commitHeader(c, d.commit)
+			if d.pr != nil {
+				a.pullHeader(c, d.pr)
+			} else {
+				a.commitHeader(c, d.commit)
+			}
 			ui.Split(c.Key("files"), &a.filesW, func() { a.filesPane(c) }, func() { a.diffView(c) }).Grow(1)
 		case d.blame != nil:
 			a.blameView(c, d.blame)

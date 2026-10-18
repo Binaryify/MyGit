@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"path"
 	"strings"
@@ -38,6 +39,7 @@ type composer struct {
 	open    bool
 	draft   comment
 	editing int // the comment edited, or -1 for a new one
+	reply   int // the pull request's thread answered, from 1, or 0
 }
 
 // diffFile is the file of the diff shown and its revision: a commit's file,
@@ -130,21 +132,47 @@ func (a *app) startComment(r editor.DiffLineRange) {
 
 func (a *app) composerView(c *ui.Context) {
 	p := &a.composer
+	pr := a.detail.pr
+	ok := strings.TrimSpace(p.draft.Body) != ""
 	ui.Modal(c, &p.open, func() {
 		ui.Column(c).Gap(12).Width(480).Children(func() {
-			ui.Text(c, loc.CommentTitle(path.Base(p.draft.Path), p.draft.lines())).Bold().FontSize(14)
+			title := loc.CommentTitle(path.Base(p.draft.Path), p.draft.lines())
+			if p.reply > 0 {
+				title = loc.ThreadReplyTitle(path.Base(p.draft.Path))
+			}
+			ui.Text(c, title).Bold().FontSize(14)
 			ui.TextArea(c, &p.draft.Body).Placeholder(loc.CommentPlaceholder()).Label(loc.CommentPlaceholder()).Lines(4, 12).AutoFocus()
 			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
 				if ui.Button(c, loc.Cancel()).Clicked() {
 					p.open = false
 				}
-				ok := strings.TrimSpace(p.draft.Body) != ""
-				label := loc.AddComment()
-				if p.editing >= 0 {
-					label = loc.Save()
-				}
-				if ui.PrimaryButton(c, label).Disabled(!ok).Tooltip(shortcut("↩")).Clicked() && ok {
-					a.saveComment()
+				switch {
+				case pr != nil && p.reply > 0:
+					if ui.PrimaryButton(c, loc.ThreadReply()).Disabled(!ok).Tooltip(shortcut("↩")).Clicked() && ok {
+						a.saveComment()
+					}
+				case pr != nil && p.editing < 0:
+					// A comment goes into the review, as GitHub's "Start a
+					// review", or out now, alone.
+					if ui.Button(c, loc.CommentNow()).Disabled(!ok || a.busy != "").Clicked() && ok {
+						cm := p.draft
+						cm.Body = strings.TrimSpace(cm.Body)
+						a.sendPull(pr, loc.CommentNow(), func(ctx context.Context) error {
+							_, err := pr.client.Comment(ctx, pr.pull.Number, pr.head, draft(cm))
+							return err
+						})
+					}
+					if ui.PrimaryButton(c, loc.AddToReview()).Disabled(!ok).Tooltip(shortcut("↩")).Clicked() && ok {
+						a.saveComment()
+					}
+				default:
+					label := loc.AddComment()
+					if p.editing >= 0 {
+						label = loc.Save()
+					}
+					if ui.PrimaryButton(c, label).Disabled(!ok).Tooltip(shortcut("↩")).Clicked() && ok {
+						a.saveComment()
+					}
 				}
 			})
 		})
@@ -156,15 +184,30 @@ func (a *app) composerView(c *ui.Context) {
 	})
 }
 
+// saveComment keeps what the composer wrote: a comment of the review of
+// the pull request shown, a reply to one of its threads, or a comment of
+// one's own.
 func (a *app) saveComment() {
 	p := &a.composer
 	p.open = false
 	p.draft.Body = strings.TrimSpace(p.draft.Body)
-	if p.editing >= 0 && p.editing < len(a.comments) {
-		a.comments[p.editing].Body = p.draft.Body
+	list := &a.comments
+	if pr := a.detail.pr; pr != nil {
+		if p.reply > 0 && p.reply <= len(pr.threads) {
+			root, body := pr.threads[p.reply-1].Root().ID, p.draft.Body
+			a.sendPull(pr, loc.ThreadReply(), func(ctx context.Context) error {
+				_, err := pr.client.Reply(ctx, pr.pull.Number, root, body)
+				return err
+			})
+			return
+		}
+		list = &pr.pending
+	}
+	if p.editing >= 0 && p.editing < len(*list) {
+		(*list)[p.editing].Body = p.draft.Body
 		return
 	}
-	a.comments = append(a.comments, p.draft)
+	*list = append(*list, p.draft)
 }
 
 // commentKey names a comment's room under its line in the diff.
@@ -180,6 +223,9 @@ func (a *app) reviewDiff(c *ui.Context, d *editor.DiffState) {
 	d.LineSelection = true
 	d.OnGutterButton = a.startComment
 	d.Annotations = d.Annotations[:0]
+	if pr := a.detail.pr; pr != nil {
+		a.pullAnnotations(d, pr, name)
+	}
 	for i, cm := range a.comments {
 		if cm.Path != name || cm.Rev != rev {
 			continue
@@ -189,8 +235,20 @@ func (a *app) reviewDiff(c *ui.Context, d *editor.DiffState) {
 		}
 	}
 	d.RenderAnnotation = func(c *ui.Context, an editor.DiffAnnotation) {
-		if k, ok := an.Key.(commentKey); ok && int(k) < len(a.comments) {
-			a.commentCard(c, int(k))
+		pr := a.detail.pr
+		switch k := an.Key.(type) {
+		case commentKey:
+			if int(k) < len(a.comments) {
+				a.commentCard(c, int(k))
+			}
+		case threadKey:
+			if pr != nil && int(k) < len(pr.threads) {
+				a.threadCard(c, pr, int(k))
+			}
+		case pendingKey:
+			if pr != nil && int(k) < len(pr.pending) {
+				a.pendingCard(c, pr, int(k))
+			}
 		}
 	}
 }

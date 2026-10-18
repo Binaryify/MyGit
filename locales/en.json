@@ -926,5 +926,101 @@
         "type": "int"
       }
     }
+  },
+  "pullNoGitHub": "The repository has no GitHub remote.",
+  "pullSignIn": "Sign in to GitHub to review: run gh auth login in a terminal, or set GH_TOKEN.",
+  "pullRequests": "Pull Requests",
+  "pullRequestsMenu": "Pull Requests…",
+  "pullNumber": "Number, as #12",
+  "pullOpen": "Open",
+  "pullNone": "No open pull requests.",
+  "pullDraft": "Draft",
+  "opOpenPull": "Open pull request #{number}",
+  "@opOpenPull": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "pullBrowser": "Open on GitHub",
+  "submitReview": "Submit Review",
+  "submitReviewN": "Submit Review ({count})",
+  "@submitReviewN": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pullStateOpen": "Open",
+  "pullStateMerged": "Merged",
+  "pullStateClosed": "Closed",
+  "pullOutdated": "{count, plural, one {# outdated thread} other {# outdated threads}}",
+  "@pullOutdated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pullOutdatedHint": "On lines the pull request's commits have since changed; they show on GitHub.",
+  "pullNewCommits": "New commits were pushed to this pull request.",
+  "pullReload": "Reload",
+  "threadResolved": "Resolved",
+  "threadSummary": "{user}, {count, plural, one {# comment} other {# comments}}",
+  "@threadSummary": {
+    "placeholders": {
+      "user": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "threadShow": "Show",
+  "threadHide": "Hide",
+  "threadReply": "Reply",
+  "threadReplyTitle": "Reply on {file}",
+  "@threadReplyTitle": {
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "threadResolve": "Resolve",
+  "threadUnresolve": "Unresolve",
+  "commentPending": "Pending",
+  "commentNow": "Comment Now",
+  "addToReview": "Add to Review",
+  "submitReviewTitle": "Review pull request #{number}",
+  "@submitReviewTitle": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "submitPending": "{count, plural, one {# comment goes with it.} other {# comments go with it.}}",
+  "@submitPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "submitBody": "Leave a summary",
+  "reviewComment": "Comment",
+  "reviewApprove": "Approve",
+  "reviewRequestChanges": "Request Changes",
+  "reviewSubmitted": "Submitted the review of #{number}.",
+  "@reviewSubmitted": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
   }
 }

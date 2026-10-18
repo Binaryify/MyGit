@@ -83,6 +83,9 @@ type app struct {
 	palette      palette   // ⌘P's files and ⌘K's commands
 	comments     []comment // the review's, to copy as Markdown
 	composer     composer
+	pulls        pullsPlan
+	submit       submitPlan
+	pullReviews  map[int]*pullReview // the pull requests opened, with their reviews
 
 	busy     string // the operation running, as the toolbar says it
 	errMsg   string
@@ -102,9 +105,10 @@ type detail struct {
 
 	files     []editor.FilePatch
 	fileSel   int
-	generated []bool  // of files, those people don't write
-	folded    bool    // the file shown is generated, its diff folded until asked
-	images    *images // the file shown is a picture: its sides, in place of a diff
+	generated []bool      // of files, those people don't write
+	folded    bool        // the file shown is generated, its diff folded until asked
+	images    *images     // the file shown is a picture: its sides, in place of a diff
+	pr        *pullReview // the pull request whose changes the commit is
 	diff      *editor.DiffState
 	merge     *merger           // a file in conflict's
 	blame     *blame            // a file's, shown in place of the diff
@@ -120,7 +124,7 @@ type detail struct {
 func newApp(repo *git.Repo) *app {
 	return &app{repo: repo, logSel: -1, stagedSel: -1, unstagedSel: -1, stashSel: -1,
 		sidebarW: prefs.SidebarW, logH: prefs.LogH, filesW: prefs.FilesW,
-		unfolded: map[string]bool{}, viewed: map[string]bool{}}
+		unfolded: map[string]bool{}, viewed: map[string]bool{}, pullReviews: map[int]*pullReview{}}
 }
 
 func (a *app) start() {
@@ -213,6 +217,7 @@ type snapshot struct {
 // refresh reads the status, and the history again when a ref moved. A
 // refresh asked for while one runs runs once after it.
 func (a *app) refresh() {
+	a.checkPull()
 	if a.refreshing {
 		a.again = true
 		return

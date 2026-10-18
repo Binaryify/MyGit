@@ -218,6 +218,7 @@ func (a *app) openCommands() {
 			add(idle, loc.OpSwitchTo(b), "", func() { a.switchTo(b) })
 		}
 	}
+	add(true, loc.PullRequestsMenu(), "", a.openPulls)
 	add(true, loc.RemotesMenu(), "", a.openRemotes)
 	add(true, loc.OpenRepoInEditor(), "", func() { a.openInEditor(a.repo.Dir, 0) })
 	add(true, loc.ShowInFolder(), "", func() { mygo.Shell.ShowItemInFolder(a.repo.Dir) })
