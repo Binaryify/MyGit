@@ -1,4 +1,4 @@
-# mygit
+# MyGit
 
 轻量的 git 客户端，用 [MyGo](https://github.com/egoist/mygo) 原生 UI 写成，交互参考 IntelliJ / Rebased 的 git 工具。
 
@@ -22,7 +22,7 @@ go run . ~/path/to/repo
 
 ## 性能（Apple M4，2 万个提交的仓库）
 
-| | mygit | Rebased |
+| | MyGit | Rebased |
 |---|---|---|
 | 打开后内存（footprint） | 109 MB | 806 MB |
 | 读完全部历史 + 布局分支图 | 0.13 s | — |

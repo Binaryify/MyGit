@@ -19,7 +19,7 @@ func installLauncher() {
 		exe, err = filepath.EvalSymlinks(exe)
 	}
 	if err != nil {
-		launcherMessage("找不到 mygit 的可执行文件", err.Error())
+		launcherMessage("找不到 MyGit 的可执行文件", err.Error())
 		return
 	}
 	if runtime.GOOS == "windows" {

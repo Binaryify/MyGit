@@ -1,9 +1,9 @@
-// mygit is a light git client: the history with its graph, the working
+// MyGit is a light git client: the history with its graph, the working
 // tree's changes to stage and commit, and the diffs of both.
 //
 //	mygit [dir]   open the repository dir is in, the current folder's by default
 //
-// A running mygit opens the repositories later launches name, each in a
+// A running MyGit opens the repositories later launches name, each in a
 // window of its own.
 package main
 
@@ -22,9 +22,9 @@ import (
 var windows = map[string]*mygo.Window{}
 
 func main() {
-	mygo.App.SetName("mygit")
+	mygo.App.SetName("MyGit")
 	if !mygo.App.RequestSingleInstanceLock() {
-		return // the running mygit opens it
+		return // the running MyGit opens it
 	}
 	mygo.App.OnSecondInstance(func(args []string, cwd string) { openArg(args, cwd) })
 	mygo.App.OnOpenFile(func(path string) { openDir(path) }) // Open Recent, the Dock menu
@@ -80,7 +80,7 @@ func open(repo *git.Repo) {
 	_ = mygo.App.AddRecentDocument(repo.Dir)
 	a := newApp(repo)
 	a.win = mygo.NewWindow(mygo.WindowOptions{
-		Title:     repo.Name() + " — mygit",
+		Title:     repo.Name() + " — MyGit",
 		Width:     1200,
 		Height:    800,
 		MinWidth:  720,
