@@ -516,3 +516,51 @@ func TestSettingsLayout(t *testing.T) {
 		t.Fatalf("layout %+v", tt.a.detail.diff)
 	}
 }
+
+func TestCompare(t *testing.T) {
+	tt := newTester(t)
+	tt.click(t, "Start")
+	if err := tt.ClickWith(ui.Cmd, "Write main"); err != nil {
+		t.Fatal(err)
+	}
+	tt.settle()
+	d := tt.a.detail
+	if d.commit == nil || !comparing(d.commit) || len(d.files) != 1 || d.files[0].NewName != "main.go" {
+		t.Fatalf("comparison %+v, files %+v", d.commit, d.files)
+	}
+	if !strings.HasPrefix(d.commit.Subject, "比较 ") || !tt.HasText("1 个文件有差异") {
+		t.Fatalf("texts %q", tt.Texts())
+	}
+	// A commit against the working tree, which has no changes to tracked
+	// files: what the commits after it changed.
+	tt.a.showCompare("x", tt.a.commits[3].Hash, "")
+	tt.settle()
+	if n := len(tt.a.detail.files); n != 2 {
+		t.Fatalf("Start against the working tree: %d files", n)
+	}
+}
+
+func TestIgnore(t *testing.T) {
+	tt := newTester(t)
+	if err := tt.RightClick("notes.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("添加到 .gitignore", "*.txt"); err != nil {
+		t.Fatalf("%v; menu %q", err, tt.Menu())
+	}
+	tt.settle()
+	b, _ := os.ReadFile(filepath.Join(tt.a.repo.Dir, ".gitignore"))
+	if string(b) != "*.txt\n" {
+		t.Fatalf(".gitignore %q", b)
+	}
+	// notes.txt is ignored now; .gitignore itself is the change.
+	if len(tt.a.unstaged) != 1 || tt.a.unstaged[0].Path != ".gitignore" {
+		t.Fatalf("changes %+v", tt.a.unstaged)
+	}
+	if err := appendIgnore(tt.a.repo.Dir, "*.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(filepath.Join(tt.a.repo.Dir, ".gitignore")); string(b) != "*.txt\n" {
+		t.Fatalf("added twice: %q", b)
+	}
+}

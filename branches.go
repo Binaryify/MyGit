@@ -120,6 +120,9 @@ func (a *app) mergeItems(m *ui.Menu, rev string) {
 	if cur == "" {
 		cur = "HEAD"
 	}
+	if m.Item("与 " + cur + " 比较").Chosen() {
+		a.showCompare("比较 "+cur+" → "+shortRev(rev), "HEAD", rev)
+	}
 	if m.Item("合并到 " + cur).Chosen() {
 		a.run("合并 "+rev, func(ctx context.Context) error { return a.repo.Merge(ctx, rev) }, nil)
 	}
@@ -176,6 +179,9 @@ func (a *app) commitMenu(m *ui.Menu, cm git.Commit) {
 			ok: func(name, msg string) {
 				a.run("新建标签 "+name, func(ctx context.Context) error { return a.repo.Tag(ctx, name, cm.Hash, msg) }, nil)
 			}}
+	}
+	if m.Item("与工作区比较").Chosen() {
+		a.showCompare("比较 "+cm.Short()+" → 工作区", cm.Hash, "")
 	}
 	if m.Item("检出此提交").Chosen() {
 		a.run("检出 "+cm.Short(), func(ctx context.Context) error { return a.repo.CheckoutDetached(ctx, cm.Hash) }, nil)

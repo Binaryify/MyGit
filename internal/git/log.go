@@ -152,6 +152,11 @@ func (r *Repo) DiffFrom(ctx context.Context, from, to string, ignoreSpace bool) 
 	return r.Git(ctx, space([]string{"diff", "-M", "--no-ext-diff"}, ignoreSpace, from, to)...)
 }
 
+// DiffWorktree is the patch from a commit to the working tree.
+func (r *Repo) DiffWorktree(ctx context.Context, rev string, ignoreSpace bool) (string, error) {
+	return r.Git(ctx, space([]string{"diff", "-M", "--no-ext-diff"}, ignoreSpace, rev)...)
+}
+
 // Outgoing are the commits a push would send: those after the upstream,
 // or, with none, those on no remote.
 func (r *Repo) Outgoing(ctx context.Context, st Status) ([]Commit, error) {

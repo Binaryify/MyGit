@@ -185,6 +185,8 @@ func (a *app) changeSection(c *ui.Context, title string, staged bool) {
 			m.Separator()
 			if ch.Work != '?' {
 				a.fileMenu(m, ch.Path, "WORKTREE")
+			} else {
+				a.ignoreItems(m, ch.Path)
 			}
 		})
 	}).Grow(1).Basis(0)
@@ -267,6 +269,10 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 	d := &a.detail
 	ui.Column(c).Padding(8, 12).Gap(3).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 		ui.Text(c, cm.Subject).Bold().SingleLine()
+		if comparing(cm) {
+			ui.Text(c, fmt.Sprintf("%d 个文件有差异", len(d.files))).TextColor(t.TextMuted)
+			return
+		}
 		ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, cm.Short()).Font("monospace").TextColor(t.Accent).Tooltip(cm.Hash)
 			ui.Text(c, cm.Author).TextColor(t.TextMuted)

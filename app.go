@@ -28,14 +28,15 @@ type app struct {
 	update func(func()) // runs a function on the main thread, the window's Update
 
 	// The history and its graph, a row per commit.
-	commits []git.Commit
-	rows    []graph.Row
-	logList ui.ListState
-	logSel  int
-	logGen  int // the load running; the batches of older ones are dropped
-	loading bool
-	refs    string // the refs the history was read at, to reload it when they move
-	scope   git.Scope
+	commits   []git.Commit
+	rows      []graph.Row
+	logList   ui.ListState
+	logSel    int
+	logChosen ui.Selection[any] // the commits chosen, two to compare
+	logGen    int               // the load running; the batches of older ones are dropped
+	loading   bool
+	refs      string // the refs the history was read at, to reload it when they move
+	scope     git.Scope
 
 	// The history's search: the rows of the commits that match it.
 	search    string
@@ -108,6 +109,7 @@ func newApp(repo *git.Repo) *app {
 
 func (a *app) start() {
 	a.logList.Selected = &a.logSel
+	a.logList.Selection = &a.logChosen
 	a.logList.Key = func(i int) any { return a.commits[a.commitAt(i)].Hash }
 	a.logList.Label = func(i int) string { return a.commits[a.commitAt(i)].Subject }
 	a.stagedList.Selected, a.unstagedList.Selected = &a.stagedSel, &a.unstagedSel
@@ -318,6 +320,22 @@ func (a *app) showCommit(i int) {
 	a.showPatch(c, func(ctx context.Context) (string, error) { return a.repo.Show(ctx, c.Hash, prefs.IgnoreWhitespace) })
 }
 
+// showCompare shows the change from one revision to another, the working
+// tree when to is empty, as a commit's.
+func (a *app) showCompare(label, from, to string) {
+	c := git.Commit{Hash: from + ".." + to, Subject: label}
+	ignore := prefs.IgnoreWhitespace
+	a.showPatch(c, func(ctx context.Context) (string, error) {
+		if to == "" {
+			return a.repo.DiffWorktree(ctx, from, ignore)
+		}
+		return a.repo.DiffFrom(ctx, from, to, ignore)
+	})
+}
+
+// comparing tells whether a commit shown is a comparison of two.
+func comparing(c *git.Commit) bool { return strings.Contains(c.Hash, "..") }
+
 // showStash shows a stash's files as a commit's.
 func (a *app) showStash(s git.Stash) {
 	c := git.Commit{Hash: s.Hash, Time: s.Time, Subject: s.Subject, Refs: []string{s.Ref}}
@@ -356,7 +374,11 @@ func (a *app) loadPatch(load func(ctx context.Context) (string, error)) {
 			return result{}, err
 		}
 		files, err := editor.ParsePatch(out)
-		return result{files, a.repo.Message(ctx, hash)}, err
+		msg := ""
+		if !strings.Contains(hash, "..") {
+			msg = a.repo.Message(ctx, hash)
+		}
+		return result{files, msg}, err
 	}, func(r result, err error) {
 		if gen != a.detail.gen {
 			return

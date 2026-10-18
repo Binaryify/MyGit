@@ -60,8 +60,10 @@ func (a *app) logView(c *ui.Context) {
 			a.logRow(c, &a.commits[ci], &a.rows[ci], lanes)
 		}).Grow(1).Basis(0)
 		if l.Changed() && a.logSel >= 0 && a.logSel < a.logCount() {
-			a.showCommit(a.commitAt(a.logSel))
 			a.stagedSel, a.unstagedSel = -1, -1
+			if !a.compareChosen() {
+				a.showCommit(a.commitAt(a.logSel))
+			}
 		}
 	})
 	c.OnShortcut(ui.Cmd, ui.KeyF, func() { a.searchBox.Focus() })
@@ -210,4 +212,24 @@ func drawRow(p *ui.Painter, r ui.Rect, row *graph.Row) {
 		cx, cy := x(row.Lane), y(graph.Mid)
 		p.Fill(ui.Rect{X: cx - 4, Y: cy - 4, W: 8, H: 8}, laneColor(row.Color), 4)
 	}
+}
+
+// compareChosen compares the two commits chosen, ⌘-clicking, the older
+// to the newer, and reports whether two are.
+func (a *app) compareChosen() bool {
+	if a.logChosen.Len() != 2 {
+		return false
+	}
+	var rows []int
+	for i := range a.commits {
+		if a.logChosen.Has(a.commits[i].Hash) {
+			rows = append(rows, i)
+		}
+	}
+	if len(rows) != 2 {
+		return false
+	}
+	newer, older := a.commits[rows[0]], a.commits[rows[1]] // the list is newest first
+	a.showCompare(fmt.Sprintf("比较 %s → %s", older.Short(), newer.Short()), older.Hash, newer.Hash)
+	return true
 }
