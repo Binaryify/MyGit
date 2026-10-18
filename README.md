@@ -78,6 +78,8 @@ Sourcetree is free and mature, but it isn't what MyGit is after:
 - **Commits** — whole messages, changed files and side-by-side diffs with syntax highlighting; a merge against any parent; compare two commits (⌘-click), a branch or the working tree
 - **Staging** — stage, unstage or discard files, changes or selected lines; edit and save the working tree in the diff
 - **History tools** — branch, tag, check out, cherry-pick, revert, reset (soft / mixed / hard) and interactive rebase (reorder, reword, edit, squash, fixup, drop)
+- **Reviewing** — generated files (lockfiles, minified, `linguist-generated`) fold away; mark files viewed; changed pictures show before and after; comment on lines and copy the comments as Markdown for an agent or a colleague
+- **Pull requests** — open a GitHub pull request, read and reply to its threads under their lines, resolve them, and submit a review: comment, approve or request changes
 - **Conflicts** — a three-pane merge view, and continue, skip or abort a merge, rebase, cherry-pick or revert
 - **Stash, blame and remotes** — stash with untracked files, blame a file line by line, manage remotes, pull (fast-forward, rebase or merge), preview a push, force with lease
 - **Sign-ins** — when git needs a username, token or passphrase, the window asks
@@ -102,8 +104,10 @@ MyGit needs `git` on the `PATH`. It runs on macOS (Apple silicon), Windows (x64)
 | ⌘↩ / Ctrl+Enter | Commit |
 | ⌘F / Ctrl+F | Search the history |
 | ⌘R / Ctrl+R | Refresh |
+| ⌘P / Ctrl+P | Go to a file of the commit or the changes |
+| ⌘K / Ctrl+K | Commands |
 | ⌘S / Ctrl+S | Save the file edited in the diff |
-| Space | Stage or unstage the change chosen |
+| Space | Stage or unstage the change chosen; mark a commit's file viewed |
 | Delete | Discard the change chosen |
 | ⌘-click | Compare two commits |
 
