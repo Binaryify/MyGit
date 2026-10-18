@@ -25,6 +25,10 @@
   <img src="docs/images/main-en.png" alt="MyGit showing a repository's history and a commit's diff">
 </p>
 
+<p align="center">
+  <a href="site/assets/mygit-demo-en.mp4"><b>▶ Watch the 40-second demo</b></a>
+</p>
+
 ## Why MyGit
 
 Standalone git clients built on an IDE platform carry the IDE with them. MyGit is a single native binary drawn on the GPU by [MyGo](https://github.com/egoist/mygo): no webview, no JVM.

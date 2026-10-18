@@ -25,6 +25,10 @@
   <img src="docs/images/main-zh.png" alt="MyGit 显示仓库历史和提交的差异">
 </p>
 
+<p align="center">
+  <a href="site/assets/mygit-demo-zh.mp4"><b>▶ 观看 40 秒演示视频</b></a>
+</p>
+
 ## 为什么是 MyGit
 
 基于 IDE 平台的独立 git 客户端，会把整个 IDE 一起带上。MyGit 是一个原生二进制文件，由 [MyGo](https://github.com/egoist/mygo) 用 GPU 绘制界面：没有 webview，也没有 JVM。

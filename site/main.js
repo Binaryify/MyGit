@@ -9,6 +9,7 @@ const zh = {
   "hero.lede": "MyGit 是轻量、快速的原生界面 git 客户端：JetBrains 的历史操作，VS Code 的暂存方式，内存只要六分之一。",
   "hero.get": "获取 MyGit",
   "hero.platforms": "macOS · Windows · Linux",
+  "demo.title": "40 秒看懂 MyGit。",
   "why.title": "内存只要六分之一。",
   "why.lede": "基于 IDE 平台的 git 客户端，会把整个 IDE 一起带上。MyGit 是一个原生二进制文件，由 MyGo 用 GPU 绘制界面：没有 webview，也没有 JVM。",
   "why.other": "IntelliJ 平台的客户端",
@@ -86,6 +87,10 @@ function setLang(next) {
   // The screenshots show the app in the same language.
   document.querySelectorAll("img[data-shot]").forEach((img) => {
     img.src = `assets/${img.dataset.shot}-${next}.webp`;
+  });
+  document.querySelectorAll("video[data-video]").forEach((v) => {
+    v.poster = `assets/${v.dataset.video}-${next}.webp`;
+    v.src = `assets/${v.dataset.video}-${next}.mp4`;
   });
   document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === next)));
   try { localStorage.setItem("mygit-lang", next); } catch {}

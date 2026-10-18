@@ -153,6 +153,10 @@ html[lang="zh-CN"] em { font-style: normal; font-weight: 700; }
 .commit-msg code { color: var(--green); }
 .section-lede { max-width: 680px; color: var(--muted); font-size: 19px; margin: 20px 0 0; }
 
+/* ---------- Demo ---------- */
+
+.demo-video { display: block; margin-top: 40px; aspect-ratio: 16 / 9; background: #0A1022; }
+
 /* ---------- Hero ---------- */
 
 .hero {

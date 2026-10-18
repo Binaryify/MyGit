@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- MyGit: an M drawn as a commit graph, two branches that meet. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1F3166"/>
+      <stop offset="1" stop-color="#0A1022"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.62" r="0.55">
+      <stop offset="0" stop-color="#6F8CFF" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#6F8CFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="blue" gradientUnits="userSpaceOnUse" x1="0" y1="760" x2="0" y2="270">
+      <stop offset="0" stop-color="#3D7BFF"/>
+      <stop offset="1" stop-color="#7FB2FF"/>
+    </linearGradient>
+    <linearGradient id="green" gradientUnits="userSpaceOnUse" x1="0" y1="760" x2="0" y2="270">
+      <stop offset="0" stop-color="#1FBF7A"/>
+      <stop offset="1" stop-color="#6EF0B4"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.07"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- The body, on the macOS icon grid: 824 square, 100 from the edges. -->
+  <g filter="url(#shadow)">
+    <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)"/>
+  </g>
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#glow)"/>
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#sheen)"/>
+  <rect x="101.5" y="101.5" width="821" height="821" rx="184.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="3"/>
+
+  <!-- The graph: a blue branch on the left, a green one on the right, each
+       running up and bending down to meet at the merge in the middle. -->
+  <g fill="none" stroke-width="62" stroke-linecap="round">
+    <path d="M330 716 V312" stroke="url(#blue)"/>
+    <path d="M330 312 C330 440 512 440 512 584" stroke="url(#blue)"/>
+    <path d="M694 716 V312" stroke="url(#green)"/>
+    <path d="M694 312 C694 440 512 440 512 584" stroke="url(#green)"/>
+  </g>
+
+  <!-- Commits: rings in their branch's color, the merge solid white. -->
+  <g stroke-width="26">
+    <circle cx="330" cy="312" r="46" fill="#121B33" stroke="#8DBBFF"/>
+    <circle cx="330" cy="716" r="46" fill="#121B33" stroke="#3D7BFF"/>
+    <circle cx="694" cy="312" r="46" fill="#121B33" stroke="#7CF2BC"/>
+    <circle cx="694" cy="716" r="46" fill="#121B33" stroke="#1FBF7A"/>
+  </g>
+  <circle cx="512" cy="584" r="64" fill="#FFFFFF"/>
+  </svg>
