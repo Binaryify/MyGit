@@ -67,6 +67,7 @@ func (a *app) view(c *ui.Context) {
 	a.confirmView(c)
 	a.cred.view(c)
 	a.paletteView(c)
+	a.composerView(c)
 	c.OnShortcut(ui.Cmd, ui.KeyR, a.refresh)
 	c.OnShortcut(ui.Cmd, ui.KeyP, a.openFiles)
 	c.OnShortcut(ui.Cmd, ui.KeyK, a.openCommands)
@@ -122,6 +123,7 @@ func (a *app) toolbar(c *ui.Context) {
 		if ui.Button(c, loc.PushMenu()).Tooltip(loc.PushTooltip()).Disabled(!idle || st.Branch == "").Clicked() {
 			a.openPush()
 		}
+		a.commentsButton(c)
 		if ui.Button(c, loc.Refresh()).Tooltip(shortcut("R")).Clicked() {
 			a.refresh()
 		}
@@ -522,6 +524,7 @@ func (a *app) diffView(c *ui.Context) {
 	case d.commit != nil && d.fileSel >= 0 && d.fileSel < len(d.files) && d.files[d.fileSel].Binary:
 		ui.Column(c).Fill().Center().Children(func() { ui.Text(c, loc.BinaryFile()).TextColor(t.TextMuted) })
 	case d.diff != nil:
+		a.reviewDiff(c, d.diff)
 		editor.DiffView(c.Key(d.gen*1000+d.fileSel), d.diff).Fill()
 	default:
 		ui.Column(c).Fill().Center().Children(func() { ui.Text(c, loc.NoDiff()).TextColor(t.TextMuted) })

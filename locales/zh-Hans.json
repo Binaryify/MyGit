@@ -325,5 +325,16 @@
   "paletteCommands": "输入命令",
   "paletteFiles": "转到文件",
   "paletteEmpty": "没有匹配项",
-  "goToFile": "转到文件…"
+  "goToFile": "转到文件…",
+  "commentTitle": "评论 {file} 第 {lines} 行",
+  "commentPlaceholder": "写下评论",
+  "addComment": "添加评论",
+  "commentYours": "你",
+  "commentLines": "第 {lines} 行",
+  "commentsMenu": "{count} 条评论",
+  "copyComments": "复制为 Markdown",
+  "commentsCopied": "已把 {count} 条评论复制为 Markdown。",
+  "clearComments": "删除全部评论…",
+  "clearCommentsTitle": "删除全部评论？",
+  "clearCommentsMessage": "{count} 条评论将被删除。"
 }

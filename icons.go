@@ -12,6 +12,7 @@ func init() {
 		"x":      `<path d="M18 6 6 18"/><path d="m6 6 12 12"/>`,
 		"minus":  `<path d="M5 12h14"/>`,
 		"check":  `<path d="M20 6 9 17l-5-5"/>`,
+		"edit":   `<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>`,
 		"circle": `<circle cx="12" cy="12" r="9"/>`,
 		"undo":   `<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>`,
 		"open":   `<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>`,

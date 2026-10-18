@@ -1,6 +1,7 @@
 package patch
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -171,5 +172,37 @@ func TestFileLines(t *testing.T) {
 	}
 	if at(old, 1) != "-two" || at(new, 1) != "+TWO" || at(new, 10) != "+eleven" || at(new, 0) != " one" {
 		t.Fatalf("old 1 %q, new 1 %q, new 10 %q, new 0 %q", at(old, 1), at(new, 1), at(new, 10), at(new, 0))
+	}
+}
+
+func TestNumber(t *testing.T) {
+	files, err := editor.ParsePatch(`diff --git a/f b/f
+--- a/f
++++ b/f
+@@ -10,3 +10,4 @@ func f() {
+ a
+-b
++B
++C
+ d
+@@ -40,2 +41,2 @@
+ x
+-y
++Y
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := files[0]
+	old, new := Lines(p)
+	var olds, news []int
+	for _, l := range old {
+		olds = append(olds, Number(p, l, true))
+	}
+	for _, l := range new {
+		news = append(news, Number(p, l, false))
+	}
+	if fmt.Sprint(olds) != "[10 11 12 40 41]" || fmt.Sprint(news) != "[10 11 12 13 41 42]" {
+		t.Errorf("old %v, new %v", olds, news)
 	}
 }

@@ -211,6 +211,7 @@ func (a *app) openCommands() {
 	})
 	add(idle && a.status.Branch != "", loc.PushMenu(), "", a.openPush)
 	add(true, loc.Refresh(), shortcut("R"), a.refresh)
+	add(len(a.comments) > 0, loc.CopyComments()+" · "+loc.CommentsMenu(len(a.comments)), "", a.copyComments)
 	add(idle, loc.BranchNew(), "", func() { a.newBranch("") })
 	for _, b := range a.branches {
 		if b != a.status.Branch {

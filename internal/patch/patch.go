@@ -152,3 +152,23 @@ func FileLines(p editor.FilePatch) (old, new map[int]Line) {
 	}
 	return old, new
 }
+
+// Number is the line of the file (from 1) that a patch's line l is on,
+// the old file's or the new's.
+func Number(p editor.FilePatch, l Line, old bool) int {
+	h := p.Hunks[l.Hunk]
+	n := h.NewStart
+	if old {
+		n = h.OldStart
+	}
+	for i := 0; i < l.Index; i++ {
+		s := h.Lines[i]
+		if s == "" || s[0] == '\\' {
+			continue
+		}
+		if old && s[0] != '+' || !old && s[0] != '-' {
+			n++
+		}
+	}
+	return n
+}

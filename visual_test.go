@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/i18n"
+	"github.com/egoist/mygo/ui/editor"
 )
 
 // TestDumpThemes renders the window in the light and dark themes into
@@ -80,4 +81,14 @@ func TestDumpFeatures(t *testing.T) {
 	tt.a.palette.query = "分支"
 	save(tt, "commands")
 	tt.a.palette.open = false
+	for i, f := range tt.a.detail.files {
+		if fileName(f) == "main.go" {
+			tt.a.showFile(i)
+		}
+	}
+	tt.Frame()
+	tt.a.startComment(editor.DiffLineRange{Side: editor.DiffNew, Start: 2, End: 2})
+	tt.a.composer.draft.Body = "run 还没定义，先补上再调用；另外这里最好处理一下返回的错误。"
+	tt.a.saveComment()
+	save(tt, "comment")
 }

@@ -80,7 +80,9 @@ type app struct {
 	cred         credPrompt
 	remotes2     remotesPlan // the remotes dialog
 	settingsOpen bool
-	palette      palette // ⌘P's files and ⌘K's commands
+	palette      palette   // ⌘P's files and ⌘K's commands
+	comments     []comment // the review's, to copy as Markdown
+	composer     composer
 
 	busy     string // the operation running, as the toolbar says it
 	errMsg   string

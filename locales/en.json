@@ -877,5 +877,54 @@
   "paletteCommands": "Type a command",
   "paletteFiles": "Go to a file",
   "paletteEmpty": "Nothing matches",
-  "goToFile": "Go to File…"
+  "goToFile": "Go to File…",
+  "commentTitle": "Comment on {file}, line {lines}",
+  "@commentTitle": {
+    "placeholders": {
+      "file": {
+        "type": "String"
+      },
+      "lines": {
+        "type": "String"
+      }
+    }
+  },
+  "commentPlaceholder": "Leave a comment",
+  "addComment": "Add Comment",
+  "commentYours": "You",
+  "commentLines": "line {lines}",
+  "@commentLines": {
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      }
+    }
+  },
+  "commentsMenu": "{count, plural, one {# Comment} other {# Comments}}",
+  "@commentsMenu": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyComments": "Copy as Markdown",
+  "commentsCopied": "{count, plural, one {Copied # comment as Markdown.} other {Copied # comments as Markdown.}}",
+  "@commentsCopied": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearComments": "Delete All Comments…",
+  "clearCommentsTitle": "Delete all comments?",
+  "clearCommentsMessage": "{count, plural, one {The comment will be deleted.} other {The # comments will be deleted.}}",
+  "@clearCommentsMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

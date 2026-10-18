@@ -3303,3 +3303,115 @@ func GoToFile() string { return In(i18n.Locale()).GoToFile() }
 func (msgs Messages) GoToFile() string {
 	return Catalog.Format(msgs.locale, "goToFile", nil)
 }
+
+// CommentTitle says "Comment on {file}, line {lines}"
+// in the language the app shows.
+func CommentTitle(file string, lines string) string {
+	return In(i18n.Locale()).CommentTitle(file, lines)
+}
+
+// CommentTitle says "Comment on {file}, line {lines}"
+// in the language of msgs.
+func (msgs Messages) CommentTitle(file string, lines string) string {
+	return Catalog.Format(msgs.locale, "commentTitle", map[string]any{"file": file, "lines": lines})
+}
+
+// CommentPlaceholder says "Leave a comment"
+// in the language the app shows.
+func CommentPlaceholder() string { return In(i18n.Locale()).CommentPlaceholder() }
+
+// CommentPlaceholder says "Leave a comment"
+// in the language of msgs.
+func (msgs Messages) CommentPlaceholder() string {
+	return Catalog.Format(msgs.locale, "commentPlaceholder", nil)
+}
+
+// AddComment says "Add Comment"
+// in the language the app shows.
+func AddComment() string { return In(i18n.Locale()).AddComment() }
+
+// AddComment says "Add Comment"
+// in the language of msgs.
+func (msgs Messages) AddComment() string {
+	return Catalog.Format(msgs.locale, "addComment", nil)
+}
+
+// CommentYours says "You"
+// in the language the app shows.
+func CommentYours() string { return In(i18n.Locale()).CommentYours() }
+
+// CommentYours says "You"
+// in the language of msgs.
+func (msgs Messages) CommentYours() string {
+	return Catalog.Format(msgs.locale, "commentYours", nil)
+}
+
+// CommentLines says "line {lines}"
+// in the language the app shows.
+func CommentLines(lines string) string { return In(i18n.Locale()).CommentLines(lines) }
+
+// CommentLines says "line {lines}"
+// in the language of msgs.
+func (msgs Messages) CommentLines(lines string) string {
+	return Catalog.Format(msgs.locale, "commentLines", map[string]any{"lines": lines})
+}
+
+// CommentsMenu says "{count, plural, one {# Comment} other {# Comments}}"
+// in the language the app shows.
+func CommentsMenu(count int) string { return In(i18n.Locale()).CommentsMenu(count) }
+
+// CommentsMenu says "{count, plural, one {# Comment} other {# Comments}}"
+// in the language of msgs.
+func (msgs Messages) CommentsMenu(count int) string {
+	return Catalog.Format(msgs.locale, "commentsMenu", map[string]any{"count": count})
+}
+
+// CopyComments says "Copy as Markdown"
+// in the language the app shows.
+func CopyComments() string { return In(i18n.Locale()).CopyComments() }
+
+// CopyComments says "Copy as Markdown"
+// in the language of msgs.
+func (msgs Messages) CopyComments() string {
+	return Catalog.Format(msgs.locale, "copyComments", nil)
+}
+
+// CommentsCopied says "{count, plural, one {Copied # comment as Markdown.} other {Copied # comments as Markdown.}}"
+// in the language the app shows.
+func CommentsCopied(count int) string { return In(i18n.Locale()).CommentsCopied(count) }
+
+// CommentsCopied says "{count, plural, one {Copied # comment as Markdown.} other {Copied # comments as Markdown.}}"
+// in the language of msgs.
+func (msgs Messages) CommentsCopied(count int) string {
+	return Catalog.Format(msgs.locale, "commentsCopied", map[string]any{"count": count})
+}
+
+// ClearComments says "Delete All Comments…"
+// in the language the app shows.
+func ClearComments() string { return In(i18n.Locale()).ClearComments() }
+
+// ClearComments says "Delete All Comments…"
+// in the language of msgs.
+func (msgs Messages) ClearComments() string {
+	return Catalog.Format(msgs.locale, "clearComments", nil)
+}
+
+// ClearCommentsTitle says "Delete all comments?"
+// in the language the app shows.
+func ClearCommentsTitle() string { return In(i18n.Locale()).ClearCommentsTitle() }
+
+// ClearCommentsTitle says "Delete all comments?"
+// in the language of msgs.
+func (msgs Messages) ClearCommentsTitle() string {
+	return Catalog.Format(msgs.locale, "clearCommentsTitle", nil)
+}
+
+// ClearCommentsMessage says "{count, plural, one {The comment will be deleted.} other {The # comments will be deleted.}}"
+// in the language the app shows.
+func ClearCommentsMessage(count int) string { return In(i18n.Locale()).ClearCommentsMessage(count) }
+
+// ClearCommentsMessage says "{count, plural, one {The comment will be deleted.} other {The # comments will be deleted.}}"
+// in the language of msgs.
+func (msgs Messages) ClearCommentsMessage(count int) string {
+	return Catalog.Format(msgs.locale, "clearCommentsMessage", map[string]any{"count": count})
+}
