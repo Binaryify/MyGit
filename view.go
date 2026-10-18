@@ -139,41 +139,62 @@ func (a *app) changeSection(c *ui.Context, title string, staged bool) {
 		ui.Text(c, title).Bold().TextColor(t.TextMuted)
 		ui.Badge(c, fmt.Sprint(len(changes)))
 		ui.Box(c).Grow(1)
-		if len(changes) > 0 {
-			label, act := "全部暂存", a.stageAll
+		if len(changes) > 0 && a.busy == "" {
 			if staged {
-				label, act = "全部取消", a.unstageAll
-			}
-			if ui.Button(c, label).Disabled(a.busy != "").Clicked() {
-				act()
+				if iconButton(c, "minus", "全部取消暂存") {
+					a.unstageAll()
+				}
+			} else if iconButton(c, "plus", "全部暂存") {
+				a.stageAll()
 			}
 		}
 	})
 	l := ui.List(c.Key(title), list, len(changes), func(i int) {
 		ch := changes[i]
-		row := ui.Row(c).Height(24).Padding(0, 10).Gap(6).AlignItems(ui.Center)
+		chosen := i == *sel
+		// As VS Code's: the name, its folder, the actions while the
+		// pointer is over the row, and the change's letter at the end.
+		row := ui.Row(c).Height(24).Padding(0, 8, 0, 10).Gap(6).AlignItems(ui.Center)
+		if chosen {
+			row.TextColor(t.AccentText)
+		}
 		row.Children(func() {
 			code := ch.Work
 			if staged {
 				code = ch.Staged
 			}
-			ui.Text(c, string(code)).Font("monospace").Bold().TextColor(changeColor(t, code, i == *sel)).Width(12)
 			name, dir := path.Base(ch.Path), path.Dir(ch.Path)
-			ui.Text(c, name).SingleLine()
+			ui.Text(c, name).SingleLine().Shrink(0)
+			muted := t.TextMuted
+			if chosen {
+				muted = t.AccentText.Alpha(0.75)
+			}
 			if dir != "." {
-				ui.Text(c, dir).TextColor(t.TextMuted).SingleLine().Grow(1)
+				ui.Text(c, dir).FontSize(11).TextColor(muted).SingleLine().Grow(1).Basis(0)
 			} else {
 				ui.Box(c).Grow(1)
 			}
-			if row.Hovered() {
-				label := "+"
-				if staged {
-					label = "−"
+			if row.Hovered() || chosen {
+				if iconButton(c, "open", "打开文件") {
+					a.openInEditor(filepath.Join(a.repo.Dir, filepath.FromSlash(ch.Path)), 0)
 				}
-				if ui.Button(c, label).Size(22, 20).Tooltip(map[bool]string{true: "取消暂存", false: "暂存"}[staged]).Clicked() {
+				if !staged && !ch.Conflict && iconButton(c, "undo", "丢弃更改") {
+					a.discard(ch)
+				}
+				icon, label := "plus", "暂存"
+				if staged {
+					icon, label = "minus", "取消暂存"
+				}
+				if iconButton(c, icon, label) {
 					a.toggleStage(ch, staged)
 				}
 			}
+			letter := string(code)
+			if code == '?' {
+				letter = "U" // untracked, as VS Code says it
+			}
+			ui.Text(c, letter).Font("monospace").FontSize(11).Bold().TextColor(changeColor(t, code, chosen)).
+				Width(14).TextAlign(ui.Center).Tooltip(changeName(code))
 		})
 		row.ContextMenu(func(m *ui.Menu) {
 			if m.Item(map[bool]string{true: "取消暂存", false: "暂存"}[staged]).Chosen() {
@@ -212,20 +233,25 @@ func (a *app) toggleStage(ch git.Change, staged bool) {
 	}
 }
 
-// changeColor colors a change's letter, white on a chosen row's accent.
+// changeColor colors a change's letter as VS Code does, white on a
+// chosen row's accent.
 func changeColor(t *ui.Theme, code byte, chosen bool) ui.Color {
 	if chosen {
 		return t.AccentText
 	}
 	switch code {
-	case 'A', '?':
-		return ui.RGB(52, 168, 83)
+	case 'A', '?', 'R', 'C':
+		return ui.RGB(115, 201, 145)
 	case 'D':
-		return t.Danger
+		return ui.RGB(199, 78, 57)
 	case 'U':
-		return ui.RGB(230, 126, 34)
+		return ui.RGB(228, 103, 107)
 	}
-	return t.Accent
+	return ui.RGB(226, 192, 141) // modified
+}
+
+func changeName(code byte) string {
+	return map[byte]string{'M': "已修改", 'A': "新增", 'D': "已删除", 'R': "已重命名", 'C': "已复制", '?': "未跟踪", 'U': "冲突", 'T': "类型改变"}[code]
 }
 
 // detailView is the diff of what was chosen last: a commit, with its files
@@ -333,14 +359,22 @@ func (a *app) filesPane(c *ui.Context) {
 		if a.detail.commit != nil {
 			rev = a.detail.commit.Hash
 		}
-		ui.Row(c).Height(24).Padding(0, 10).Gap(6).AlignItems(ui.Center).Tooltip(name).ContextMenu(func(m *ui.Menu) {
+		ui.Row(c).Height(24).Padding(0, 8, 0, 10).Gap(6).AlignItems(ui.Center).Tooltip(name).ContextMenu(func(m *ui.Menu) {
 			a.fileMenu(m, name, rev)
 		}).Children(func() {
-			ui.Text(c, string(code)).Font("monospace").Bold().TextColor(changeColor(t, code, i == a.detail.fileSel)).Width(12)
-			ui.Text(c, path.Base(name)).SingleLine()
-			if dir := path.Dir(name); dir != "." {
-				ui.Text(c, dir).TextColor(t.TextMuted).SingleLine()
+			chosen := i == a.detail.fileSel
+			muted := t.TextMuted
+			if chosen {
+				muted = t.AccentText.Alpha(0.75)
 			}
+			ui.Text(c, path.Base(name)).SingleLine().Shrink(0)
+			if dir := path.Dir(name); dir != "." {
+				ui.Text(c, dir).FontSize(11).TextColor(muted).SingleLine().Grow(1).Basis(0)
+			} else {
+				ui.Box(c).Grow(1)
+			}
+			ui.Text(c, string(code)).Font("monospace").FontSize(11).Bold().TextColor(changeColor(t, code, chosen)).
+				Width(14).TextAlign(ui.Center).Tooltip(changeName(code))
 		})
 	}).Fill()
 	if l.Changed() && a.detail.fileSel >= 0 && a.detail.fileSel < len(files) {

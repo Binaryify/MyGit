@@ -75,8 +75,11 @@ func newTester(t *testing.T) *tester {
 	return tt
 }
 
-// settle runs what the workers send until they are quiet.
+// settle runs what the workers send until they are quiet and the app has
+// nothing running, as git takes its time on Windows.
 func (tt *tester) settle() {
+	a := tt.a
+	deadline := time.Now().Add(30 * time.Second)
 	for {
 		select {
 		case fn := <-tt.queue:
@@ -84,7 +87,9 @@ func (tt *tester) settle() {
 			tt.Frame()
 		case <-time.After(300 * time.Millisecond):
 			tt.Frame()
-			return
+			if (a.busy == "" && !a.refreshing && !a.loading && !a.detail.loading) || time.Now().After(deadline) {
+				return
+			}
 		}
 	}
 }
@@ -183,7 +188,7 @@ func TestStageSelectedLinesAndHunks(t *testing.T) {
 	tt.Frame()
 	tt.click(t, "丢弃")
 	b, _ := os.ReadFile(filepath.Join(dir, "main.go"))
-	if string(b) != index {
+	if strings.ReplaceAll(string(b), "\r\n", "\n") != index { // CRLF with core.autocrlf
 		t.Fatalf("working tree %q", b)
 	}
 }

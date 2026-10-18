@@ -110,6 +110,9 @@ func TestDiscardLines(t *testing.T) {
 	p := r.patch()
 	r.gitIn(Select(p, changed(p, "-two", "+TWO"), true), "apply", "--reverse", "-")
 	b, _ := os.ReadFile(filepath.Join(r.dir, "f.txt"))
+	// With core.autocrlf, as Git for Windows sets it, git apply writes the
+	// file with CRLF, as checking it out does.
+	b = []byte(strings.ReplaceAll(string(b), "\r\n", "\n"))
 	want := "one\ntwo\nthree\nfour\nfive\nsix\nseven\nEIGHT\nnine\nten\neleven\n"
 	if string(b) != want {
 		t.Fatalf("file\n%s\nwant\n%s", b, want)
