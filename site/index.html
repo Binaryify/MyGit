@@ -8,86 +8,86 @@
   <meta property="og:title" content="MyGit — a light, native git client">
   <meta property="og:description" content="The commit graph, without the IDE. macOS, Windows and Linux.">
   <meta property="og:image" content="assets/main-en.webp">
-  <meta name="theme-color" content="#0A1022">
+  <meta name="theme-color" content="#07090F">
   <link rel="icon" href="assets/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400;1,6..72,500&family=Noto+Serif+SC:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+SC:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- The page is a commit graph: this rail runs down the left, a commit at each section. -->
-  <svg class="rail" aria-hidden="true" preserveAspectRatio="none">
-    <defs>
-      <linearGradient id="rail-blue" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#7FB2FF"/><stop offset="1" stop-color="#3D7BFF"/>
-      </linearGradient>
-      <linearGradient id="rail-green" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#6EF0B4"/><stop offset="1" stop-color="#1FBF7A"/>
-      </linearGradient>
-    </defs>
-    <path class="rail-track rail-track-green" d=""/>
-    <path class="rail-track" d=""/>
-    <path class="rail-draw rail-draw-green" d=""/>
-    <path class="rail-draw" d=""/>
-  </svg>
+  <div class="backdrop" aria-hidden="true"></div>
 
   <header class="nav">
-    <a class="brand" href="#top" aria-label="MyGit">
-      <img src="assets/logo.svg" alt="" width="34" height="34">
-      <span>MyGit</span>
-    </a>
-    <nav class="nav-links">
-      <a href="#why" data-i18n="nav.why">Why</a>
-      <a href="#features" data-i18n="nav.features">Features</a>
-      <a href="#install" data-i18n="nav.install">Install</a>
-    </nav>
-    <div class="nav-end">
-      <div class="lang" role="group" aria-label="Language">
-        <button type="button" data-lang="en">EN</button>
-        <button type="button" data-lang="zh">中文</button>
-      </div>
-      <a class="btn btn-ghost" href="https://github.com/Binaryify/MyGit">
-        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-        GitHub
+    <div class="nav-inner">
+      <a class="brand" href="#top" aria-label="MyGit">
+        <img src="assets/logo.svg" alt="" width="28" height="28">
+        <span>MyGit</span>
       </a>
+      <nav class="nav-links">
+        <a href="#demo" data-i18n="nav.demo">Demo</a>
+        <a href="#why" data-i18n="nav.why">Why</a>
+        <a href="#features" data-i18n="nav.features">Features</a>
+        <a href="#install" data-i18n="nav.install">Install</a>
+      </nav>
+      <div class="nav-end">
+        <div class="lang" role="group" aria-label="Language">
+          <button type="button" data-lang="en">EN</button>
+          <button type="button" data-lang="zh">中文</button>
+        </div>
+        <a class="btn btn-ghost btn-sm" href="https://github.com/Binaryify/MyGit">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+          GitHub
+        </a>
+      </div>
     </div>
   </header>
 
   <main id="top">
     <!-- Hero -->
-    <section class="hero commit" data-hash="3f9c1e0">
-      <div class="hero-copy">
-        <p class="eyebrow"><span class="dot"></span><code>git log --graph</code></p>
-        <h1 data-i18n-html="hero.title">The commit graph,<br><em>without the IDE.</em></h1>
-        <p class="lede" data-i18n="hero.lede">MyGit is a light, fast git client with a native UI — JetBrains' history tools and VS Code's way of staging, in a sixth of the memory.</p>
-        <div class="cta">
-          <a class="btn btn-primary" href="#install" data-i18n="hero.get">Get MyGit</a>
-          <span class="platforms" data-i18n="hero.platforms">macOS · Windows · Linux</span>
-        </div>
+    <section class="hero">
+      <a class="pill" href="#demo">
+        <span class="pill-dot"></span>
+        <span data-i18n="hero.pill">Native · GPU-drawn · 109 MB</span>
+        <span class="pill-arrow" aria-hidden="true">→</span>
+      </a>
+      <h1 data-i18n-html="hero.title">The commit graph,<br><span class="grad">without the IDE.</span></h1>
+      <p class="lede" data-i18n="hero.lede">A light, fast git client with a native UI — JetBrains' history tools and VS Code's way of staging, in a sixth of the memory.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="#install" data-i18n="hero.get">Get MyGit</a>
+        <a class="btn btn-ghost" href="#demo"><span aria-hidden="true">▶</span> <span data-i18n="hero.watch">Watch the demo</span></a>
       </div>
-      <figure class="hero-shot">
-        <div class="glow" aria-hidden="true"></div>
-        <img class="shot" data-shot="main" src="assets/main-en.webp" width="1568" height="1045"
-             alt="MyGit showing a repository's history, its commit graph and a commit's diff">
-      </figure>
+      <p class="platforms" data-i18n="hero.platforms">macOS · Windows · Linux</p>
+
+      <div class="hero-stage">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <figure class="hero-shot">
+          <img data-shot="main" src="assets/main-en.webp" width="1568" height="1045"
+               alt="MyGit showing a repository's history, its commit graph and a commit's diff">
+        </figure>
+      </div>
     </section>
 
     <!-- Demo -->
-    <section id="demo" class="commit demo reveal" data-hash="a1c3f09">
-      <p class="commit-msg"><span class="hash">a1c3f09</span> <code>docs: record a demo</code></p>
+    <section id="demo" class="section reveal">
+      <p class="eyebrow" data-i18n="demo.eyebrow">Demo</p>
       <h2 data-i18n="demo.title">See it in 40 seconds.</h2>
-      <video class="shot demo-video" data-video="mygit-demo" src="assets/mygit-demo-en.mp4" poster="assets/mygit-demo-en.webp"
-             width="1920" height="1080" controls playsinline preload="none"></video>
+      <div class="video-frame card">
+        <video data-video="mygit-demo" src="assets/mygit-demo-en.mp4" poster="assets/mygit-demo-en.webp"
+               width="1920" height="1080" playsinline preload="none"></video>
+        <button type="button" class="play" aria-label="Play">
+          <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>
+        </button>
+      </div>
     </section>
 
     <!-- Why -->
-    <section id="why" class="commit why" data-hash="b81d2a4">
-      <p class="commit-msg"><span class="hash">b81d2a4</span> <code>perf: drop the JVM</code></p>
+    <section id="why" class="section">
+      <p class="eyebrow" data-i18n="why.eyebrow">Performance</p>
       <h2 data-i18n="why.title">A sixth of the memory.</h2>
       <p class="section-lede" data-i18n="why.lede">Git clients built on an IDE platform carry the IDE with them. MyGit is one native binary, drawn on the GPU by MyGo: no webview, no JVM.</p>
 
-      <div class="bars reveal">
+      <div class="memory card reveal">
         <div class="bar-row">
           <div class="bar-label"><b>MyGit</b></div>
           <div class="bar"><span class="fill fill-mygit" style="--w: 13.5%"></span></div>
@@ -102,67 +102,100 @@
       </div>
 
       <dl class="stats reveal">
-        <div><dt>0.13 s</dt><dd data-i18n="why.s1">to read 20,000 commits and lay out their graph</dd></div>
-        <div><dt>0.24 s</dt><dd data-i18n="why.s2">to open a commit with a 20 MB patch</dd></div>
-        <div><dt>0 %</dt><dd data-i18n="why.s3">CPU while idle</dd></div>
+        <div><dt>0.13<small>s</small></dt><dd data-i18n="why.s1">to read 20,000 commits and lay out their graph</dd></div>
+        <div><dt>0.24<small>s</small></dt><dd data-i18n="why.s2">to open a commit with a 20 MB patch</dd></div>
+        <div><dt>0<small>%</small></dt><dd data-i18n="why.s3">CPU while idle</dd></div>
         <div><dt>git</dt><dd data-i18n="why.s4">makes every change, so nothing behaves differently from your terminal</dd></div>
       </dl>
     </section>
 
+    <!-- Compared -->
+    <section id="compare" class="section">
+      <p class="eyebrow" data-i18n="vs.eyebrow">Compared</p>
+      <h2 data-i18n="vs.title">Why not Sourcetree?</h2>
+      <p class="section-lede" data-i18n="vs.lede">Sourcetree is free and mature, but it isn't what MyGit is after.</p>
+
+      <div class="compare card reveal">
+        <div class="compare-row compare-head">
+          <span></span><b>MyGit</b><b>Sourcetree</b>
+        </div>
+        <div class="compare-row">
+          <span>Linux</span>
+          <span class="yes" data-i18n="vs.linux.a">Yes</span>
+          <span class="no" data-i18n="vs.linux.b">No — macOS and Windows only</span>
+        </div>
+        <div class="compare-row">
+          <span data-i18n="vs.same">One app on every platform</span>
+          <span class="yes" data-i18n="vs.same.a">The same code and features</span>
+          <span class="no" data-i18n="vs.same.b">Separate macOS and Windows apps that differ</span>
+        </div>
+        <div class="compare-row">
+          <span data-i18n="vs.merge">Resolving a conflict</span>
+          <span class="yes" data-i18n="vs.merge.a">Built in: three panes, a conflict at a time</span>
+          <span class="no" data-i18n="vs.merge.b">Take a whole side, or an external merge tool</span>
+        </div>
+        <div class="compare-row">
+          <span data-i18n="vs.edit">Fixing a line in the diff before staging it</span>
+          <span class="yes" data-i18n="vs.edit.a">Yes</span>
+          <span class="no" data-i18n="vs.edit.b">No</span>
+        </div>
+      </div>
+    </section>
+
     <!-- Features -->
-    <section id="features" class="commit features" data-hash="5c70df3">
-      <p class="commit-msg"><span class="hash">5c70df3</span> <code>feat: everything you reach for</code></p>
+    <section id="features" class="section">
+      <p class="eyebrow" data-i18n="features.eyebrow">Features</p>
       <h2 data-i18n="features.title">Everything you reach for, nothing you don't.</h2>
 
-      <article class="feature reveal">
-        <div class="feature-copy">
-          <p class="tag"><code>feat(staging)</code></p>
-          <h3 data-i18n="f1.title">Stage what you mean.</h3>
-          <p data-i18n="f1.body">Stage files, changes or single lines. A changed file shows whole, so you can fix a typo right in the diff and save — then stage just the lines you want.</p>
-        </div>
-        <img class="shot" data-shot="changes-detail" src="assets/changes-detail-en.webp" width="1568" height="497" loading="lazy" alt="Staging selected lines and editing a file in the diff">
-      </article>
+      <div class="bento">
+        <article class="card tile tile-6 reveal">
+          <div class="tile-copy">
+            <h3 data-i18n="f1.title">Stage what you mean.</h3>
+            <p data-i18n="f1.body">Stage files, changes or single lines. A changed file shows whole, so you can fix a typo right in the diff and save — then stage just the lines you want.</p>
+          </div>
+          <img class="tile-shot" data-shot="changes-detail" src="assets/changes-detail-en.webp" width="1568" height="497" loading="lazy" alt="Staging selected lines and editing a file in the diff">
+        </article>
 
-      <article class="feature feature-flip reveal">
-        <div class="feature-copy">
-          <p class="tag"><code>feat(merge)</code></p>
-          <h3 data-i18n="f2.title">Resolve conflicts side by side.</h3>
-          <p data-i18n="f2.body">Ours, the result and theirs in three panes. Take a side or both, a conflict at a time, edit the result, and continue the merge, rebase or cherry-pick from the bar on top.</p>
-        </div>
-        <img class="shot" data-shot="merge-detail" src="assets/merge-detail-en.webp" width="1174" height="465" loading="lazy" alt="The three-pane merge view">
-      </article>
+        <article class="card tile tile-4 reveal">
+          <div class="tile-copy">
+            <h3 data-i18n="f2.title">Resolve conflicts side by side.</h3>
+            <p data-i18n="f2.body">Ours, the result and theirs in three panes. Take a side or both, a conflict at a time, edit the result, and continue the merge, rebase or cherry-pick from the bar on top.</p>
+          </div>
+          <img class="tile-shot" data-shot="merge-detail" src="assets/merge-detail-en.webp" width="1174" height="465" loading="lazy" alt="The three-pane merge view">
+        </article>
 
-      <article class="feature reveal">
-        <div class="feature-copy">
-          <p class="tag"><code>feat(branches)</code></p>
-          <h3 data-i18n="f3.title">Find any branch.</h3>
-          <p data-i18n="f3.body">Search local and remote branches as you type. Switch, merge, rebase, compare, rename or delete from each one's menu — and interactively rebase from any commit.</p>
-        </div>
-        <img class="shot shot-medium" data-shot="branches-detail" src="assets/branches-detail-en.webp" width="880" height="740" loading="lazy" alt="Searching branches in the branch popover">
-      </article>
+        <article class="card tile tile-2 reveal">
+          <div class="tile-copy">
+            <h3 data-i18n="f3.title">Find any branch.</h3>
+            <p data-i18n="f3.body">Search local and remote branches as you type. Switch, merge, rebase, compare, rename or delete from each one's menu — and interactively rebase from any commit.</p>
+          </div>
+          <img class="tile-shot tile-shot-crop" data-shot="branches-detail" src="assets/branches-detail-en.webp" width="880" height="740" loading="lazy" alt="Searching branches in the branch popover">
+        </article>
 
-      <article class="feature feature-flip reveal">
-        <div class="feature-copy">
-          <p class="tag"><code>feat(open)</code></p>
-          <h3 data-i18n="f4.title">Open anything.</h3>
-          <p data-i18n="f4.body">Drop a folder on a window, clone, start a new repository, or run <code>mygit .</code> in a terminal. Each repository gets a window of its own.</p>
-        </div>
-        <img class="shot shot-narrow" data-shot="welcome" src="assets/welcome-en.webp" width="1040" height="1280" loading="lazy" alt="The welcome window">
-      </article>
+        <article class="card tile tile-2 reveal">
+          <div class="tile-copy">
+            <h3 data-i18n="f4.title">Open anything.</h3>
+            <p data-i18n-html="f4.body">Drop a folder on a window, clone, start a new repository, or run <code>mygit .</code> in a terminal. Each repository gets a window of its own.</p>
+          </div>
+          <img class="tile-shot tile-shot-crop" data-shot="welcome" src="assets/welcome-en.webp" width="1040" height="1280" loading="lazy" alt="The welcome window">
+        </article>
 
-      <ul class="more reveal">
-        <li><code>log</code><span data-i18n="m1">Search the history by message, author or hash; filter by branch or path</span></li>
-        <li><code>diff</code><span data-i18n="m2">Side-by-side diffs with syntax highlighting; compare two commits with ⌘-click</span></li>
-        <li><code>rebase -i</code><span data-i18n="m3">Reorder, reword, squash, fixup or drop, by dragging</span></li>
-        <li><code>stash</code><span data-i18n="m4">Stash with untracked files; apply, pop or branch from a stash</span></li>
-        <li><code>blame</code><span data-i18n="m5">Who changed each line, and a double-click to their commit</span></li>
-        <li><code>push</code><span data-i18n="m6">Preview what a push sends; force with lease; sign-ins asked in the window</span></li>
-      </ul>
+        <article class="card tile tile-4 tile-list reveal">
+          <ul class="more">
+            <li><code>log</code><span data-i18n="m1">Search the history by message, author or hash; filter by branch or path</span></li>
+            <li><code>diff</code><span data-i18n="m2">Side-by-side diffs with syntax highlighting; compare two commits with ⌘-click</span></li>
+            <li><code>rebase -i</code><span data-i18n="m3">Reorder, reword, squash, fixup or drop, by dragging</span></li>
+            <li><code>stash</code><span data-i18n="m4">Stash with untracked files; apply, pop or branch from a stash</span></li>
+            <li><code>blame</code><span data-i18n="m5">Who changed each line, and a double-click to their commit</span></li>
+            <li><code>push</code><span data-i18n="m6">Preview what a push sends; force with lease; sign-ins asked in the window</span></li>
+          </ul>
+        </article>
+      </div>
     </section>
 
     <!-- Everywhere -->
-    <section class="commit everywhere" data-hash="88caafb">
-      <p class="commit-msg"><span class="hash">88caafb</span> <code>merge: platforms and languages</code></p>
+    <section class="section">
+      <p class="eyebrow" data-i18n="every.eyebrow">Everywhere</p>
       <h2 data-i18n="every.title">One app, everywhere you work.</h2>
       <div class="chips reveal">
         <div class="chip"><b>macOS</b><span data-i18n="every.mac">Apple silicon</span></div>
@@ -175,36 +208,42 @@
     </section>
 
     <!-- Install -->
-    <section id="install" class="commit install" data-hash="e4a17c9">
-      <p class="commit-msg"><span class="hash">e4a17c9</span> <code>build: from source</code></p>
+    <section id="install" class="section">
+      <p class="eyebrow" data-i18n="install.eyebrow">Install</p>
       <h2 data-i18n="install.title">Get MyGit.</h2>
       <p class="section-lede" data-i18n="install.lede">Releases are coming soon. Until then, build it with Go 1.27 or later — it needs git on your PATH.</p>
-      <div class="terminal reveal">
-        <div class="terminal-bar"><i></i><i></i><i></i><span>zsh</span>
-          <button type="button" class="copy" data-i18n="install.copy">Copy</button></div>
+
+      <div class="install-grid">
+        <div class="terminal card reveal">
+          <div class="terminal-bar"><i></i><i></i><i></i><span>zsh</span>
+            <button type="button" class="copy" data-i18n="install.copy">Copy</button></div>
 <pre><code><span class="prompt">$</span> git clone https://github.com/Binaryify/MyGit.git
 <span class="prompt">$</span> cd MyGit
 <span class="prompt">$</span> go tool mygo build
 <span class="comment"># → build/darwin-arm64/MyGit.app</span></code></pre>
-      </div>
+        </div>
 
-      <h3 class="keys-title" data-i18n="keys.title">Shortcuts</h3>
-      <table class="keys reveal">
-        <tr><td><kbd>⌘</kbd><kbd>↩</kbd></td><td data-i18n="keys.commit">Commit</td></tr>
-        <tr><td><kbd>⌘</kbd><kbd>F</kbd></td><td data-i18n="keys.search">Search the history</td></tr>
-        <tr><td><kbd>Space</kbd></td><td data-i18n="keys.stage">Stage or unstage the change chosen</td></tr>
-        <tr><td><kbd>Delete</kbd></td><td data-i18n="keys.discard">Discard the change chosen</td></tr>
-        <tr><td><kbd>⌘</kbd><kbd>S</kbd></td><td data-i18n="keys.save">Save the file edited in the diff</td></tr>
-        <tr><td><kbd>⌘</kbd>-click</td><td data-i18n="keys.compare">Compare two commits</td></tr>
-      </table>
-      <p class="keys-note" data-i18n="keys.note">Ctrl in place of ⌘ on Windows and Linux.</p>
+        <div class="keys card reveal">
+          <h3 data-i18n="keys.title">Shortcuts</h3>
+          <dl>
+            <div><dt><kbd>⌘</kbd><kbd>↩</kbd></dt><dd data-i18n="keys.commit">Commit</dd></div>
+            <div><dt><kbd>⌘</kbd><kbd>F</kbd></dt><dd data-i18n="keys.search">Search the history</dd></div>
+            <div><dt><kbd>Space</kbd></dt><dd data-i18n="keys.stage">Stage or unstage the change chosen</dd></div>
+            <div><dt><kbd>Delete</kbd></dt><dd data-i18n="keys.discard">Discard the change chosen</dd></div>
+            <div><dt><kbd>⌘</kbd><kbd>S</kbd></dt><dd data-i18n="keys.save">Save the file edited in the diff</dd></div>
+            <div><dt><kbd>⌘</kbd><kbd>click</kbd></dt><dd data-i18n="keys.compare">Compare two commits</dd></div>
+          </dl>
+          <p class="keys-note" data-i18n="keys.note">Ctrl in place of ⌘ on Windows and Linux.</p>
+        </div>
+      </div>
     </section>
   </main>
 
-  <footer class="footer commit merge-point" data-hash="HEAD">
-    <div class="merge-dot" aria-hidden="true"></div>
-    <p class="footer-line"><img src="assets/logo.svg" alt="" width="22" height="22"> <span data-i18n-html="footer.made">Built with <a href="https://github.com/egoist/mygo">MyGo</a>, in Go.</span></p>
-    <p class="footer-sub"><a href="https://github.com/Binaryify/MyGit">github.com/Binaryify/MyGit</a></p>
+  <footer class="footer">
+    <div class="footer-inner">
+      <p class="footer-line"><img src="assets/logo.svg" alt="" width="20" height="20"> <span data-i18n-html="footer.made">Built with <a href="https://github.com/egoist/mygo">MyGo</a>, in Go.</span></p>
+      <a class="footer-link" href="https://github.com/Binaryify/MyGit">github.com/Binaryify/MyGit</a>
+    </div>
   </footer>
 
   <script src="main.js"></script>

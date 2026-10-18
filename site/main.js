@@ -1,15 +1,20 @@
-// MyGit's site: its two languages, the rail that draws the page's commit
-// graph as it scrolls, and the reveals.
+// MyGit's site: its two languages, the hero shot settling as the page
+// scrolls, the cards' pointer light, the demo's play button, and reveals.
 
 const zh = {
+  "nav.demo": "演示",
   "nav.why": "为什么",
   "nav.features": "功能",
   "nav.install": "安装",
-  "hero.title": "<span class=\"line\">只要提交图，</span><br><em class=\"line\">不要整个 IDE。</em>",
-  "hero.lede": "MyGit 是轻量、快速的原生界面 git 客户端：JetBrains 的历史操作，VS Code 的暂存方式，内存只要六分之一。",
+  "hero.pill": "原生 · GPU 绘制 · 109 MB",
+  "hero.title": "<span class=\"nw\">git 历史</span><span class=\"nw\">一目了然，</span><br><span class=\"grad nw\">不必打开 IDE。</span>",
+  "hero.lede": "轻量、快速的原生界面 git 客户端：JetBrains 的历史操作，VS Code 的暂存方式，内存只要六分之一。",
   "hero.get": "获取 MyGit",
+  "hero.watch": "观看演示",
   "hero.platforms": "macOS · Windows · Linux",
+  "demo.eyebrow": "演示",
   "demo.title": "40 秒看懂 MyGit。",
+  "why.eyebrow": "性能",
   "why.title": "内存只要六分之一。",
   "why.lede": "基于 IDE 平台的 git 客户端，会把整个 IDE 一起带上。MyGit 是一个原生二进制文件，由 MyGo 用 GPU 绘制界面：没有 webview，也没有 JVM。",
   "why.other": "IntelliJ 平台的客户端",
@@ -18,6 +23,21 @@ const zh = {
   "why.s2": "打开一个 20 MB 补丁的提交",
   "why.s3": "空闲时的 CPU",
   "why.s4": "完成每一个改动，表现和终端里完全一致",
+  "vs.eyebrow": "对比",
+  "vs.title": "为什么不用 Sourcetree？",
+  "vs.lede": "Sourcetree 免费、成熟，但和 MyGit 想做的不是一回事。",
+  "vs.linux.a": "支持",
+  "vs.linux.b": "不支持，只有 macOS 和 Windows",
+  "vs.same": "各平台同一个应用",
+  "vs.same.a": "同一套代码、同样的功能",
+  "vs.same.b": "macOS 和 Windows 是两个不同的应用，功能有差异",
+  "vs.merge": "解决冲突",
+  "vs.merge.a": "内置三栏，一个冲突一个冲突地处理",
+  "vs.merge.b": "整个文件采用某一边，或交给外部合并工具",
+  "vs.edit": "暂存前直接在 diff 里改一行",
+  "vs.edit.a": "可以",
+  "vs.edit.b": "不行",
+  "features.eyebrow": "功能",
   "features.title": "常用的都在，用不上的一个没有。",
   "f1.title": "想暂存什么就暂存什么。",
   "f1.body": "按文件、改动块，甚至按行暂存。改动的文件整篇显示，发现错字可以直接在 diff 里改完保存，再只暂存你想要的那几行。",
@@ -33,6 +53,7 @@ const zh = {
   "m4": "stash 可包括未跟踪文件，可应用、弹出或从 stash 建分支",
   "m5": "每一行是谁改的，双击直达对应提交",
   "m6": "推送前预览要发送的提交，force-with-lease，需要登录时在窗口里询问",
+  "every.eyebrow": "跨平台",
   "every.title": "一个应用，在哪儿都能用。",
   "every.mac": "Apple 芯片",
   "every.lang": "跟随系统语言",
@@ -40,6 +61,7 @@ const zh = {
   "every.title2": "自定义标题栏",
   "every.update": "签名的自动更新",
   "every.update2": "一键完成",
+  "install.eyebrow": "安装",
   "install.title": "获取 MyGit。",
   "install.lede": "安装包即将发布。在那之前，可以用 Go 1.27 或更新版本从源码构建，需要 PATH 里有 git。",
   "install.copy": "复制",
@@ -76,86 +98,62 @@ function setLang(next) {
   document.documentElement.lang = next === "zh" ? "zh-CN" : "en";
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const s = t[el.dataset.i18n];
-    if (s === undefined) return;
-    if (s.includes("<")) el.innerHTML = s;
-    else el.textContent = s;
+    if (s !== undefined) el.textContent = s;
   });
   document.querySelectorAll("[data-i18n-html]").forEach((el) => {
     const s = t[el.dataset.i18nHtml];
     if (s !== undefined) el.innerHTML = s;
   });
-  // The screenshots show the app in the same language.
+  // The screenshots and the demo show the app in the same language.
   document.querySelectorAll("img[data-shot]").forEach((img) => {
     img.src = `assets/${img.dataset.shot}-${next}.webp`;
   });
   document.querySelectorAll("video[data-video]").forEach((v) => {
     v.poster = `assets/${v.dataset.video}-${next}.webp`;
     v.src = `assets/${v.dataset.video}-${next}.mp4`;
+    v.controls = false;
+    v.closest(".video-frame").classList.remove("playing");
   });
   document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === next)));
   try { localStorage.setItem("mygit-lang", next); } catch {}
-  requestAnimationFrame(layoutRail);
 }
 document.querySelectorAll(".lang button").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.lang)));
 setLang(preferredLang());
 
-// The rail: a blue branch from the hero's commit through every section to
-// the footer's merge, and a green one that forks off beside the features
-// and merges back at the end — drawn as far as the page has scrolled.
-const rail = document.querySelector(".rail");
-const blue = rail.querySelectorAll(".rail-track:not(.rail-track-green), .rail-draw:not(.rail-draw-green)");
-const green = rail.querySelectorAll(".rail-track-green, .rail-draw-green");
-const drawBlue = rail.querySelector(".rail-draw:not(.rail-draw-green)");
-const drawGreen = rail.querySelector(".rail-draw-green");
-
-function railX() {
-  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--rail-x")) || 56;
+// The nav gains its rule once the page moves, and the hero shot starts
+// tilted back and lies flat as it comes up the window.
+const nav = document.querySelector(".nav");
+const shot = document.querySelector(".hero-shot");
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function onScroll() {
+  nav.classList.toggle("scrolled", window.scrollY > 8);
+  if (still) return;
+  const top = shot.getBoundingClientRect().top;
+  const t = Math.max(0, Math.min(1, (top - window.innerHeight * 0.15) / (window.innerHeight * 0.6)));
+  shot.style.setProperty("--tilt", `${(t * 14).toFixed(2)}deg`);
 }
+window.addEventListener("scroll", onScroll, { passive: true });
+window.addEventListener("resize", onScroll);
+onScroll();
 
-function layoutRail() {
-  const x = railX();
-  const top = (el) => el.getBoundingClientRect().top + window.scrollY;
-  const hero = document.querySelector(".hero");
-  const features = document.querySelector("#features");
-  const everywhere = document.querySelector(".everywhere");
-  const merge = document.querySelector(".merge-dot");
-  const height = document.documentElement.scrollHeight;
-  rail.setAttribute("height", height);
-  rail.setAttribute("viewBox", `0 0 ${window.innerWidth} ${height}`);
+// The light under the pointer on each card.
+document.querySelectorAll(".card").forEach((card) => {
+  card.addEventListener("pointermove", (e) => {
+    const r = card.getBoundingClientRect();
+    card.style.setProperty("--mx", `${e.clientX - r.left}px`);
+    card.style.setProperty("--my", `${e.clientY - r.top}px`);
+  });
+});
 
-  const y0 = top(hero) + 27;
-  const yEnd = top(merge) + 16;
-  const yFork = top(features) + 15;
-  const yJoin = top(everywhere) + 15;
-  const gx = x + 26; // the green branch's lane
-  const b = `M ${x} ${y0} V ${yEnd}`;
-  const g = `M ${x} ${yFork} C ${x} ${yFork + 60}, ${gx} ${yFork + 40}, ${gx} ${yFork + 110} V ${yJoin - 110} C ${gx} ${yJoin - 40}, ${x} ${yJoin - 60}, ${x} ${yJoin}`;
-  blue.forEach((p) => p.setAttribute("d", b));
-  green.forEach((p) => p.setAttribute("d", g));
-  for (const p of [drawBlue, drawGreen]) {
-    const len = p.getTotalLength();
-    p.style.strokeDasharray = `${len}`;
-    p.dataset.len = len;
-  }
-  drawRail();
-}
-
-function drawRail() {
-  // The line reaches a little past the middle of the window.
-  const reach = window.scrollY + window.innerHeight * 0.62;
-  for (const p of [drawBlue, drawGreen]) {
-    const len = +p.dataset.len || 0;
-    const box = p.getBBox();
-    const done = Math.max(0, Math.min(1, (reach - box.y) / Math.max(box.height, 1)));
-    p.style.strokeDashoffset = `${len * (1 - done)}`;
-  }
-}
-
-window.addEventListener("scroll", drawRail, { passive: true });
-window.addEventListener("resize", () => requestAnimationFrame(layoutRail));
-window.addEventListener("load", layoutRail);
-document.fonts && document.fonts.ready.then(layoutRail);
-layoutRail();
+// The demo plays from its own button, then hands over to the controls.
+document.querySelectorAll(".video-frame").forEach((frame) => {
+  const video = frame.querySelector("video");
+  frame.querySelector(".play").addEventListener("click", () => {
+    frame.classList.add("playing");
+    video.controls = true;
+    video.play();
+  });
+});
 
 // Reveals, and the memory bars counting up as they arrive.
 const io = new IntersectionObserver(
@@ -167,20 +165,20 @@ const io = new IntersectionObserver(
       io.unobserve(e.target);
     }
   },
-  { threshold: 0.2 }
+  { threshold: 0.15 }
 );
 document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
 
 function countUp(el) {
   const to = +el.dataset.to;
+  if (still) { el.textContent = to; return; }
   const start = performance.now();
   const step = (now) => {
     const t = Math.min(1, (now - start) / 1600);
     el.textContent = Math.round(to * (1 - Math.pow(1 - t, 3)));
     if (t < 1) requestAnimationFrame(step);
   };
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) el.textContent = to;
-  else requestAnimationFrame(step);
+  requestAnimationFrame(step);
 }
 
 // Copying the build commands, without the prompts and the comment.

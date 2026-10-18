@@ -42,6 +42,17 @@ Standalone git clients built on an IDE platform carry the IDE with them. MyGit i
 
 MyGit reads what `git` prints and lets `git` itself make every change, so a repository behaves in MyGit exactly as it does in a terminal.
 
+## Why not Sourcetree?
+
+Sourcetree is free and mature, but it isn't what MyGit is after:
+
+| | MyGit | Sourcetree |
+|---|---|---|
+| Linux | **Yes** | No — macOS and Windows only |
+| One app on every platform | **Yes**, the same code and features | Separate macOS and Windows apps that differ |
+| Resolving a conflict | **Built in**: ours, result and theirs side by side, a conflict at a time | Take a whole side, or hand off to an external merge tool |
+| Fixing a line in the diff before staging it | **Yes** | No |
+
 ## Features
 
 <table>
