@@ -211,3 +211,53 @@ func TestSearchAndScope(t *testing.T) {
 		t.Fatalf("all of it again: %d commits", len(tt.a.commits))
 	}
 }
+
+func TestBranchFromCommitAndDelete(t *testing.T) {
+	tt := newTester(t)
+	if err := tt.RightClick("Write main"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("从此提交新建分支…"); err != nil {
+		t.Fatalf("%v; menu %q", err, tt.Menu())
+	}
+	tt.settle()
+	tt.Type("hotfix")
+	tt.click(t, "创建并切换")
+	if tt.a.status.Branch != "hotfix" || tt.a.errMsg != "" {
+		t.Fatalf("branch %q, error %q", tt.a.status.Branch, tt.a.errMsg)
+	}
+	// main has commits hotfix doesn't: deleting it asks first.
+	tt.a.deleteBranch("main")
+	tt.settle()
+	if !tt.a.confirm.open {
+		t.Fatal("deleted an unmerged branch without asking")
+	}
+	tt.click(t, "仍然删除")
+	if b, _ := tt.a.repo.Branches(context.Background()); len(b) != 2 || b[0] != "feature" || b[1] != "hotfix" {
+		t.Fatalf("branches %v", b)
+	}
+	// Merged into hotfix, feature goes at once.
+	tt.a.run("合并", func(ctx context.Context) error { return tt.a.repo.Merge(ctx, "feature") }, nil)
+	tt.settle()
+	tt.a.deleteBranch("feature")
+	tt.settle()
+	if b, _ := tt.a.repo.Branches(context.Background()); len(b) != 1 || tt.a.confirm.open {
+		t.Fatalf("branches %v, asking %v", b, tt.a.confirm.open)
+	}
+}
+
+func TestResetHardAsks(t *testing.T) {
+	tt := newTester(t)
+	if err := tt.RightClick("Start"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("将 main 重置到此", "Hard：丢弃所有更改…"); err != nil {
+		t.Fatalf("%v; menu %q", err, tt.Menu())
+	}
+	tt.settle()
+	tt.click(t, "硬重置")
+	main, _ := tt.a.repo.Git(context.Background(), "log", "-1", "--format=%s", "main")
+	if strings.TrimSpace(main) != "Start" || len(tt.a.commits) != 2 { // Start, and feature's commit
+		t.Fatalf("main at %q, %d commits", main, len(tt.a.commits))
+	}
+}

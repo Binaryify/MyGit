@@ -145,3 +145,57 @@ func TestLogScope(t *testing.T) {
 		t.Fatalf("log of a.txt %+v", got)
 	}
 }
+
+func TestBranchesAndCommits(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	commit := func(name, msg string) {
+		write(t, r, name, msg)
+		if err := r.Stage(ctx, name); err != nil {
+			t.Fatal(err)
+		}
+		if err := r.Commit(ctx, msg, false); err != nil {
+			t.Fatal(err)
+		}
+	}
+	commit("a.txt", "a")
+	if err := r.CreateBranch(ctx, "topic", "", true); err != nil {
+		t.Fatal(err)
+	}
+	commit("b.txt", "b")
+	if err := r.Switch(ctx, "main"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.DeleteBranch(ctx, "topic", false); !NotMerged(err) {
+		t.Fatalf("deleting an unmerged branch: %v", err)
+	}
+	if err := r.Merge(ctx, "topic"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.RenameBranch(ctx, "topic", "done"); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := r.Branches(ctx); !slices.Equal(b, []string{"done", "main"}) {
+		t.Fatalf("branches %v", b)
+	}
+	if err := r.DeleteBranch(ctx, "done", false); err != nil {
+		t.Fatal(err)
+	}
+	var log []Commit
+	_ = r.Log(ctx, Scope{}, 10, func(c []Commit) { log = append(log, c...) })
+	if err := r.Revert(ctx, log[0]); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(r.Dir, "b.txt")); !os.IsNotExist(err) {
+		t.Fatalf("b.txt after reverting its commit: %v", err)
+	}
+	if err := r.Reset(ctx, log[0].Hash, ResetHard); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Tag(ctx, "v1", log[0].Hash, "first"); err != nil {
+		t.Fatal(err)
+	}
+	if !r.ValidBranchName(ctx, "feature/x") || r.ValidBranchName(ctx, "bad..name") {
+		t.Fatal("branch names")
+	}
+}

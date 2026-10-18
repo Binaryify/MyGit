@@ -31,6 +31,7 @@ func (a *app) view(c *ui.Context) {
 			ui.SplitVertical(c, &a.logH, func() { a.logView(c) }, func() { a.detailView(c) }).Fill()
 		}).Grow(1)
 	})
+	a.promptView(c)
 	a.confirmView(c)
 	c.OnShortcut(ui.Cmd, ui.KeyR, a.refresh)
 }
@@ -44,13 +45,7 @@ func (a *app) toolbar(c *ui.Context) {
 		if branch == "" {
 			branch = "（游离 HEAD）"
 		}
-		ui.Button(c, "⎇ "+branch+" ▾").Label("切换分支").Menu(func(m *ui.Menu) {
-			for _, b := range a.branches {
-				if m.Item(b).Checked(b == st.Branch).Chosen() && b != st.Branch {
-					a.run("切换到 "+b, func(ctx context.Context) error { return a.repo.Switch(ctx, b) }, nil)
-				}
-			}
-		})
+		ui.Button(c, "⎇ "+branch+" ▾").Label("分支").Menu(a.branchMenu)
 		if st.Upstream != "" {
 			ui.Text(c, fmt.Sprintf("%s  ↑%d ↓%d", st.Upstream, st.Ahead, st.Behind)).TextColor(t.TextMuted)
 		}

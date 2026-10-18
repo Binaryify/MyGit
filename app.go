@@ -45,6 +45,7 @@ type app struct {
 
 	status                   git.Status
 	branches                 []string
+	remotes                  []string // the remotes' branches
 	staged                   []git.Change
 	unstaged                 []git.Change
 	stagedList, unstagedList ui.ListState
@@ -57,6 +58,7 @@ type app struct {
 	fileList ui.ListState // of the commit's files
 
 	confirm confirmation
+	prompt  prompt
 
 	busy     string // the operation running, as the toolbar says it
 	errMsg   string
@@ -159,6 +161,7 @@ func (a *app) run(label string, fn func(ctx context.Context) error, then func())
 type snapshot struct {
 	status   git.Status
 	branches []string
+	remotes  []string
 	refs     string
 }
 
@@ -176,7 +179,8 @@ func (a *app) refresh() {
 			return snapshot{}, err
 		}
 		b, _ := a.repo.Branches(ctx)
-		return snapshot{st, b, a.repo.Refs(ctx)}, nil
+		rb, _ := a.repo.RemoteBranches(ctx)
+		return snapshot{st, b, rb, a.repo.Refs(ctx)}, nil
 	}, func(s snapshot, err error) {
 		a.refreshing = false
 		if a.again {
@@ -188,7 +192,7 @@ func (a *app) refresh() {
 			return
 		}
 		a.setStatus(s.status)
-		a.branches = s.branches
+		a.branches, a.remotes = s.branches, s.remotes
 		if s.refs != a.refs || a.commits == nil && !a.loading {
 			a.refs = s.refs
 			a.loadLog()

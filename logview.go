@@ -157,7 +157,9 @@ func (a *app) visibleLanes() int {
 func (a *app) logRow(c *ui.Context, cm *git.Commit, row *graph.Row, lanes int) {
 	t := c.Theme()
 	head := false
-	ui.Row(c).Height(rowHeight).PaddingX(4).Gap(6).AlignItems(ui.Center).Children(func() {
+	ui.Row(c).Height(rowHeight).PaddingX(4).Gap(6).AlignItems(ui.Center).ContextMenu(func(m *ui.Menu) {
+		a.commitMenu(m, *cm)
+	}).Children(func() {
 		if lanes > 0 {
 			ui.Box(c).Size(float32(lanes*laneWidth+4), rowHeight).Draw(func(p *ui.Painter, r ui.Rect) {
 				drawRow(p, r, row)
