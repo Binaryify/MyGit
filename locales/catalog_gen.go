@@ -3263,3 +3263,43 @@ func ImageError(error string) string { return In(i18n.Locale()).ImageError(error
 func (msgs Messages) ImageError(error string) string {
 	return Catalog.Format(msgs.locale, "imageError", map[string]any{"error": error})
 }
+
+// PaletteCommands says "Type a command"
+// in the language the app shows.
+func PaletteCommands() string { return In(i18n.Locale()).PaletteCommands() }
+
+// PaletteCommands says "Type a command"
+// in the language of msgs.
+func (msgs Messages) PaletteCommands() string {
+	return Catalog.Format(msgs.locale, "paletteCommands", nil)
+}
+
+// PaletteFiles says "Go to a file"
+// in the language the app shows.
+func PaletteFiles() string { return In(i18n.Locale()).PaletteFiles() }
+
+// PaletteFiles says "Go to a file"
+// in the language of msgs.
+func (msgs Messages) PaletteFiles() string {
+	return Catalog.Format(msgs.locale, "paletteFiles", nil)
+}
+
+// PaletteEmpty says "Nothing matches"
+// in the language the app shows.
+func PaletteEmpty() string { return In(i18n.Locale()).PaletteEmpty() }
+
+// PaletteEmpty says "Nothing matches"
+// in the language of msgs.
+func (msgs Messages) PaletteEmpty() string {
+	return Catalog.Format(msgs.locale, "paletteEmpty", nil)
+}
+
+// GoToFile says "Go to File…"
+// in the language the app shows.
+func GoToFile() string { return In(i18n.Locale()).GoToFile() }
+
+// GoToFile says "Go to File…"
+// in the language of msgs.
+func (msgs Messages) GoToFile() string {
+	return Catalog.Format(msgs.locale, "goToFile", nil)
+}

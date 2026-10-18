@@ -80,6 +80,7 @@ type app struct {
 	cred         credPrompt
 	remotes2     remotesPlan // the remotes dialog
 	settingsOpen bool
+	palette      palette // ⌘P's files and ⌘K's commands
 
 	busy     string // the operation running, as the toolbar says it
 	errMsg   string

@@ -29,12 +29,7 @@ func (a *app) stashPanel(c *ui.Context) {
 		ui.Row(c).Padding(8, 10).Children(func() {
 			changed := len(a.staged)+len(a.unstaged) > 0
 			if ui.Button(c, loc.StashChanges()).Disabled(!changed || a.busy != "").Grow(1).Clicked() {
-				a.prompt = prompt{open: true, title: loc.StashTitle(), button: loc.OpStash(), check: loc.StashUntracked(), checked: true,
-					ok: func(msg, _ string) {
-						untracked := a.prompt.checked
-						a.run(loc.OpStash(), func(ctx context.Context) error { return a.repo.StashPush(ctx, msg, untracked) }, nil)
-					}}
-				a.prompt.value = "WIP"
+				a.stashChanges()
 			}
 		})
 		stashes := a.stashes
@@ -60,6 +55,16 @@ func (a *app) stashPanel(c *ui.Context) {
 			a.run(loc.OpApply(s.Ref), func(ctx context.Context) error { return a.repo.StashApply(ctx, s.Ref, false) }, nil)
 		}
 	})
+}
+
+// stashChanges asks for a stash's message, then stashes the changes.
+func (a *app) stashChanges() {
+	a.prompt = prompt{open: true, title: loc.StashTitle(), button: loc.OpStash(), check: loc.StashUntracked(), checked: true,
+		ok: func(msg, _ string) {
+			untracked := a.prompt.checked
+			a.run(loc.OpStash(), func(ctx context.Context) error { return a.repo.StashPush(ctx, msg, untracked) }, nil)
+		}}
+	a.prompt.value = "WIP"
 }
 
 func (a *app) stashMenu(m *ui.Menu, s git.Stash) {

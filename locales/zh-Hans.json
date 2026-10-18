@@ -321,5 +321,9 @@
   "markUnviewed": "取消已看",
   "imageBefore": "之前",
   "imageAfter": "之后",
-  "imageError": "无法显示图片：{error}"
+  "imageError": "无法显示图片：{error}",
+  "paletteCommands": "输入命令",
+  "paletteFiles": "转到文件",
+  "paletteEmpty": "没有匹配项",
+  "goToFile": "转到文件…"
 }

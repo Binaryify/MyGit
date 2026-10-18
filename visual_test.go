@@ -76,4 +76,8 @@ func TestDumpFeatures(t *testing.T) {
 	}
 	tt.settle()
 	save(tt, "image")
+	tt.a.openCommands()
+	tt.a.palette.query = "分支"
+	save(tt, "commands")
+	tt.a.palette.open = false
 }

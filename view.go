@@ -66,7 +66,10 @@ func (a *app) view(c *ui.Context) {
 	a.settingsView(c)
 	a.confirmView(c)
 	a.cred.view(c)
+	a.paletteView(c)
 	c.OnShortcut(ui.Cmd, ui.KeyR, a.refresh)
+	c.OnShortcut(ui.Cmd, ui.KeyP, a.openFiles)
+	c.OnShortcut(ui.Cmd, ui.KeyK, a.openCommands)
 }
 
 func (a *app) toolbar(c *ui.Context) {

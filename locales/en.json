@@ -873,5 +873,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "paletteCommands": "Type a command",
+  "paletteFiles": "Go to a file",
+  "paletteEmpty": "Nothing matches",
+  "goToFile": "Go to File…"
 }
