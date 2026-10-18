@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,6 +24,7 @@ type welcome struct {
 	win    *mygo.Window
 	recent []string
 	errMsg string
+	unsafe string // a repository another user owns, to trust
 	cred   credPrompt
 	clone  clonePlan
 }
@@ -88,6 +90,20 @@ func (w *welcome) view(c *ui.Context) {
 		})
 		if w.errMsg != "" {
 			ui.Text(c, w.errMsg).TextColor(t.Danger).Wrap()
+		}
+		if w.unsafe != "" {
+			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+				ui.Text(c, "确认这是你自己的仓库，就可以让 git 信任它（写入 git 的 safe.directory 设置）。").
+					FontSize(12).TextColor(t.TextMuted).Wrap().Grow(1).Basis(0)
+				if ui.PrimaryButton(c, "信任并打开").Clicked() {
+					dir := w.unsafe
+					if err := git.Trust(dir); err != nil {
+						w.errMsg = err.Error()
+						return
+					}
+					w.open(dir)
+				}
+			})
 		}
 		if len(w.recent) > 0 {
 			ui.Text(c, "最近打开").Bold().TextColor(t.TextMuted)
@@ -160,10 +176,22 @@ func (w *welcome) pick() {
 // in one.
 func (w *welcome) open(dir string) {
 	repo, err := git.Open(dir)
-	if err != nil {
-		w.errMsg = err.Error()
+	w.failed(dir, err)
+	if err == nil {
+		open(repo)
+	}
+}
+
+// failed says why a folder didn't open, and offers to trust a repository
+// another user owns.
+func (w *welcome) failed(dir string, err error) {
+	w.errMsg, w.unsafe = "", ""
+	if err == nil {
 		return
 	}
-	w.errMsg = ""
-	open(repo)
+	w.errMsg = err.Error()
+	var unsafe *git.UnsafeError
+	if errors.As(err, &unsafe) {
+		w.unsafe = dir
+	}
 }

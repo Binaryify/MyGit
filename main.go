@@ -64,17 +64,22 @@ func openArg(args []string, cwd string) {
 			dir = filepath.Join(cwd, dir)
 		}
 	}
-	if repo, err := git.Open(dir); err == nil {
+	repo, err := git.Open(dir)
+	if err == nil {
 		open(repo)
 		return
 	}
 	showWelcome()
+	if len(args) > 0 { // a folder asked for that didn't open: say why
+		welcomeWin.failed(dir, err)
+	}
 }
 
 func openDir(dir string) {
 	repo, err := git.Open(dir)
 	if err != nil {
-		go mygo.Dialog.Message(mygo.MessageOptions{Title: "打不开这个文件夹", Message: err.Error()})
+		showWelcome()
+		welcomeWin.failed(dir, err)
 		return
 	}
 	open(repo)
@@ -132,8 +137,8 @@ func appMenu() *mygo.Menu {
 			mygo.Separator(),
 			{Role: mygo.RoleClose},
 		}},
-		{Role: mygo.RoleEditMenu},
-		{Role: mygo.RoleWindowMenu},
+		{Role: mygo.RoleEditMenu, Label: "编辑"},
+		{Role: mygo.RoleWindowMenu, Label: "窗口"},
 	})
 }
 

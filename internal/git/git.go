@@ -20,14 +20,36 @@ type Repo struct {
 	GitDir string // the repository, .git or a worktree's
 }
 
+// UnsafeError says git won't work in a repository another user owns, as
+// on a shared or external disk, until it is trusted (safe.directory).
+type UnsafeError struct{ Dir string }
+
+func (e *UnsafeError) Error() string {
+	return e.Dir + " 的所有者不是当前用户，git 出于安全考虑拒绝在里面运行"
+}
+
 // Open finds the repository dir is in.
 func Open(dir string) (*Repo, error) {
 	out, err := run(context.Background(), dir, "rev-parse", "--show-toplevel", "--absolute-git-dir")
+	if err != nil && strings.Contains(err.Error(), "dubious ownership") {
+		return nil, &UnsafeError{Dir: dir}
+	}
 	lines := strings.Split(strings.TrimSpace(out), "\n")
 	if err != nil || len(lines) != 2 {
 		return nil, fmt.Errorf("%s 不是 git 仓库", dir)
 	}
-	return &Repo{Dir: filepath.Clean(lines[0]), GitDir: filepath.Clean(lines[1])}, nil
+	return &Repo{Dir: filepath.Clean(strings.TrimSpace(lines[0])), GitDir: filepath.Clean(strings.TrimSpace(lines[1]))}, nil
+}
+
+// Trust lets git work in a repository another user owns, for the user,
+// as git's own message says to.
+func Trust(dir string) error {
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		return err
+	}
+	_, err = run(context.Background(), abs, "config", "--global", "--add", "safe.directory", filepath.ToSlash(abs))
+	return err
 }
 
 // Name is the working tree's folder name.

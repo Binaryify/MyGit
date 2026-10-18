@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -567,5 +568,20 @@ func TestIgnore(t *testing.T) {
 	}
 	if b, _ := os.ReadFile(filepath.Join(tt.a.repo.Dir, ".gitignore")); string(b) != "*.txt\n" {
 		t.Fatalf("added twice: %q", b)
+	}
+}
+
+func TestWelcomeOffersTrust(t *testing.T) {
+	w := &welcome{}
+	tt := ui.NewTester(w.view, 520, 600)
+	w.failed("/mnt/disk/repo", &git.UnsafeError{Dir: "/mnt/disk/repo"})
+	tt.Frame()
+	if w.unsafe == "" || !tt.HasText("信任并打开") || !tt.HasText(w.errMsg) {
+		t.Fatalf("texts %q", tt.Texts())
+	}
+	w.failed("/tmp", errors.New("/tmp 不是 git 仓库"))
+	tt.Frame()
+	if w.unsafe != "" || tt.HasText("信任并打开") {
+		t.Fatal("offers to trust a folder that isn't a repository")
 	}
 }
