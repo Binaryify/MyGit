@@ -10,6 +10,7 @@ import (
 
 	"mygit/internal/git"
 	"mygit/internal/graph"
+	"mygit/internal/patch"
 )
 
 // logBatch is how many commits the history shows at a time as it loads.
@@ -44,6 +45,8 @@ type app struct {
 	detail   detail
 	fileList ui.ListState // of the commit's files
 
+	confirm confirmation
+
 	busy     string // the operation running, as the toolbar says it
 	errMsg   string
 	sidebarW float32
@@ -61,6 +64,8 @@ type detail struct {
 	files   []editor.FilePatch
 	fileSel int
 	diff    *editor.DiffState
+	raw     string            // the change's patch as git printed it
+	patch   *editor.FilePatch // the change's, when its lines can be chosen
 	gen     int
 	loading bool
 }
@@ -257,27 +262,37 @@ func (a *app) showFile(i int) {
 }
 
 // showChange shows the diff of a change, staged or in the working tree.
+// Shown again as the change moves on, it keeps the diff, with its
+// selection and scroll, while the patch is the same.
 func (a *app) showChange(c git.Change, staged bool) {
-	a.detail = detail{change: &c, staged: staged, gen: a.detail.gen + 1, loading: true}
+	same := a.detail.change != nil && a.detail.change.Path == c.Path && a.detail.staged == staged
+	if !same {
+		a.detail = detail{change: &c, staged: staged, gen: a.detail.gen + 1, loading: true}
+	}
 	gen := a.detail.gen
-	work(a, func(ctx context.Context) (*editor.DiffState, error) {
+	type result struct {
+		raw   string
+		patch *editor.FilePatch
+		diff  *editor.DiffState
+	}
+	work(a, func(ctx context.Context) (result, error) {
 		if c.Work == '?' && !staged { // untracked: all of it is new
 			text, err := a.repo.ReadFile(c.Path)
 			if err != nil {
-				return nil, err
+				return result{}, err
 			}
-			return textDiff(c.Path, "", text), nil
+			return result{raw: text, diff: textDiff(c.Path, "", text)}, nil
 		}
 		out, err := a.repo.Diff(ctx, c.Path, staged)
 		if err != nil {
-			return nil, err
+			return result{}, err
 		}
 		files, err := editor.ParsePatch(out)
 		if err != nil || len(files) == 0 {
-			return nil, err
+			return result{raw: out}, err
 		}
-		return patchDiff(files[0]), nil
-	}, func(d *editor.DiffState, err error) {
+		return result{raw: out, patch: &files[0], diff: patchDiff(files[0])}, nil
+	}, func(r result, err error) {
 		if gen != a.detail.gen {
 			return
 		}
@@ -285,7 +300,14 @@ func (a *app) showChange(c git.Change, staged bool) {
 		if err != nil {
 			a.errMsg = err.Error()
 		}
-		a.detail.diff = d
+		if same && r.raw == a.detail.raw && a.detail.diff != nil {
+			return
+		}
+		a.detail.raw, a.detail.patch, a.detail.diff = r.raw, r.patch, r.diff
+		a.detail.change = &c
+		if r.patch != nil && patch.Partial(*r.patch) {
+			a.reviewLines(r.diff)
+		}
 	})
 }
 
@@ -325,6 +347,17 @@ func (a *app) unstage(c git.Change) {
 		paths = append(paths, c.OldPath) // a rename is staged as both
 	}
 	a.run("取消暂存", func(ctx context.Context) error { return a.repo.Unstage(ctx, paths...) }, nil)
+}
+
+// discard throws a change of the working tree away, once the user says so.
+func (a *app) discard(c git.Change) {
+	msg := "“" + c.Path + "”的更改会被丢弃，无法撤销。"
+	if c.Work == '?' {
+		msg = "未跟踪的文件“" + c.Path + "”会被删除，无法撤销。"
+	}
+	a.ask("丢弃更改？", msg, "丢弃", func() {
+		a.run("丢弃", func(ctx context.Context) error { return a.repo.Discard(ctx, c) }, nil)
+	})
 }
 
 func (a *app) stageAll() {

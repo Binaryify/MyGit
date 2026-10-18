@@ -10,6 +10,7 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 
 	"mygit/internal/git"
+	"mygit/internal/patch"
 )
 
 const rowHeight = 26
@@ -30,6 +31,7 @@ func (a *app) view(c *ui.Context) {
 			ui.SplitVertical(c, &a.logH, func() { a.logView(c) }, func() { a.detailView(c) }).Fill()
 		}).Grow(1)
 	})
+	a.confirmView(c)
 	c.OnShortcut(ui.Cmd, ui.KeyR, a.refresh)
 }
 
@@ -151,6 +153,9 @@ func (a *app) changeSection(c *ui.Context, title string, staged bool) {
 			if m.Item(map[bool]string{true: "取消暂存", false: "暂存"}[staged]).Chosen() {
 				a.toggleStage(ch, staged)
 			}
+			if !staged && !ch.Conflict && m.Item("丢弃更改…").Chosen() {
+				a.discard(ch)
+			}
 		})
 	}).Grow(1).Basis(0)
 	if l.Changed() && *sel >= 0 && *sel < len(changes) {
@@ -209,6 +214,8 @@ func (a *app) detailView(c *ui.Context) {
 					side = "已暂存"
 				}
 				ui.Badge(c, side)
+				ui.Box(c).Grow(1)
+				a.lineButtons(c)
 			})
 			a.diffView(c)
 		default:
@@ -279,4 +286,25 @@ func refLabel(ref string) (string, bool) {
 		return tag, true
 	}
 	return ref, false
+}
+
+// lineButtons act on the lines selected in the diff of a change.
+func (a *app) lineButtons(c *ui.Context) {
+	if a.detail.patch == nil || !patch.Partial(*a.detail.patch) {
+		return
+	}
+	chosen := a.selectedLines()
+	none := chosen == nil || a.busy != ""
+	if a.detail.staged {
+		if ui.Button(c, "取消暂存选中行").Disabled(none).Clicked() {
+			a.applyLines(chosen, lineUnstage)
+		}
+		return
+	}
+	if ui.Button(c, "丢弃选中行").Disabled(none).Clicked() {
+		a.applyLines(chosen, lineDiscard)
+	}
+	if ui.Button(c, "暂存选中行").Disabled(none).Tooltip("点击或拖动行号选中行").Clicked() {
+		a.applyLines(chosen, lineStage)
+	}
 }

@@ -47,9 +47,17 @@ func command(ctx context.Context, dir string, args ...string) *exec.Cmd {
 }
 
 func run(ctx context.Context, dir string, args ...string) (string, error) {
+	return runInput(ctx, dir, "", args...)
+}
+
+// runInput runs git with input on its standard input.
+func runInput(ctx context.Context, dir, input string, args ...string) (string, error) {
 	var stdout, stderr bytes.Buffer
 	cmd := command(ctx, dir, args...)
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
+	if input != "" {
+		cmd.Stdin = strings.NewReader(input)
+	}
 	if err := cmd.Run(); err != nil {
 		if msg := strings.TrimSpace(stderr.String()); msg != "" {
 			return stdout.String(), errors.New(msg)

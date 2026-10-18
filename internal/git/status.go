@@ -136,3 +136,27 @@ func (r *Repo) LastMessage(ctx context.Context) string {
 	out, _ := r.Git(ctx, "log", "-1", "--format=%B")
 	return strings.TrimSpace(out)
 }
+
+// Apply applies a patch: to the index when cached, else to the working
+// tree, and backwards when reverse, as unstaging and discarding lines do.
+func (r *Repo) Apply(ctx context.Context, patch string, cached, reverse bool) error {
+	args := []string{"apply", "--whitespace=nowarn"}
+	if cached {
+		args = append(args, "--cached")
+	}
+	if reverse {
+		args = append(args, "--reverse")
+	}
+	_, err := runInput(ctx, r.Dir, patch, append(args, "-")...)
+	return err
+}
+
+// Discard throws away the working tree's changes of the files: tracked
+// files go back to the index, untracked ones are deleted.
+func (r *Repo) Discard(ctx context.Context, c Change) error {
+	if c.Work == '?' {
+		return os.RemoveAll(filepath.Join(r.Dir, filepath.FromSlash(c.Path)))
+	}
+	_, err := r.Git(ctx, "restore", "--worktree", "--", c.Path)
+	return err
+}

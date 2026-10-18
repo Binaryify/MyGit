@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/egoist/mygo/ui/editor"
 
 	"mygit/internal/git"
 )
@@ -146,5 +148,42 @@ func TestAmendStartsFromLastMessage(t *testing.T) {
 	tt.click(t, "修改上次提交")
 	if tt.a.amend || tt.a.message != "" {
 		t.Fatalf("amend %v, message %q", tt.a.amend, tt.a.message)
+	}
+}
+
+func TestStageSelectedLinesAndHunks(t *testing.T) {
+	tt := newTester(t)
+	dir := tt.a.repo.Dir
+	if err := os.WriteFile(filepath.Join(dir, "main.go"), []byte("package main\n\n// A\nfunc main() {}\n\n// B\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	tt.a.refresh()
+	tt.settle()
+	tt.click(t, "main.go")
+	d := tt.a.detail.diff
+	if tt.a.detail.patch == nil || d == nil || !d.LineSelection {
+		t.Fatalf("detail %+v", tt.a.detail)
+	}
+	// Select "// A", the new side's third line, and stage it alone.
+	d.SetSelectedLines(editor.DiffLineRange{Side: editor.DiffNew, Start: 2, End: 2}, true)
+	tt.Frame()
+	tt.click(t, "暂存选中行")
+	index, err := tt.a.repo.Git(context.Background(), "show", ":main.go")
+	if err != nil || index != "package main\n\n// A\nfunc main() {}\n" {
+		t.Fatalf("index %q, %v", index, err)
+	}
+	if len(tt.a.staged) != 1 || len(tt.a.unstaged) != 2 { // main.go and notes.txt
+		t.Fatalf("staged %v, unstaged %v", tt.a.staged, tt.a.unstaged)
+	}
+	// Discard what is left, "// B", through its change's button.
+	if tt.a.detail.staged || tt.a.detail.patch == nil {
+		t.Fatalf("detail after staging %+v", tt.a.detail)
+	}
+	tt.a.applyLines(tt.a.hunkLines(tt.a.detail.diff.Hunks()[0]), lineDiscard)
+	tt.Frame()
+	tt.click(t, "丢弃")
+	b, _ := os.ReadFile(filepath.Join(dir, "main.go"))
+	if string(b) != index {
+		t.Fatalf("working tree %q", b)
 	}
 }
