@@ -28,6 +28,7 @@ func main() {
 		os.Exit(code)
 	}
 	mygo.App.SetName("MyGit")
+	loadSettings()
 	if !mygo.App.RequestSingleInstanceLock() {
 		return // the running MyGit opens it
 	}
@@ -137,16 +138,18 @@ func appMenu() *mygo.Menu {
 }
 
 // askUser asks a prompt of git's in the window of the repository it runs
-// in, and waits for the answer.
+// in, or the welcome window, cloning, and waits for the answer.
 func askUser(dir, prompt string) (string, bool) {
 	done := make(chan credAnswer, 1)
 	mygo.RunOnMain(func() {
-		a := apps[dir]
-		if a == nil {
+		switch {
+		case apps[dir] != nil:
+			apps[dir].askCredential(prompt, done)
+		case welcomeWin != nil:
+			welcomeWin.cred.ask(welcomeWin.win, prompt, done)
+		default:
 			done <- credAnswer{}
-			return
 		}
-		a.askCredential(prompt, done)
 	})
 	r := <-done
 	return r.value, r.ok

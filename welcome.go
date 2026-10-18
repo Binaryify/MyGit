@@ -23,6 +23,8 @@ type welcome struct {
 	win    *mygo.Window
 	recent []string
 	errMsg string
+	cred   credPrompt
+	clone  clonePlan
 }
 
 var welcomeWin *welcome
@@ -67,6 +69,8 @@ func recentRepos() []string {
 
 func (w *welcome) view(c *ui.Context) {
 	t := c.Theme()
+	defer w.cloneView(c)
+	defer w.cred.view(c)
 	ui.Column(c).Fill().Padding(28).Gap(18).Children(func() {
 		ui.Column(c).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Image(c, icon).Size(96, 96)
@@ -74,6 +78,14 @@ func (w *welcome) view(c *ui.Context) {
 			ui.Text(c, "轻量的 git 客户端").TextColor(t.TextMuted)
 		})
 		w.dropZone(c)
+		ui.Row(c).Gap(8).Children(func() {
+			if ui.Button(c, "克隆仓库…").Grow(1).Clicked() {
+				w.clone = clonePlan{open: true, parent: defaultParent()}
+			}
+			if ui.Button(c, "新建仓库…").Grow(1).Clicked() {
+				go w.initRepo()
+			}
+		})
 		if w.errMsg != "" {
 			ui.Text(c, w.errMsg).TextColor(t.Danger).Wrap()
 		}

@@ -3,11 +3,12 @@ package main
 import (
 	"strings"
 
+	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 )
 
 // credPrompt is git's or ssh's question for a username, a password, a
-// token or a passphrase, which the window asks for the command waiting.
+// token or a passphrase, which a window asks for the command waiting.
 type credPrompt struct {
 	open   bool
 	prompt string
@@ -20,16 +21,19 @@ type credAnswer struct {
 	ok    bool
 }
 
-func (a *app) askCredential(prompt string, done chan credAnswer) {
-	if a.cred.open { // one at a time: an earlier one is given up
-		a.cred.done <- credAnswer{}
+// ask shows a prompt in win, giving an earlier one up.
+func (p *credPrompt) ask(win *mygo.Window, prompt string, done chan credAnswer) {
+	if p.open {
+		p.done <- credAnswer{}
 	}
-	a.cred = credPrompt{open: true, prompt: strings.TrimSpace(prompt), done: done}
-	if a.win != nil {
-		a.win.Show()
-		a.win.Focus()
+	*p = credPrompt{open: true, prompt: strings.TrimSpace(prompt), done: done}
+	if win != nil {
+		win.Show()
+		win.Focus()
 	}
 }
+
+func (a *app) askCredential(prompt string, done chan credAnswer) { a.cred.ask(a.win, prompt, done) }
 
 // secret tells whether a prompt asks for what shouldn't show as typed.
 func secret(prompt string) bool {
@@ -37,8 +41,7 @@ func secret(prompt string) bool {
 	return strings.Contains(p, "password") || strings.Contains(p, "passphrase") || strings.Contains(p, "token")
 }
 
-func (a *app) credentialView(c *ui.Context) {
-	p := &a.cred
+func (p *credPrompt) view(c *ui.Context) {
 	if !p.open {
 		return
 	}

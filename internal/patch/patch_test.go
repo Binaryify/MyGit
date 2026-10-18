@@ -153,3 +153,20 @@ func TestLines(t *testing.T) {
 		t.Fatal("a modified file can't be cut")
 	}
 }
+
+func TestFileLines(t *testing.T) {
+	r := newRepo(t)
+	p := r.patch()
+	old, new := FileLines(p)
+	// "two" is the old file's line 1, "TWO" the new one's, "eleven" its 10.
+	at := func(m map[int]Line, i int) string {
+		l, ok := m[i]
+		if !ok {
+			return ""
+		}
+		return p.Hunks[l.Hunk].Lines[l.Index]
+	}
+	if at(old, 1) != "-two" || at(new, 1) != "+TWO" || at(new, 10) != "+eleven" || at(new, 0) != " one" {
+		t.Fatalf("old 1 %q, new 1 %q, new 10 %q, new 0 %q", at(old, 1), at(new, 1), at(new, 10), at(new, 0))
+	}
+}

@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"path"
+	"path/filepath"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/egoist/mygo"
@@ -62,11 +65,13 @@ type app struct {
 	detail   detail
 	fileList ui.ListState // of the commit's files
 
-	confirm confirmation
-	prompt  prompt
-	rebase  rebasePlan
-	push    pushPlan
-	cred    credPrompt
+	confirm      confirmation
+	prompt       prompt
+	rebase       rebasePlan
+	push         pushPlan
+	cred         credPrompt
+	remotes2     remotesPlan // the remotes dialog
+	settingsOpen bool
 
 	busy     string // the operation running, as the toolbar says it
 	errMsg   string
@@ -90,13 +95,15 @@ type detail struct {
 	message string            // the commit's whole message
 	parent  int               // the merge's parent its change is against
 	raw     string            // the change's patch as git printed it
+	whole   bool              // the change shows whole files, the new one to edit
 	patch   *editor.FilePatch // the change's, when its lines can be chosen
 	gen     int
 	loading bool
 }
 
 func newApp(repo *git.Repo) *app {
-	return &app{repo: repo, logSel: -1, stagedSel: -1, unstagedSel: -1, stashSel: -1, sidebarW: 300, logH: 360, filesW: 260}
+	return &app{repo: repo, logSel: -1, stagedSel: -1, unstagedSel: -1, stashSel: -1,
+		sidebarW: prefs.SidebarW, logH: prefs.LogH, filesW: prefs.FilesW}
 }
 
 func (a *app) start() {
@@ -109,6 +116,10 @@ func (a *app) start() {
 	if a.win != nil {
 		a.update = a.win.Update
 		a.win.OnFocus(a.refresh) // the repository may have changed in a terminal
+		a.win.OnClosed(func() {  // the next window opens as this one was laid out
+			prefs.SidebarW, prefs.LogH, prefs.FilesW = a.sidebarW, a.logH, a.filesW
+			prefs.save()
+		})
 		a.watch()
 	}
 	a.refresh()
@@ -304,7 +315,7 @@ func (a *app) loadLog() {
 // showCommit loads the files a commit changed.
 func (a *app) showCommit(i int) {
 	c := a.commits[i]
-	a.showPatch(c, func(ctx context.Context) (string, error) { return a.repo.Show(ctx, c.Hash) })
+	a.showPatch(c, func(ctx context.Context) (string, error) { return a.repo.Show(ctx, c.Hash, prefs.IgnoreWhitespace) })
 }
 
 // showStash shows a stash's files as a commit's.
@@ -328,7 +339,9 @@ func (a *app) showParent(i int) {
 	c := *a.detail.commit
 	parent := c.Parents[i]
 	a.detail = detail{commit: &c, parent: i, message: a.detail.message, gen: a.detail.gen + 1, loading: true}
-	a.loadPatch(func(ctx context.Context) (string, error) { return a.repo.DiffFrom(ctx, parent, c.Hash) })
+	a.loadPatch(func(ctx context.Context) (string, error) {
+		return a.repo.DiffFrom(ctx, parent, c.Hash, prefs.IgnoreWhitespace)
+	})
 }
 
 func (a *app) loadPatch(load func(ctx context.Context) (string, error)) {
@@ -368,8 +381,10 @@ func (a *app) showFile(i int) {
 }
 
 // showChange shows the diff of a change, staged or in the working tree.
-// Shown again as the change moves on, it keeps the diff, with its
-// selection and scroll, while the patch is the same.
+// A file changed in the working tree shows whole, the index's version on
+// the left and the file on the right to edit. Shown again as the change
+// moves on, the diff stays, with its selection, scroll and edits, while
+// the texts are the same.
 func (a *app) showChange(c git.Change, staged bool) {
 	if c.Conflict {
 		if a.detail.merge == nil || a.detail.merge.path != c.Path {
@@ -382,10 +397,15 @@ func (a *app) showChange(c git.Change, staged bool) {
 		a.detail = detail{change: &c, staged: staged, gen: a.detail.gen + 1, loading: true}
 	}
 	gen := a.detail.gen
+	ignoreSpace := prefs.IgnoreWhitespace
+	// The working tree's file, whole and editable, when it is changed in
+	// place and its patch, all of it, can be cut for staging.
+	whole := !staged && c.Work == 'M' && !ignoreSpace
 	type result struct {
-		raw   string
-		patch *editor.FilePatch
-		diff  *editor.DiffState
+		raw      string
+		patch    *editor.FilePatch
+		old, new string // the whole texts
+		diff     *editor.DiffState
 	}
 	work(a, func(ctx context.Context) (result, error) {
 		if c.Work == '?' && !staged { // untracked: all of it is new
@@ -395,7 +415,7 @@ func (a *app) showChange(c git.Change, staged bool) {
 			}
 			return result{raw: text, diff: textDiff(c.Path, "", text)}, nil
 		}
-		out, err := a.repo.Diff(ctx, c.Path, staged)
+		out, err := a.repo.Diff(ctx, c.Path, staged, ignoreSpace)
 		if err != nil {
 			return result{}, err
 		}
@@ -403,7 +423,18 @@ func (a *app) showChange(c git.Change, staged bool) {
 		if err != nil || len(files) == 0 {
 			return result{raw: out}, err
 		}
-		return result{raw: out, patch: &files[0], diff: patchDiff(files[0])}, nil
+		r := result{raw: out, patch: &files[0]}
+		if whole {
+			r.old = a.repo.ReadIndex(ctx, c.Path)
+			if r.new, err = a.repo.ReadFile(c.Path); err != nil {
+				return result{}, err
+			}
+			r.diff = textDiff(c.Path, r.old, r.new)
+			r.diff.Editable = true
+		} else {
+			r.diff = patchDiff(files[0])
+		}
+		return r, nil
 	}, func(r result, err error) {
 		if gen != a.detail.gen {
 			return
@@ -412,19 +443,46 @@ func (a *app) showChange(c git.Change, staged bool) {
 		if err != nil {
 			a.errMsg = err.Error()
 		}
-		if same && r.raw == a.detail.raw && a.detail.diff != nil {
-			return
+		d := a.detail.diff
+		if same && d != nil {
+			if r.raw == a.detail.raw {
+				return
+			}
+			// The file changed as shown, or its index did: keep the diff
+			// and what's being edited, taking the new patch for staging.
+			if a.detail.whole && whole && (d.New.Modified() || d.New.String() == r.new) {
+				if d.Old.String() != r.old {
+					d.Old.Set(r.old)
+				}
+				a.detail.raw, a.detail.patch = r.raw, r.patch
+				return
+			}
 		}
-		a.detail.raw, a.detail.patch, a.detail.diff = r.raw, r.patch, r.diff
+		a.detail.raw, a.detail.patch, a.detail.diff, a.detail.whole = r.raw, r.patch, r.diff, whole && r.diff != nil
 		a.detail.change = &c
-		if r.patch != nil && patch.Partial(*r.patch) {
+		if r.patch != nil && patch.Partial(*r.patch) && !ignoreSpace {
 			a.reviewLines(r.diff)
 		}
 	})
 }
 
+// saveFile writes the working tree's file edited in the diff.
+func (a *app) saveFile() {
+	d := a.detail
+	if !d.whole || d.diff == nil || !d.diff.New.Modified() {
+		return
+	}
+	text, path := d.diff.New.String(), d.change.Path
+	if err := a.repo.WriteFile(path, text); err != nil {
+		a.errMsg = "保存失败：" + err.Error()
+		return
+	}
+	d.diff.New.MarkSaved()
+	a.refresh()
+}
+
 func patchDiff(p editor.FilePatch) *editor.DiffState {
-	d := &editor.DiffState{}
+	d := &editor.DiffState{Layout: diffLayout()}
 	d.SetPatch(p)
 	if lang := editor.LanguageFor(fileName(p)); lang != nil {
 		d.Old.SetLanguage(lang)
@@ -434,7 +492,7 @@ func patchDiff(p editor.FilePatch) *editor.DiffState {
 }
 
 func textDiff(name, old, new string) *editor.DiffState {
-	d := &editor.DiffState{Old: editor.NewBuffer(old), New: editor.NewBuffer(new)}
+	d := &editor.DiffState{Old: editor.NewBuffer(old), New: editor.NewBuffer(new), Layout: diffLayout()}
 	if lang := editor.LanguageFor(name); lang != nil {
 		d.Old.SetLanguage(lang)
 		d.New.SetLanguage(lang)
@@ -461,13 +519,20 @@ func (a *app) unstage(c git.Change) {
 	a.run("取消暂存", func(ctx context.Context) error { return a.repo.Unstage(ctx, paths...) }, nil)
 }
 
+// trash moves a file to the trash.
+var trash = func(path string) error { return mygo.Shell.TrashItem(path) }
+
 // discard throws a change of the working tree away, once the user says so.
 func (a *app) discard(c git.Change) {
-	msg := "“" + c.Path + "”的更改会被丢弃，无法撤销。"
-	if c.Work == '?' {
-		msg = "未跟踪的文件“" + c.Path + "”会被删除，无法撤销。"
+	if c.Work == '?' { // a file git doesn't have: to the trash, where it can be found again
+		a.ask("把文件移到废纸篓？", "未跟踪的文件“"+c.Path+"”会移到废纸篓。", "移到废纸篓", func() {
+			a.run("丢弃", func(context.Context) error {
+				return trash(filepath.Join(a.repo.Dir, filepath.FromSlash(c.Path)))
+			}, nil)
+		})
+		return
 	}
-	a.ask("丢弃更改？", msg, "丢弃", func() {
+	a.ask("丢弃更改？", "“"+c.Path+"”的更改会被丢弃，无法撤销。", "丢弃", func() {
 		a.run("丢弃", func(ctx context.Context) error { return a.repo.Discard(ctx, c) }, nil)
 	})
 }
@@ -501,5 +566,28 @@ func (a *app) toggleAmend() {
 		a.message = a.repo.LastMessage(context.Background())
 	} else if a.message == a.repo.LastMessage(context.Background()) {
 		a.message = ""
+	}
+}
+
+// remoteNames are the remotes the remotes' branches name.
+func (a *app) remoteNames() []string {
+	var names []string
+	for _, b := range a.remotes {
+		if name, _, ok := strings.Cut(b, "/"); ok && !slices.Contains(names, name) {
+			names = append(names, name)
+		}
+	}
+	return names
+}
+
+// reloadDiff shows the diff of what's chosen again, as the diff settings
+// changed.
+func (a *app) reloadDiff() {
+	switch d := a.detail; {
+	case d.change != nil && d.merge == nil:
+		a.detail = detail{gen: d.gen}
+		a.showChange(*d.change, d.staged)
+	case d.commit != nil && d.fileSel >= 0 && d.fileSel < len(d.files):
+		a.showFile(d.fileSel)
 	}
 }

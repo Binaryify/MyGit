@@ -476,3 +476,43 @@ func TestCredentialDialog(t *testing.T) {
 		t.Fatalf("canceled answer %+v", r)
 	}
 }
+
+func TestEditInDiff(t *testing.T) {
+	tt := newTester(t)
+	dir := tt.a.repo.Dir
+	if err := os.WriteFile(filepath.Join(dir, "main.go"), []byte("package main\n\nfunc main() { println(1) }\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	tt.a.refresh()
+	tt.settle()
+	tt.click(t, "main.go")
+	d := tt.a.detail.diff
+	if !tt.a.detail.whole || d == nil || !d.Editable || d.Old.String() != "package main\n\nfunc main() {}\n" {
+		t.Fatalf("detail %+v", tt.a.detail)
+	}
+	d.New.Edit(editor.Edit{Start: d.New.Len(), End: d.New.Len(), Text: "// edited\n"})
+	tt.Frame()
+	if !tt.a.unsaved() || !tt.HasText("保存") {
+		t.Fatal("no unsaved edit")
+	}
+	tt.click(t, "保存")
+	b, _ := os.ReadFile(filepath.Join(dir, "main.go"))
+	if string(b) != "package main\n\nfunc main() { println(1) }\n// edited\n" || tt.a.unsaved() {
+		t.Fatalf("file %q", b)
+	}
+	if tt.a.detail.diff != d {
+		t.Fatal("saving replaced the diff, losing its place")
+	}
+}
+
+func TestSettingsLayout(t *testing.T) {
+	tt := newTester(t)
+	tt.click(t, "Write main")
+	prefs.Unified = true
+	defer func() { prefs.Unified = false }()
+	tt.a.reloadDiff()
+	tt.settle()
+	if tt.a.detail.diff == nil || tt.a.detail.diff.Layout != editor.DiffUnified {
+		t.Fatalf("layout %+v", tt.a.detail.diff)
+	}
+}

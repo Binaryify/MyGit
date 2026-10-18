@@ -38,8 +38,10 @@ func (a *app) view(c *ui.Context) {
 	a.rebaseView(c)
 	a.pushView(c)
 	a.promptView(c)
+	a.remotesView(c)
+	a.settingsView(c)
 	a.confirmView(c)
-	a.credentialView(c)
+	a.cred.view(c)
 	c.OnShortcut(ui.Cmd, ui.KeyR, a.refresh)
 }
 
@@ -62,9 +64,19 @@ func (a *app) toolbar(c *ui.Context) {
 			ui.Text(c, a.busy+"…").TextColor(t.TextMuted)
 		}
 		idle := a.busy == ""
-		if ui.Button(c, "获取").Tooltip("git fetch --all --prune").Disabled(!idle).Clicked() {
-			a.run("获取", a.repo.Fetch, nil)
-		}
+		ui.Button(c, "获取 ▾").Label("获取").Disabled(!idle).Menu(func(m *ui.Menu) {
+			if m.Item("获取全部远程").Chosen() {
+				a.run("获取", a.repo.Fetch, nil)
+			}
+			if names := a.remoteNames(); len(names) > 1 {
+				m.Separator()
+				for _, name := range names {
+					if m.Item("获取 " + name).Chosen() {
+						a.run("获取 "+name, func(ctx context.Context) error { return a.repo.FetchRemote(ctx, name) }, nil)
+					}
+				}
+			}
+		})
 		ui.Button(c, "拉取 ▾").Label("拉取").Disabled(!idle || st.Upstream == "").Menu(func(m *ui.Menu) {
 			pull := func(mode git.PullMode) {
 				a.run("拉取", func(ctx context.Context) error { return a.repo.Pull(ctx, mode) }, nil)
@@ -85,6 +97,7 @@ func (a *app) toolbar(c *ui.Context) {
 		if ui.Button(c, "刷新").Tooltip("⌘R").Clicked() {
 			a.refresh()
 		}
+		ui.Button(c, "⋯").Label("仓库").Menu(a.repoMenu)
 	})
 }
 
@@ -278,6 +291,9 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 
 // fileMenu is a file's context menu, of a commit's files or the changes.
 func (a *app) fileMenu(m *ui.Menu, path, rev string) {
+	if m.Item("在编辑器中打开").Chosen() {
+		a.openInEditor(filepath.Join(a.repo.Dir, filepath.FromSlash(path)), 0)
+	}
 	if m.Item("文件历史").Chosen() {
 		a.setScope(git.Scope{Ref: a.scope.Ref, Path: path})
 	}
@@ -351,11 +367,20 @@ func refLabel(ref string) (string, bool) {
 
 // lineButtons act on the lines selected in the diff of a change.
 func (a *app) lineButtons(c *ui.Context) {
-	if a.detail.patch == nil || !patch.Partial(*a.detail.patch) {
+	if ui.Button(c, "在编辑器中打开").Clicked() {
+		a.openChangeInEditor()
+	}
+	if a.detail.whole {
+		if ui.PrimaryButton(c, "保存").Disabled(!a.unsaved()).Tooltip("⌘S").Clicked() {
+			a.saveFile()
+		}
+		c.OnShortcut(ui.Cmd, ui.KeyS, a.saveFile)
+	}
+	if a.detail.patch == nil || !patch.Partial(*a.detail.patch) || prefs.IgnoreWhitespace {
 		return
 	}
 	chosen := a.selectedLines()
-	none := chosen == nil || a.busy != ""
+	none := chosen == nil || a.busy != "" || a.unsaved()
 	if a.detail.staged {
 		if ui.Button(c, "取消暂存选中行").Disabled(none).Clicked() {
 			a.applyLines(chosen, lineUnstage)

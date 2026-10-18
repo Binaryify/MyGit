@@ -127,3 +127,28 @@ func header(p editor.FilePatch) string {
 func Partial(p editor.FilePatch) bool {
 	return !p.Binary && p.OldName != "" && p.OldName == p.NewName && len(p.Hunks) > 0
 }
+
+// FileLines numbers a patch's lines by the lines of the files, from 0:
+// old has the old file's lines the patch holds (context and deletions),
+// new the new file's (context and additions), as a diff of the whole
+// files numbers them.
+func FileLines(p editor.FilePatch) (old, new map[int]Line) {
+	old, new = map[int]Line{}, map[int]Line{}
+	for h, hunk := range p.Hunks {
+		o, n := hunk.OldStart-1, hunk.NewStart-1
+		for i, l := range hunk.Lines {
+			if l == "" || l[0] == '\\' {
+				continue
+			}
+			if l[0] != '+' {
+				old[o] = Line{h, i}
+				o++
+			}
+			if l[0] != '-' {
+				new[n] = Line{h, i}
+				n++
+			}
+		}
+	}
+	return old, new
+}

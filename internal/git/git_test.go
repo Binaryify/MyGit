@@ -73,7 +73,7 @@ func TestStageCommitLog(t *testing.T) {
 	if len(st.Changes) != 1 || st.Changes[0].Work != 'M' || st.Changes[0].Staged != 0 {
 		t.Fatalf("modified file: %+v", st.Changes)
 	}
-	if d, err := r.Diff(ctx, "a.txt", false); err != nil || !slices.Contains(lines(d), "+two") {
+	if d, err := r.Diff(ctx, "a.txt", false, false); err != nil || !slices.Contains(lines(d), "+two") {
 		t.Fatalf("diff %q, %v", d, err)
 	}
 	if err := r.Stage(ctx, "a.txt"); err != nil {
@@ -93,7 +93,7 @@ func TestStageCommitLog(t *testing.T) {
 		len(all[0].Parents) != 1 || all[0].Parents[0] != all[1].Hash || !slices.Contains(all[0].Refs, "main") {
 		t.Fatalf("log %+v", all)
 	}
-	if p, err := r.Show(ctx, all[0].Hash); err != nil || !slices.Contains(lines(p), "+two") {
+	if p, err := r.Show(ctx, all[0].Hash, false); err != nil || !slices.Contains(lines(p), "+two") {
 		t.Fatalf("show %q, %v", p, err)
 	}
 	if r.LastMessage(ctx) != "second" {
@@ -369,5 +369,58 @@ func TestBlameAndRemote(t *testing.T) {
 	}
 	if err := r.Pull(ctx, PullRebase); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestCloneInitRemotes(t *testing.T) {
+	ctx := context.Background()
+	src := repo(t)
+	write(t, src, "a.txt", "a")
+	_ = src.Stage(ctx, "a.txt")
+	_ = src.Commit(ctx, "a", false)
+	parent := t.TempDir()
+	var lines []string
+	if err := Clone(ctx, parent, src.Dir, "copy", func(l string) { lines = append(lines, l) }); err != nil {
+		t.Fatal(err)
+	}
+	r, err := Open(filepath.Join(parent, "copy"))
+	if err != nil || len(lines) == 0 {
+		t.Fatalf("clone %v, progress %q", err, lines)
+	}
+	if err := Clone(ctx, parent, filepath.Join(parent, "nothing"), "x", nil); err == nil || !strings.HasPrefix(err.Error(), "fatal:") {
+		t.Fatalf("cloning nothing: %v", err)
+	}
+	if err := r.AddRemote(ctx, "upstream", "https://example.com/a.git"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.RenameRemote(ctx, "upstream", "mirror"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.SetRemoteURL(ctx, "mirror", "https://example.com/b.git"); err != nil {
+		t.Fatal(err)
+	}
+	list, _ := r.Remotes(ctx)
+	if len(list) != 2 || !slices.Contains(list, Remote{"mirror", "https://example.com/b.git"}) {
+		t.Fatalf("remotes %+v", list)
+	}
+	if err := r.RemoveRemote(ctx, "mirror"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.FetchRemote(ctx, "origin"); err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	if err := Init(ctx, dir); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Open(dir); err != nil {
+		t.Fatal(err)
+	}
+	for url, want := range map[string]string{
+		"https://github.com/egoist/mygo.git": "mygo", "git@github.com:a/b.git": "b", "https://x.org/c/": "c", "/tmp/d": "d",
+	} {
+		if got := RepoName(url); got != want {
+			t.Errorf("RepoName(%q) = %q", url, got)
+		}
 	}
 }

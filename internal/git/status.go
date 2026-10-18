@@ -91,13 +91,36 @@ func change(xy, path string) Change {
 }
 
 // Diff is the patch of a change: the index against HEAD when staged, else
-// the working tree against the index.
-func (r *Repo) Diff(ctx context.Context, path string, staged bool) (string, error) {
+// the working tree against the index; ignoring whitespace changes when
+// asked.
+func (r *Repo) Diff(ctx context.Context, path string, staged, ignoreSpace bool) (string, error) {
 	args := []string{"diff", "-M", "--no-ext-diff"}
 	if staged {
 		args = append(args, "--cached")
 	}
+	if ignoreSpace {
+		args = append(args, "-w")
+	}
 	return r.Git(ctx, append(args, "--", path)...)
+}
+
+// ReadIndex reads a file as the index holds it, "" for one not in it.
+func (r *Repo) ReadIndex(ctx context.Context, path string) string {
+	out, err := r.Git(ctx, "show", ":"+path)
+	if err != nil {
+		return ""
+	}
+	return out
+}
+
+// WriteFile writes a file of the working tree, keeping its mode.
+func (r *Repo) WriteFile(path, text string) error {
+	full := filepath.Join(r.Dir, filepath.FromSlash(path))
+	mode := os.FileMode(0o644)
+	if fi, err := os.Stat(full); err == nil {
+		mode = fi.Mode()
+	}
+	return os.WriteFile(full, []byte(text), mode)
 }
 
 // ReadFile reads a file of the working tree, as an untracked file shows.

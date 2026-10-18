@@ -61,7 +61,7 @@ func BenchmarkShowCommit(b *testing.B) {
 		b.Skip("MYGIT_BENCH_COMMIT not set")
 	}
 	for range b.N {
-		out, err := r.Show(context.Background(), hash)
+		out, err := r.Show(context.Background(), hash, false)
 		if err != nil {
 			b.Fatal(err)
 		}
