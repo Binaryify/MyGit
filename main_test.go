@@ -608,3 +608,14 @@ func TestHeadersDontMove(t *testing.T) {
 		t.Fatalf("header at %+v, %+v, %+v; file %+v → %+v", before, staged, after, fileBefore, fileAfter)
 	}
 }
+
+func TestDropTarget(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "a.txt")
+	if err := os.WriteFile(file, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if dropTarget(dir) != dir || dropTarget(file) != dir {
+		t.Fatalf("folder %q, file %q", dropTarget(dir), dropTarget(file))
+	}
+}

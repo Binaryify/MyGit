@@ -117,6 +117,22 @@ func (a *app) repoMenu(m *ui.Menu) {
 		a.openInEditor(a.repo.Dir, 0)
 	}
 	m.Separator()
+	if m.Item("打开仓库…").Chosen() {
+		showWelcome()
+	}
+	if recent := recentRepos(); len(recent) > 0 {
+		m.Submenu("最近打开", func(m *ui.Menu) {
+			for _, dir := range recent {
+				if m.Item(homeRelative(dir)).Chosen() {
+					openDir(dir)
+				}
+			}
+		})
+	}
+	if m.Item("安装命令行工具…").Chosen() {
+		go installLauncher()
+	}
+	m.Separator()
 	if m.Item("设置…").Chosen() {
 		a.settingsOpen = true
 	}

@@ -3,5 +3,19 @@
   "identifier": "io.github.binaryify.mygit",
   "version": "0.1.0",
   "copyright": "Copyright © 2026 binaryify",
-  "out": "build"
+  "out": "build",
+  "macos": {
+    "infoPlist": {
+      "CFBundleDocumentTypes": [
+        {
+          "CFBundleTypeName": "Folder",
+          "CFBundleTypeRole": "Viewer",
+          "LSHandlerRank": "Alternate",
+          "LSItemContentTypes": [
+            "public.folder"
+          ]
+        }
+      ]
+    }
+  }
 }

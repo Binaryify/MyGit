@@ -20,7 +20,8 @@ const rowHeight = 26
 
 func (a *app) view(c *ui.Context) {
 	t := c.Theme()
-	ui.Column(c).Fill().FontSize(12).Children(func() {
+	root := ui.Column(c).Fill().FontSize(12)
+	root.Children(func() {
 		a.toolbar(c)
 		if a.errMsg != "" {
 			ui.Row(c).Padding(6, 12).Gap(8).Background(t.Danger.Alpha(0.12)).AlignItems(ui.Center).Children(func() {
@@ -34,7 +35,13 @@ func (a *app) view(c *ui.Context) {
 		ui.Split(c, &a.sidebarW, func() { a.leftPanel(c) }, func() {
 			ui.SplitVertical(c, &a.logH, func() { a.logView(c) }, func() { a.detailView(c) }).Fill()
 		}).Grow(1)
+		if root.FileDragOver() {
+			dropHint(c)
+		}
 	})
+	if paths := root.DroppedFiles(); len(paths) > 0 {
+		openDropped(paths)
+	}
 	a.rebaseView(c)
 	a.pushView(c)
 	a.promptView(c)
@@ -48,8 +55,9 @@ func (a *app) view(c *ui.Context) {
 func (a *app) toolbar(c *ui.Context) {
 	t := c.Theme()
 	st := a.status
-	ui.Row(c).Gap(8).Padding(8, 12).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
-		ui.Text(c, a.repo.Name()).FontSize(14).Bold()
+	titleBar(c).Background(t.Surface).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
+		ui.Image(c, icon).Size(22, 22)
+		ui.Text(c, a.repo.Name()).FontSize(13).Bold().Tooltip(a.repo.Dir)
 		branch := st.Branch
 		if branch == "" {
 			branch = "（游离 HEAD）"

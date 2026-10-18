@@ -94,7 +94,7 @@ func open(repo *git.Repo) {
 	}
 	_ = mygo.App.AddRecentDocument(repo.Dir)
 	a := newApp(repo)
-	a.win = mygo.NewWindow(mygo.WindowOptions{
+	a.win = mygo.NewWindow(customTitleBar(mygo.WindowOptions{
 		Title:     repo.Name() + " — MyGit",
 		Width:     1200,
 		Height:    800,
@@ -102,7 +102,8 @@ func open(repo *git.Repo) {
 		MinHeight: 480,
 		StateKey:  "main",
 		Content:   ui.View(a.view),
-	})
+	}))
+	dropMenuBar(a.win)
 	apps[repo.Dir] = a
 	a.win.OnClosed(func() { delete(apps, repo.Dir) })
 	a.start()

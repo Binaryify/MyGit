@@ -39,14 +39,15 @@ func showWelcome() {
 		return
 	}
 	w := &welcome{recent: recentRepos()}
-	w.win = mygo.NewWindow(mygo.WindowOptions{
+	w.win = mygo.NewWindow(customTitleBar(mygo.WindowOptions{
 		Title:     "MyGit",
 		Width:     520,
-		Height:    600,
+		Height:    640,
 		MinWidth:  420,
-		MinHeight: 480,
+		MinHeight: 520,
 		Content:   ui.View(w.view),
-	})
+	}))
+	dropMenuBar(w.win)
 	w.win.OnClosed(func() { welcomeWin = nil })
 	welcomeWin = w
 }
@@ -70,10 +71,24 @@ func recentRepos() []string {
 }
 
 func (w *welcome) view(c *ui.Context) {
-	t := c.Theme()
 	defer w.cloneView(c)
 	defer w.cred.view(c)
-	ui.Column(c).Fill().Padding(28).Gap(18).Children(func() {
+	root := ui.Column(c).Fill()
+	root.Children(func() {
+		titleBar(c) // nothing in it but room to drag the window by
+		w.body(c)
+		if root.FileDragOver() {
+			dropHint(c)
+		}
+	})
+	if paths := root.DroppedFiles(); len(paths) > 0 {
+		w.open(dropTarget(paths[0]))
+	}
+}
+
+func (w *welcome) body(c *ui.Context) {
+	t := c.Theme()
+	ui.Column(c).Grow(1).Basis(0).Padding(0, 28, 28, 28).Gap(18).Children(func() {
 		ui.Column(c).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Image(c, icon).Size(96, 96)
 			ui.Text(c, "MyGit").FontSize(24).Bold()
@@ -130,9 +145,6 @@ func (w *welcome) dropZone(c *ui.Context) {
 		ui.Text(c, "把仓库文件夹拖到这里").FontSize(15).Bold()
 		ui.Text(c, "或点击选择文件夹").TextColor(t.TextMuted)
 	})
-	if files := zone.DroppedFiles(); len(files) > 0 {
-		w.open(files[0])
-	}
 	if zone.Clicked() {
 		go w.pick()
 	}
@@ -194,4 +206,31 @@ func (w *welcome) failed(dir string, err error) {
 	if errors.As(err, &unsafe) {
 		w.unsafe = dir
 	}
+}
+
+// dropHint covers a window while folders are dragged over it, saying
+// they open as repositories.
+func dropHint(c *ui.Context) {
+	t := c.Theme()
+	ui.Column(c).Absolute().Top(8).Right(8).Bottom(8).Left(8).Center().Gap(6).Radius(14).
+		Background(t.Background.Alpha(0.88)).Border(2, t.Accent).BorderStyle(ui.BorderDashed).Children(func() {
+		ui.Text(c, "松开以打开仓库").FontSize(16).Bold()
+		ui.Text(c, "每个仓库在自己的窗口里打开").TextColor(t.TextMuted)
+	})
+}
+
+// openDropped opens the repositories of folders dropped on a window, or
+// of the folders of files dropped.
+func openDropped(paths []string) {
+	for _, p := range paths {
+		openDir(dropTarget(p))
+	}
+}
+
+// dropTarget is the folder a dropped path opens: itself, or a file's.
+func dropTarget(p string) string {
+	if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
+		return filepath.Dir(p)
+	}
+	return p
 }
