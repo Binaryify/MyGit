@@ -2,3 +2,5 @@
 /.mygo/
 mygo_windows_*.syso
 .DS_Store
+.idea/
+.vscode/
