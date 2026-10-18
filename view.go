@@ -27,7 +27,8 @@ func (a *app) view(c *ui.Context) {
 				}
 			})
 		}
-		ui.Split(c, &a.sidebarW, func() { a.changesPanel(c) }, func() {
+		a.operationBar(c)
+		ui.Split(c, &a.sidebarW, func() { a.leftPanel(c) }, func() {
 			ui.SplitVertical(c, &a.logH, func() { a.logView(c) }, func() { a.detailView(c) }).Fill()
 		}).Grow(1)
 	})
@@ -74,7 +75,7 @@ func (a *app) toolbar(c *ui.Context) {
 // commit message under them.
 func (a *app) changesPanel(c *ui.Context) {
 	t := c.Theme()
-	ui.Column(c).Fill().Children(func() {
+	ui.Column(c).Grow(1).Basis(0).Children(func() {
 		a.changeSection(c, "暂存的更改", true)
 		a.changeSection(c, "更改", false)
 		ui.Column(c).Gap(8).Padding(10).BorderWidth(1, 0, 0, 0).BorderColor(t.Border).Children(func() {

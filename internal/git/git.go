@@ -16,16 +16,18 @@ import (
 
 // Repo is a working tree and its repository.
 type Repo struct {
-	Dir string // the top of the working tree
+	Dir    string // the top of the working tree
+	GitDir string // the repository, .git or a worktree's
 }
 
 // Open finds the repository dir is in.
 func Open(dir string) (*Repo, error) {
-	out, err := run(context.Background(), dir, "rev-parse", "--show-toplevel")
-	if err != nil {
+	out, err := run(context.Background(), dir, "rev-parse", "--show-toplevel", "--absolute-git-dir")
+	lines := strings.Split(strings.TrimSpace(out), "\n")
+	if err != nil || len(lines) != 2 {
 		return nil, fmt.Errorf("%s 不是 git 仓库", dir)
 	}
-	return &Repo{Dir: filepath.Clean(strings.TrimSpace(out))}, nil
+	return &Repo{Dir: filepath.Clean(lines[0]), GitDir: filepath.Clean(lines[1])}, nil
 }
 
 // Name is the working tree's folder name.

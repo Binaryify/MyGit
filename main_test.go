@@ -261,3 +261,66 @@ func TestResetHardAsks(t *testing.T) {
 		t.Fatalf("main at %q, %d commits", main, len(tt.a.commits))
 	}
 }
+
+func TestStashFlow(t *testing.T) {
+	tt := newTester(t)
+	tt.click(t, "Stash (0)")
+	tt.click(t, "Stash 当前更改…")
+	tt.click(t, "Stash")
+	if len(tt.a.stashes) != 1 || len(tt.a.unstaged) != 0 {
+		t.Fatalf("stashes %v, unstaged %v", tt.a.stashes, tt.a.unstaged)
+	}
+	tt.click(t, tt.a.stashes[0].Subject)
+	if d := tt.a.detail; d.commit == nil || len(d.files) != 1 || d.files[0].NewName != "notes.txt" {
+		t.Fatalf("stash detail %+v", d)
+	}
+	if err := tt.RightClick(tt.a.stashes[0].Subject); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("弹出（应用并删除）"); err != nil {
+		t.Fatal(err)
+	}
+	tt.settle()
+	if len(tt.a.stashes) != 0 || len(tt.a.unstaged) != 1 {
+		t.Fatalf("after pop: stashes %v, unstaged %v", tt.a.stashes, tt.a.unstaged)
+	}
+}
+
+func TestConflictBar(t *testing.T) {
+	tt := newTester(t)
+	ctx := context.Background()
+	r := tt.a.repo
+	for _, args := range [][]string{
+		{"switch", "-q", "-c", "other", "HEAD~1"},
+		{"-c", "user.name=a", "-c", "user.email=a@a", "commit", "-q", "--allow-empty", "-m", "noop"},
+	} {
+		if _, err := r.Git(ctx, args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(r.Dir, "main.go"), []byte("package other\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Git(ctx, "-c", "user.name=a", "-c", "user.email=a@a", "commit", "-q", "-am", "other main"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Git(ctx, "switch", "-q", "main"); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(r.Dir, "main.go"), []byte("package mine\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Git(ctx, "-c", "user.name=a", "-c", "user.email=a@a", "commit", "-q", "-am", "my main"); err != nil {
+		t.Fatal(err)
+	}
+	tt.a.run("合并", func(ctx context.Context) error { return r.Merge(ctx, "other") }, nil)
+	tt.settle()
+	if tt.a.op != git.Merging || !tt.HasText("正在合并，有 1 个冲突文件：解决后暂存，再点继续") {
+		t.Fatalf("op %q, texts %q", tt.a.op, tt.Texts())
+	}
+	tt.click(t, "中止…")
+	tt.click(t, "中止")
+	if tt.a.op != git.NoOperation {
+		t.Fatalf("op after aborting %q", tt.a.op)
+	}
+}

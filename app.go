@@ -46,6 +46,11 @@ type app struct {
 	status                   git.Status
 	branches                 []string
 	remotes                  []string // the remotes' branches
+	op                       git.Operation
+	stashes                  []git.Stash
+	stashList                ui.ListState
+	stashSel                 int
+	leftTab                  int // the left panel's: changes or the stash
 	staged                   []git.Change
 	unstaged                 []git.Change
 	stagedList, unstagedList ui.ListState
@@ -84,7 +89,7 @@ type detail struct {
 }
 
 func newApp(repo *git.Repo) *app {
-	return &app{repo: repo, logSel: -1, stagedSel: -1, unstagedSel: -1, sidebarW: 300, logH: 360, filesW: 260}
+	return &app{repo: repo, logSel: -1, stagedSel: -1, unstagedSel: -1, stashSel: -1, sidebarW: 300, logH: 360, filesW: 260}
 }
 
 func (a *app) start() {
@@ -92,6 +97,7 @@ func (a *app) start() {
 	a.logList.Key = func(i int) any { return a.commits[a.commitAt(i)].Hash }
 	a.logList.Label = func(i int) string { return a.commits[a.commitAt(i)].Subject }
 	a.stagedList.Selected, a.unstagedList.Selected = &a.stagedSel, &a.unstagedSel
+	a.stashList.Selected = &a.stashSel
 	a.fileList.Selected = &a.detail.fileSel
 	if a.win != nil {
 		a.update = a.win.Update
@@ -163,6 +169,8 @@ type snapshot struct {
 	branches []string
 	remotes  []string
 	refs     string
+	op       git.Operation
+	stashes  []git.Stash
 }
 
 // refresh reads the status, and the history again when a ref moved. A
@@ -180,7 +188,8 @@ func (a *app) refresh() {
 		}
 		b, _ := a.repo.Branches(ctx)
 		rb, _ := a.repo.RemoteBranches(ctx)
-		return snapshot{st, b, rb, a.repo.Refs(ctx)}, nil
+		stashes, _ := a.repo.Stashes(ctx)
+		return snapshot{st, b, rb, a.repo.Refs(ctx), a.repo.Operation(), stashes}, nil
 	}, func(s snapshot, err error) {
 		a.refreshing = false
 		if a.again {
@@ -192,7 +201,8 @@ func (a *app) refresh() {
 			return
 		}
 		a.setStatus(s.status)
-		a.branches, a.remotes = s.branches, s.remotes
+		a.branches, a.remotes, a.op, a.stashes = s.branches, s.remotes, s.op, s.stashes
+		a.stashSel = min(a.stashSel, len(a.stashes)-1)
 		if s.refs != a.refs || a.commits == nil && !a.loading {
 			a.refs = s.refs
 			a.loadLog()
@@ -287,13 +297,24 @@ func (a *app) loadLog() {
 // showCommit loads the files a commit changed.
 func (a *app) showCommit(i int) {
 	c := a.commits[i]
+	a.showPatch(c, func(ctx context.Context) (string, error) { return a.repo.Show(ctx, c.Hash) })
+}
+
+// showStash shows a stash's files as a commit's.
+func (a *app) showStash(s git.Stash) {
+	c := git.Commit{Hash: s.Hash, Time: s.Time, Subject: s.Subject, Refs: []string{s.Ref}}
+	a.showPatch(c, func(ctx context.Context) (string, error) { return a.repo.StashShow(ctx, s.Ref) })
+}
+
+// showPatch loads the files of a commit's patch, which load reads.
+func (a *app) showPatch(c git.Commit, load func(ctx context.Context) (string, error)) {
 	if a.detail.commit != nil && a.detail.commit.Hash == c.Hash {
 		return
 	}
 	a.detail = detail{commit: &c, gen: a.detail.gen + 1, loading: true}
 	gen := a.detail.gen
 	work(a, func(ctx context.Context) ([]editor.FilePatch, error) {
-		out, err := a.repo.Show(ctx, c.Hash)
+		out, err := load(ctx)
 		if err != nil {
 			return nil, err
 		}

@@ -12,10 +12,12 @@ import (
 
 // prompt asks for a name, of a branch or a tag, in a dialog.
 type prompt struct {
-	open                  bool
-	title, button, value  string
-	note, message, msgVal string // a second, optional field: a tag's message
-	ok                    func(value, message string)
+	open                 bool
+	title, button, value string
+	message, msgVal      string // a second, optional field: a tag's message
+	check                string // an option, as a checkbox, when given
+	checked              bool
+	ok                   func(value, message string)
 }
 
 func (a *app) ask1(title, button, value string, ok func(string)) {
@@ -31,6 +33,9 @@ func (a *app) promptView(c *ui.Context) {
 			submitted := ui.TextInput(c, &p.value).Label(p.title).AutoFocus().Submitted()
 			if p.message != "" {
 				ui.TextInput(c, &p.msgVal).Placeholder(p.message).Label(p.message)
+			}
+			if p.check != "" {
+				ui.Checkbox(c, &p.checked, p.check)
 			}
 			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
 				if ui.Button(c, "取消").Clicked() {

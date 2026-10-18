@@ -199,3 +199,85 @@ func TestBranchesAndCommits(t *testing.T) {
 		t.Fatal("branch names")
 	}
 }
+
+func TestStashAndOperations(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	commit := func(name, text, msg string) {
+		write(t, r, name, text)
+		if err := r.Stage(ctx, name); err != nil {
+			t.Fatal(err)
+		}
+		if err := r.Commit(ctx, msg, false); err != nil {
+			t.Fatal(err)
+		}
+	}
+	commit("a.txt", "base\n", "base")
+	write(t, r, "a.txt", "wip\n")
+	write(t, r, "new.txt", "new\n")
+	if err := r.StashPush(ctx, "half done", true); err != nil {
+		t.Fatal(err)
+	}
+	list, err := r.Stashes(ctx)
+	if err != nil || len(list) != 1 || list[0].Ref != "stash@{0}" || !strings.HasSuffix(list[0].Subject, "half done") {
+		t.Fatalf("stashes %+v, %v", list, err)
+	}
+	if p, err := r.StashShow(ctx, "stash@{0}"); err != nil || !strings.Contains(p, "+wip") || !strings.Contains(p, "+new") {
+		t.Fatalf("stash patch %q, %v", p, err)
+	}
+	if err := r.StashApply(ctx, "stash@{0}", true); err != nil {
+		t.Fatal(err)
+	}
+	if list, _ := r.Stashes(ctx); len(list) != 0 {
+		t.Fatalf("stash after pop %+v", list)
+	}
+	if err := r.Discard(ctx, Change{Path: "a.txt", Work: 'M'}); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Discard(ctx, Change{Path: "new.txt", Work: '?'}); err != nil {
+		t.Fatal(err)
+	}
+
+	// A conflict stops a merge, which aborts back to where it was.
+	if err := r.CreateBranch(ctx, "other", "", true); err != nil {
+		t.Fatal(err)
+	}
+	commit("a.txt", "other\n", "other")
+	if err := r.Switch(ctx, "main"); err != nil {
+		t.Fatal(err)
+	}
+	commit("a.txt", "mine\n", "mine")
+	if err := r.Merge(ctx, "other"); err == nil {
+		t.Fatal("merge with a conflict went through")
+	}
+	if op := r.Operation(); op != Merging {
+		t.Fatalf("operation %q", op)
+	}
+	st, _ := r.Status(ctx)
+	if len(st.Changes) != 1 || !st.Changes[0].Conflict {
+		t.Fatalf("conflict %+v", st.Changes)
+	}
+	if err := r.Abort(ctx, Merging); err != nil {
+		t.Fatal(err)
+	}
+	if op := r.Operation(); op != NoOperation {
+		t.Fatalf("operation after abort %q", op)
+	}
+	// Resolved and staged, a rebase continues with git's message, no editor.
+	if err := r.Rebase(ctx, "other"); err == nil {
+		t.Fatal("rebase with a conflict went through")
+	}
+	if op := r.Operation(); op != Rebasing {
+		t.Fatalf("operation %q", op)
+	}
+	write(t, r, "a.txt", "both\n")
+	if err := r.Stage(ctx, "a.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Continue(ctx, Rebasing); err != nil {
+		t.Fatal(err)
+	}
+	if op := r.Operation(); op != NoOperation {
+		t.Fatalf("operation after continuing %q", op)
+	}
+}
