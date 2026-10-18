@@ -135,16 +135,19 @@ func (a *app) changeSection(c *ui.Context, title string, staged bool) {
 	if staged {
 		list, sel = &a.stagedList, &a.stagedSel
 	}
-	ui.Row(c).Padding(8, 10, 4, 10).Gap(6).AlignItems(ui.Center).Children(func() {
+	// A fixed height, so the header doesn't move as its button comes and
+	// goes; the button stays while git runs, doing nothing then.
+	ui.Row(c).Height(32).Padding(4, 8, 0, 10).Gap(6).AlignItems(ui.Center).Children(func() {
 		ui.Text(c, title).Bold().TextColor(t.TextMuted)
 		ui.Badge(c, fmt.Sprint(len(changes)))
 		ui.Box(c).Grow(1)
-		if len(changes) > 0 && a.busy == "" {
+		if len(changes) > 0 {
+			idle := a.busy == ""
 			if staged {
-				if iconButton(c, "minus", "全部取消暂存") {
+				if iconButton(c, "minus", "全部取消暂存") && idle {
 					a.unstageAll()
 				}
-			} else if iconButton(c, "plus", "全部暂存") {
+			} else if iconButton(c, "plus", "全部暂存") && idle {
 				a.stageAll()
 			}
 		}

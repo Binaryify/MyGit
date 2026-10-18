@@ -585,3 +585,26 @@ func TestWelcomeOffersTrust(t *testing.T) {
 		t.Fatal("offers to trust a folder that isn't a repository")
 	}
 }
+
+// The sections' headers stay put as files are staged and unstaged.
+func TestHeadersDontMove(t *testing.T) {
+	tt := newTester(t)
+	header := func() ui.Rect {
+		t.Helper()
+		r, ok := tt.Find("暂存的更改")
+		if !ok {
+			t.Fatalf("no header in %q", tt.Texts())
+		}
+		return r
+	}
+	before := header()
+	fileBefore, _ := tt.Find("notes.txt")
+	tt.click(t, "全部暂存")
+	staged := header()
+	tt.click(t, "全部取消暂存")
+	after := header()
+	fileAfter, _ := tt.Find("notes.txt")
+	if before != staged || staged != after || fileBefore.Y != fileAfter.Y {
+		t.Fatalf("header at %+v, %+v, %+v; file %+v → %+v", before, staged, after, fileBefore, fileAfter)
+	}
+}
