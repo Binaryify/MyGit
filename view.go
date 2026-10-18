@@ -69,7 +69,7 @@ func (a *app) toolbar(c *ui.Context) {
 		if branch == "" {
 			branch = "（游离 HEAD）"
 		}
-		ui.Button(c, "⎇ "+branch+" ▾").Label("分支").Menu(a.branchMenu)
+		a.branchesButton(c, "⎇ "+branch+" ▾")
 		if st.Upstream != "" {
 			ui.Text(c, fmt.Sprintf("%s  ↑%d ↓%d", st.Upstream, st.Ahead, st.Behind)).TextColor(t.TextMuted)
 		}
@@ -121,10 +121,10 @@ func (a *app) toolbar(c *ui.Context) {
 func (a *app) changesPanel(c *ui.Context) {
 	t := c.Theme()
 	ui.Column(c).Grow(1).Basis(0).Children(func() {
-		a.changeSection(c, "暂存的更改", true)
-		a.changeSection(c, "更改", false)
-		ui.Column(c).Gap(8).Padding(10).BorderWidth(1, 0, 0, 0).BorderColor(t.Border).Children(func() {
-			ui.TextArea(c, &a.message).Placeholder("提交说明").Label("提交说明").Lines(3, 8)
+		// The message on top, as VS Code has it, where it shows however
+		// many files changed.
+		ui.Column(c).Gap(8).Padding(10).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
+			ui.TextArea(c, &a.message).Placeholder("提交说明（⌘↩ 提交）").Label("提交说明").Lines(2, 8)
 			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 				if ui.Checkbox(c, &a.amend, "修改上次提交").Changed() {
 					a.toggleAmend()
@@ -139,6 +139,8 @@ func (a *app) changesPanel(c *ui.Context) {
 				}
 			})
 		})
+		a.changeSection(c, "暂存的更改", true)
+		a.changeSection(c, "更改", false)
 	})
 	c.OnShortcut(ui.Cmd, ui.KeyEnter, a.commit)
 }
@@ -241,6 +243,25 @@ func (a *app) changeSection(c *ui.Context, title string, staged bool) {
 	if l.Submitted() && *sel >= 0 && *sel < len(changes) {
 		a.toggleStage(changes[*sel], staged)
 	}
+	// The keys of VS Code's and Finder's lists: space stages or unstages
+	// the change chosen, delete discards it, asking first.
+	chosen := func(fn func(git.Change)) func() {
+		return func() {
+			if *sel >= 0 && *sel < len(changes) && a.busy == "" {
+				fn(changes[*sel])
+			}
+		}
+	}
+	list.Handle.OnShortcut(c, 0, ui.KeySpace, chosen(func(ch git.Change) { a.toggleStage(ch, staged) }))
+	if !staged {
+		discard := chosen(func(ch git.Change) {
+			if !ch.Conflict {
+				a.discard(ch)
+			}
+		})
+		list.Handle.OnShortcut(c, 0, ui.KeyBackspace, discard)
+		list.Handle.OnShortcut(c, 0, ui.KeyDelete, discard)
+	}
 }
 
 func (a *app) toggleStage(ch git.Change, staged bool) {
@@ -257,15 +278,22 @@ func changeColor(t *ui.Theme, code byte, chosen bool) ui.Color {
 	if chosen {
 		return t.AccentText
 	}
+	// VS Code's colors of its dark themes, and of its light ones.
+	pick := func(dark, light ui.Color) ui.Color {
+		if t.Dark {
+			return dark
+		}
+		return light
+	}
 	switch code {
 	case 'A', '?', 'R', 'C':
-		return ui.RGB(115, 201, 145)
+		return pick(ui.RGB(115, 201, 145), ui.RGB(88, 124, 12))
 	case 'D':
-		return ui.RGB(199, 78, 57)
+		return pick(ui.RGB(199, 78, 57), ui.RGB(173, 7, 7))
 	case 'U':
-		return ui.RGB(228, 103, 107)
+		return pick(ui.RGB(228, 103, 107), ui.RGB(173, 7, 7))
 	}
-	return ui.RGB(226, 192, 141) // modified
+	return pick(ui.RGB(226, 192, 141), ui.RGB(137, 85, 3)) // modified
 }
 
 func changeName(code byte) string {

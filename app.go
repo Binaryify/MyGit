@@ -67,6 +67,8 @@ type app struct {
 	fileList ui.ListState // of the commit's files
 
 	confirm      confirmation
+	branchesOpen bool   // the branches' popover
+	branchFilter string // its search
 	prompt       prompt
 	rebase       rebasePlan
 	push         pushPlan

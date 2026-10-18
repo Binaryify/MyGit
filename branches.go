@@ -51,66 +51,137 @@ func (a *app) promptView(c *ui.Context) {
 	})
 }
 
-// branchMenu is the toolbar's branch button: a branch to switch to, and
-// what to do with each, as IntelliJ's branches popup.
-func (a *app) branchMenu(m *ui.Menu) {
+// branchItems are what a local branch's menu does with it.
+func (a *app) branchItems(m *ui.Menu, b string) {
 	cur := a.status.Branch
-	if m.Item("新建分支…").Chosen() {
-		a.newBranch("")
+	if b != cur && m.Item("切换到此分支").Chosen() {
+		a.switchTo(b)
+	}
+	if b != cur {
+		a.mergeItems(m, b)
+	}
+	if m.Item("从此分支新建分支…").Chosen() {
+		a.newBranch(b)
+	}
+	if m.Item("显示此分支的历史").Chosen() {
+		a.setScope(git.Scope{Ref: b})
 	}
 	m.Separator()
-	for _, b := range a.branches {
-		label := b
-		if b == cur {
-			label = "✓ " + b
-		}
-		m.Submenu(label, func(m *ui.Menu) {
-			if b != cur && m.Item("切换到此分支").Chosen() {
-				a.run("切换到 "+b, func(ctx context.Context) error { return a.repo.Switch(ctx, b) }, nil)
-			}
-			if b != cur {
-				a.mergeItems(m, b)
-			}
-			if m.Item("从此分支新建分支…").Chosen() {
-				a.newBranch(b)
-			}
-			if m.Item("显示此分支的历史").Chosen() {
-				a.setScope(git.Scope{Ref: b})
-			}
-			m.Separator()
-			if m.Item("重命名…").Chosen() {
-				a.ask1("重命名分支 "+b, "重命名", b, func(to string) {
-					a.run("重命名分支", func(ctx context.Context) error { return a.repo.RenameBranch(ctx, b, to) }, nil)
-				})
-			}
-			if b != cur && m.Item("删除").Chosen() {
-				a.deleteBranch(b)
-			}
+	if m.Item("重命名…").Chosen() {
+		a.ask1("重命名分支 "+b, "重命名", b, func(to string) {
+			a.run("重命名分支", func(ctx context.Context) error { return a.repo.RenameBranch(ctx, b, to) }, nil)
 		})
 	}
-	if len(a.remotes) == 0 {
-		return
+	if b != cur && m.Item("删除").Chosen() {
+		a.deleteBranch(b)
+	}
+}
+
+// remoteItems are what a remote branch's menu does with it.
+func (a *app) remoteItems(m *ui.Menu, rb string) {
+	if m.Item("检出为本地分支").Chosen() {
+		a.run("检出 "+rb, func(ctx context.Context) error { return a.repo.CheckoutRemote(ctx, rb) }, nil)
+	}
+	a.mergeItems(m, rb)
+	if m.Item("从此分支新建分支…").Chosen() {
+		a.newBranch(rb)
 	}
 	m.Separator()
-	m.Submenu("远程分支", func(m *ui.Menu) {
-		for _, rb := range a.remotes {
-			m.Submenu(rb, func(m *ui.Menu) {
-				if m.Item("检出为本地分支").Chosen() {
-					a.run("检出 "+rb, func(ctx context.Context) error { return a.repo.CheckoutRemote(ctx, rb) }, nil)
+	if m.Item("删除远程分支…").Chosen() {
+		a.ask("删除远程分支 "+rb+"？", "会从远程仓库删除这个分支。", "删除", func() {
+			a.run("删除远程分支", func(ctx context.Context) error { return a.repo.DeleteRemoteBranch(ctx, rb) }, nil)
+		})
+	}
+}
+
+func (a *app) switchTo(b string) {
+	a.run("切换到 "+b, func(ctx context.Context) error { return a.repo.Switch(ctx, b) }, nil)
+}
+
+// branchesButton opens the branches' popover, as IntelliJ's: a search,
+// a new branch, and the local and remote branches the search matches,
+// each with its menu. Enter switches to the first local one.
+func (a *app) branchesButton(c *ui.Context, label string) {
+	b := ui.Button(c, label).Label("分支")
+	if b.Clicked() {
+		a.branchesOpen, a.branchFilter = !a.branchesOpen, ""
+	}
+	ui.Popover(c, b, &a.branchesOpen, func() {
+		t := c.Theme()
+		q := strings.ToLower(strings.TrimSpace(a.branchFilter))
+		match := func(name string) bool { return q == "" || strings.Contains(strings.ToLower(name), q) }
+		var local, remote []string
+		for _, n := range a.branches {
+			if match(n) {
+				local = append(local, n)
+			}
+		}
+		for _, n := range a.remotes {
+			if match(n) {
+				remote = append(remote, n)
+			}
+		}
+		ui.Column(c).Width(320).Gap(4).Children(func() {
+			in := ui.TextInput(c, &a.branchFilter).Placeholder("搜索分支").Label("搜索分支").AutoFocus()
+			if in.Submitted() && len(local) > 0 && local[0] != a.status.Branch {
+				a.branchesOpen = false
+				a.switchTo(local[0])
+			}
+			if branchRow(c, "＋ 新建分支…", false) {
+				a.branchesOpen = false
+				a.newBranch("")
+			}
+			ui.Scroll(c).MaxHeight(420).Gap(1).Children(func() {
+				section := func(title string, names []string, items func(*ui.Menu, string)) {
+					if len(names) == 0 {
+						return
+					}
+					ui.Text(c, title).FontSize(11).Bold().TextColor(t.TextMuted).Padding(8, 8, 2, 8)
+					for _, n := range names {
+						ui.Box(c.Key(title + n)).Children(func() {
+							branchMenuRow(c, n, n == a.status.Branch, func(m *ui.Menu) { items(m, n) })
+						})
+					}
 				}
-				a.mergeItems(m, rb)
-				if m.Item("从此分支新建分支…").Chosen() {
-					a.newBranch(rb)
-				}
-				m.Separator()
-				if m.Item("删除远程分支…").Chosen() {
-					a.ask("删除远程分支 "+rb+"？", "会从远程仓库删除这个分支。", "删除", func() {
-						a.run("删除远程分支", func(ctx context.Context) error { return a.repo.DeleteRemoteBranch(ctx, rb) }, nil)
-					})
+				section("本地分支", local, a.branchItems)
+				section("远程分支", remote, a.remoteItems)
+				if len(local)+len(remote) == 0 {
+					ui.Text(c, "没有匹配的分支").TextColor(t.TextMuted).Padding(8)
 				}
 			})
+		})
+	})
+}
+
+// branchRow is a row of the branches' popover, the current branch's
+// checked; it reports a click.
+func branchRow(c *ui.Context, name string, current bool) bool {
+	return branchRowElement(c, name, current).Clicked()
+}
+
+func branchRowElement(c *ui.Context, name string, current bool) ui.Element {
+	t := c.Theme()
+	row := ui.ButtonBase(c).Height(26).PaddingX(8).Gap(6).Radius(5).AlignItems(ui.Center).Label(name)
+	if row.Hovered() {
+		row.Background(t.Text.Alpha(0.08))
+	}
+	row.Children(func() {
+		mark := ""
+		if current {
+			mark = "✓"
+		}
+		ui.Text(c, mark).Width(12).TextColor(t.Accent)
+		ui.Text(c, name).SingleLine().Grow(1).Basis(0)
+		if current {
+			ui.Text(c, "当前").FontSize(11).TextColor(t.TextMuted)
 		}
 	})
+	return row
+}
+
+// branchMenuRow is a branch's row, whose click opens its menu.
+func branchMenuRow(c *ui.Context, name string, current bool, items func(*ui.Menu)) {
+	branchRowElement(c, name, current).Menu(items)
 }
 
 // mergeItems merge a branch into the current one, or rebase the current

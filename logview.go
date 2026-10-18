@@ -41,7 +41,7 @@ func (a *app) logView(c *ui.Context) {
 			}
 			ui.Box(c).Grow(1)
 			a.scopeButton(c)
-			ui.SearchField(c, &a.search).Placeholder("搜索说明、作者、哈希 ⌘F").Label("搜索历史").Width(260).Bind(&a.searchBox)
+			a.searchField(c)
 		})
 		if a.scope.Path != "" {
 			ui.Row(c).Padding(4, 12).Gap(8).AlignItems(ui.Center).Background(t.Accent.Alpha(0.1)).Children(func() {
@@ -57,7 +57,8 @@ func (a *app) logView(c *ui.Context) {
 		}
 		l := ui.List(c.Key("log"), &a.logList, a.logCount(), func(i int) {
 			ci := a.commitAt(i)
-			a.logRow(c, &a.commits[ci], &a.rows[ci], lanes)
+			cm := &a.commits[ci]
+			a.logRow(c, cm, &a.rows[ci], lanes, i == a.logSel || a.logChosen.Has(cm.Hash))
 		}).Grow(1).Basis(0)
 		if l.Changed() && a.logSel >= 0 && a.logSel < a.logCount() {
 			a.stagedSel, a.unstagedSel = -1, -1
@@ -156,7 +157,7 @@ func (a *app) visibleLanes() int {
 	return min(lanes, maxLanes)
 }
 
-func (a *app) logRow(c *ui.Context, cm *git.Commit, row *graph.Row, lanes int) {
+func (a *app) logRow(c *ui.Context, cm *git.Commit, row *graph.Row, lanes int, chosen bool) {
 	t := c.Theme()
 	head := false
 	ui.Row(c).Height(rowHeight).PaddingX(4).Gap(6).AlignItems(ui.Center).ContextMenu(func(m *ui.Menu) {
@@ -182,8 +183,12 @@ func (a *app) logRow(c *ui.Context, cm *git.Commit, row *graph.Row, lanes int) {
 		if head {
 			subject.Bold()
 		}
-		ui.Text(c, cm.Author).TextColor(t.TextMuted).SingleLine().Width(120)
-		ui.Text(c, cm.Time.Format("2006-01-02 15:04")).TextColor(t.TextMuted).Font("monospace").FontSize(11).Width(110)
+		muted := t.TextMuted
+		if chosen { // on the accent, muted text would hardly show
+			muted = t.AccentText.Alpha(0.8)
+		}
+		ui.Text(c, cm.Author).TextColor(muted).SingleLine().Width(120)
+		ui.Text(c, cm.Time.Format("2006-01-02 15:04")).TextColor(muted).Font("monospace").FontSize(11).Width(110)
 	})
 }
 
@@ -232,4 +237,19 @@ func (a *app) compareChosen() bool {
 	newer, older := a.commits[rows[0]], a.commits[rows[1]] // the list is newest first
 	a.showCompare(fmt.Sprintf("比较 %s → %s", older.Short(), newer.Short()), older.Hash, newer.Hash)
 	return true
+}
+
+// searchField is the history's search: an input with a magnifier, which
+// says what it searches, and a button clearing it.
+func (a *app) searchField(c *ui.Context) {
+	t := c.Theme()
+	ui.Row(c).Width(280).Height(28).Gap(6).PaddingX(8).Radius(6).AlignItems(ui.Center).
+		Background(t.Surface).Border(1, t.Border).Children(func() {
+		ui.Icon(c, icons["search"]).Size(13, 13).TextColor(t.TextMuted)
+		ui.TextInputBase(c, &a.search).Placeholder("搜索说明、作者、哈希  ⌘F").Label("搜索历史").
+			Grow(1).Bind(&a.searchBox)
+		if a.search != "" && iconButton(c, "x", "清除搜索") {
+			a.search = ""
+		}
+	})
 }

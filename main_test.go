@@ -635,3 +635,28 @@ func TestDropNotARepo(t *testing.T) {
 		t.Fatal("error stays")
 	}
 }
+
+func TestBranchesPopoverAndKeys(t *testing.T) {
+	tt := newTester(t)
+	tt.click(t, "分支")
+	if !tt.a.branchesOpen || !tt.HasText("本地分支") || !tt.HasText("feature") {
+		t.Fatalf("texts %q", tt.Texts())
+	}
+	tt.Type("feat")
+	tt.Frame()
+	if tt.HasText("main") && !tt.HasText("⎇ main ▾") {
+		t.Fatalf("main still listed: %q", tt.Texts())
+	}
+	tt.Key(0, ui.KeyEnter)
+	tt.settle()
+	if tt.a.status.Branch != "feature" || tt.a.branchesOpen {
+		t.Fatalf("branch %q, open %v", tt.a.status.Branch, tt.a.branchesOpen)
+	}
+	// Space stages the change chosen in the list.
+	tt.click(t, "notes.txt")
+	tt.Key(0, ui.KeySpace)
+	tt.settle()
+	if len(tt.a.staged) != 1 || tt.a.staged[0].Path != "notes.txt" {
+		t.Fatalf("staged %+v", tt.a.staged)
+	}
+}
