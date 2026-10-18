@@ -76,6 +76,7 @@ type app struct {
 
 	busy     string // the operation running, as the toolbar says it
 	errMsg   string
+	trustDir string // a repository another user owns, dropped, to trust
 	sidebarW float32
 	logH     float32
 	filesW   float32

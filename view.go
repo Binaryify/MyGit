@@ -26,8 +26,15 @@ func (a *app) view(c *ui.Context) {
 		if a.errMsg != "" {
 			ui.Row(c).Padding(6, 12).Gap(8).Background(t.Danger.Alpha(0.12)).AlignItems(ui.Center).Children(func() {
 				ui.Text(c, a.errMsg).TextColor(t.Danger).Wrap().Grow(1)
+				if a.trustDir != "" && ui.Button(c, "信任并打开").Tooltip("写入 git 的 safe.directory 设置").Clicked() {
+					if err := git.Trust(a.trustDir); err != nil {
+						a.errMsg = err.Error()
+					} else {
+						a.openDropped([]string{a.trustDir})
+					}
+				}
 				if ui.Button(c, "关闭").Clicked() {
-					a.errMsg = ""
+					a.errMsg, a.trustDir = "", ""
 				}
 			})
 		}
@@ -40,7 +47,7 @@ func (a *app) view(c *ui.Context) {
 		}
 	})
 	if paths := root.DroppedFiles(); len(paths) > 0 {
-		openDropped(paths)
+		a.openDropped(paths)
 	}
 	a.rebaseView(c)
 	a.pushView(c)

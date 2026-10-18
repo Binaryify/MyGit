@@ -219,11 +219,23 @@ func dropHint(c *ui.Context) {
 	})
 }
 
-// openDropped opens the repositories of folders dropped on a window, or
-// of the folders of files dropped.
-func openDropped(paths []string) {
+// openDropped opens the repositories of folders dropped on a repository's
+// window, or of the folders of files dropped, and says in that window why
+// one didn't open.
+func (a *app) openDropped(paths []string) {
+	a.errMsg, a.trustDir = "", ""
 	for _, p := range paths {
-		openDir(dropTarget(p))
+		dir := dropTarget(p)
+		repo, err := git.Open(dir)
+		if err != nil {
+			a.errMsg = err.Error()
+			var unsafe *git.UnsafeError
+			if errors.As(err, &unsafe) {
+				a.trustDir = dir
+			}
+			continue
+		}
+		open(repo)
 	}
 }
 

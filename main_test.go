@@ -619,3 +619,19 @@ func TestDropTarget(t *testing.T) {
 		t.Fatalf("folder %q, file %q", dropTarget(dir), dropTarget(file))
 	}
 }
+
+// A folder that isn't a repository, dropped on a repository's window,
+// says so there rather than opening the welcome window.
+func TestDropNotARepo(t *testing.T) {
+	tt := newTester(t)
+	dir := t.TempDir()
+	tt.a.openDropped([]string{dir})
+	tt.Frame()
+	if !strings.Contains(tt.a.errMsg, "不是 git 仓库") || !tt.HasText(tt.a.errMsg) || welcomeWin != nil {
+		t.Fatalf("error %q, welcome %v", tt.a.errMsg, welcomeWin != nil)
+	}
+	tt.click(t, "关闭")
+	if tt.a.errMsg != "" {
+		t.Fatal("error stays")
+	}
+}
