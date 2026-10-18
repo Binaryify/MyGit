@@ -1,50 +1,107 @@
-# MyGit
+<p align="center">
+  <img src="docs/images/logo.png" width="128" height="128" alt="MyGit">
+</p>
 
-轻量的 git 客户端，用 [MyGo](https://github.com/egoist/mygo) 原生 UI 写成，交互参考 IntelliJ / Rebased 的 git 工具。
+<h1 align="center">MyGit</h1>
 
-- **历史**：所有分支、标签、远程，带分支图，流式加载；按说明/作者/哈希搜索，按分支或路径筛选（文件历史）
-- **提交详情**：完整说明、改动文件、并排 diff（语法高亮），合并提交可切换对比的父提交
-- **暂存**：按文件、按改动块、按选中行暂存、取消暂存、丢弃（丢弃会先确认）
-- **提交**：提交、修改上次提交；文件变化时自动刷新
-- **分支**：新建、切换、重命名、删除（未合并时确认），检出、合并、删除远程分支，合并、变基
-- **提交右键菜单**：复制哈希、新建分支或标签、检出、cherry-pick、revert、reset（soft/mixed/hard）、交互式变基
-- **交互式变基**：拖动重排，pick / reword / edit / squash / fixup / drop
-- **冲突**：三栏合并视图（我们的 | 结果 | 他们的），按冲突块采用某一边或两边都要；合并、变基、cherry-pick 中途的继续、跳过、中止
-- **Stash**：stash（可包括未跟踪文件）、查看、应用、弹出、从 stash 建分支、删除
-- **Blame**：逐行追溯，双击定位到对应提交
-- **远程**：获取；拉取（快进、变基、合并）；推送前预览提交，支持 force-with-lease 和推送标签
-- **多仓库**：每个仓库一个窗口，最近打开，命令行再次启动时交给已运行的实例（`mygit .`）
-- **界面**：自定义标题栏，跟随系统深浅色；中文 / English，跟随系统或在设置里切换
-- **更新**：启动后和每 6 小时检查一次新版本，签名校验后一键更新
-- 读取靠解析 `git` 的输出，写操作全部交给 `git` 命令本身，不会弹出编辑器
+<p align="center">
+  A light, fast git client with a native UI.<br>
+  JetBrains' commit graph and history tools, VS Code's way of staging, in a sixth of the memory.
+</p>
 
-支持 macOS（Apple 芯片）、Windows（x64）、Linux（x64）；不支持 Intel Mac。
+<p align="center">
+  <a href="https://github.com/Binaryify/MyGit/actions/workflows/ci.yml"><img src="https://github.com/Binaryify/MyGit/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/macOS-Apple%20silicon-111?logo=apple" alt="macOS">
+  <img src="https://img.shields.io/badge/Windows-x64-0078D4?logo=windows" alt="Windows">
+  <img src="https://img.shields.io/badge/Linux-x64-FCC624?logo=linux&logoColor=111" alt="Linux">
+  <img src="https://img.shields.io/badge/built%20with-Go%20%2B%20MyGo-00ADD8?logo=go&logoColor=white" alt="Go">
+</p>
+
+<p align="center">
+  <b>English</b> · <a href="README.zh-CN.md">简体中文</a>
+</p>
+
+<p align="center">
+  <img src="docs/images/main-en.png" alt="MyGit showing a repository's history and a commit's diff">
+</p>
+
+## Why MyGit
+
+Standalone git clients built on an IDE platform carry the IDE with them. MyGit is a single native binary drawn on the GPU by [MyGo](https://github.com/egoist/mygo): no webview, no JVM.
+
+| On a repository of 20,000 commits | MyGit | Rebased (IntelliJ platform) |
+|---|---|---|
+| Memory once open | **109 MB** | 806 MB |
+| Reading the whole history and laying out its graph | **0.13 s** | — |
+| Opening a commit with a 20 MB patch (5,677 files) | **0.24 s** | — |
+| CPU while idle | **0 %** | — |
+
+MyGit reads what `git` prints and lets `git` itself make every change, so a repository behaves in MyGit exactly as it does in a terminal.
+
+## Features
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/changes-en.png" alt="Editing a change in the diff"></td>
+    <td width="50%"><img src="docs/images/merge-en.png" alt="Resolving a conflict"></td>
+  </tr>
+  <tr>
+    <td><b>Stage what you mean.</b> Stage files, changes or single lines, and edit the working tree right in the diff.</td>
+    <td><b>Resolve conflicts side by side.</b> Ours, the result and theirs, a conflict at a time.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/branches-en.png" alt="Searching branches"></td>
+    <td><img src="docs/images/welcome-en.png" alt="The welcome window"></td>
+  </tr>
+  <tr>
+    <td><b>Find any branch.</b> Search local and remote branches, switch, merge, rebase or compare.</td>
+    <td><b>Open anything.</b> Drop a folder, clone, or pick a recent repository.</td>
+  </tr>
+</table>
+
+- **History** — every branch, tag and remote with its graph, streamed as it loads; search by message, author or hash; filter by branch or path (file history)
+- **Commits** — whole messages, changed files and side-by-side diffs with syntax highlighting; a merge against any parent; compare two commits (⌘-click), a branch or the working tree
+- **Staging** — stage, unstage or discard files, changes or selected lines; edit and save the working tree in the diff
+- **History tools** — branch, tag, check out, cherry-pick, revert, reset (soft / mixed / hard) and interactive rebase (reorder, reword, edit, squash, fixup, drop)
+- **Conflicts** — a three-pane merge view, and continue, skip or abort a merge, rebase, cherry-pick or revert
+- **Stash, blame and remotes** — stash with untracked files, blame a file line by line, manage remotes, pull (fast-forward, rebase or merge), preview a push, force with lease
+- **Sign-ins** — when git needs a username, token or passphrase, the window asks
+- **Everywhere** — a window per repository, drag folders in, `mygit .` from a terminal, custom title bars, light and dark, English and 简体中文, signed auto-updates
+
+## Install
+
+Releases are coming soon. Until then, build it from source with [Go](https://go.dev/dl/) 1.27 or later:
 
 ```bash
-go run . ~/path/to/repo
+git clone https://github.com/Binaryify/MyGit.git
+cd MyGit
+go tool mygo build    # build/darwin-arm64/MyGit.app, and the disk image
 ```
 
-## 性能（Apple M4，2 万个提交的仓库）
+MyGit needs `git` on the `PATH`. It runs on macOS (Apple silicon), Windows (x64) and Linux (x64); Intel Macs aren't supported.
 
-| | MyGit | Rebased |
-|---|---|---|
-| 打开后内存（footprint） | 109 MB | 806 MB |
-| 读完全部历史 + 布局分支图 | 0.13 s | — |
-| 打开 20 MB 补丁的提交（5677 个文件） | 0.24 s，+34 MB | — |
-| 空闲 CPU | 0% | — |
+## Shortcuts
 
-## 开发与发布
+| Keys | Does |
+|---|---|
+| ⌘↩ / Ctrl+Enter | Commit |
+| ⌘F / Ctrl+F | Search the history |
+| ⌘R / Ctrl+R | Refresh |
+| ⌘S / Ctrl+S | Save the file edited in the diff |
+| Space | Stage or unstage the change chosen |
+| Delete | Discard the change chosen |
+| ⌘-click | Compare two commits |
+
+## Development
 
 ```bash
-go tool mygo dev      # 开发，改动自动重新加载
-go test ./...         # 测试（界面测试不需要窗口）
+go tool mygo dev      # run, reloading on changes
+go test ./...         # the tests, the UI's included, need no window
 go tool mygo build -platform darwin/arm64,windows/amd64,linux/amd64
 ```
 
-文案在 `locales/`：`en.json` 是源语言，`zh-Hans.json` 是简体中文，改完运行 `go tool mygo generate` 重新生成 `locales/catalog_gen.go`。
+The texts live in [`locales/`](locales): `en.json` is the source and `zh-Hans.json` its Chinese. After changing them, run `go tool mygo generate`. Translations into other languages are welcome: add `locales/<tag>.json`.
 
-发布：在 `CHANGELOG.md` 写好这个版本的说明，再推送版本标签，例如 `git tag v0.2.0 && git push origin v0.2.0`。CI 用仓库 Secret `MYGO_UPDATER_PRIVATE_KEY` 签名，打包 macOS dmg、Windows 安装程序与 zip、Linux deb 与更新包，并创建 GitHub Release。签名私钥在本机 `~/Library/Application Support/mygo/update-keys/mygit/`，丢了已安装的应用就再也收不到更新。
+To release, describe the version in [`CHANGELOG.md`](CHANGELOG.md) and push a tag such as `v0.2.0`: CI signs the updates with the `MYGO_UPDATER_PRIVATE_KEY` secret, builds the macOS disk image, the Windows installer and zip, and the Linux package, and publishes them in a release.
 
-注意：仓库是私有的时候，已安装的应用下载不到 Release 里的更新包。测试自动更新前，要么把仓库设为公开，要么把更新包放到公开的地址（mygo 支持 `updates.url` 或 S3 / Cloudflare R2）。
-
-基准测试：`MYGIT_BENCH_REPO=<仓库> MYGIT_BENCH_COMMIT=<提交> go test -run '^$' -bench .`
+Benchmarks: `MYGIT_BENCH_REPO=<repo> MYGIT_BENCH_COMMIT=<commit> go test -run '^$' -bench .`

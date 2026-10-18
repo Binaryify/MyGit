@@ -63,6 +63,9 @@ func main() {
 			mygo.App.OnQuit(func() { s.Close() })
 		}
 		ready = true
+		if prefs.Language != "" { // the language chosen in Settings
+			mygo.App.SetLocale(prefs.Language)
+		}
 		watchUpdates()
 		if len(pending) > 0 { // started to open them
 			for _, p := range pending {
