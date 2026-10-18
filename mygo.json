@@ -21,5 +21,9 @@
   "i18n": {
     "dir": "locales",
     "source": "en"
+  },
+  "updates": {
+    "publicKey": "q5C+iL6+Y6YsRMOB9qGLiQyaz7RW3lwtF9eqh4q10fI=",
+    "github": "Binaryify/MyGit"
   }
 }

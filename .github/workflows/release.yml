@@ -1,0 +1,93 @@
+name: Release
+
+# Push a version tag to publish a release:
+#   git tag v0.2.0 && git push origin v0.2.0
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  # macOS (Apple silicon) and Linux build on a Mac, which makes the dmg.
+  unix:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Test
+        run: go test ./...
+      - name: Set the version from the tag
+        run: jq --arg v "${GITHUB_REF_NAME#v}" '.version = $v' mygo.json > mygo.tmp && mv mygo.tmp mygo.json
+      - name: Build
+        # The secret signs the updates that installed apps download.
+        env:
+          MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: go tool mygo build -platform darwin/arm64,linux/amd64
+      - name: Package
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir dist
+          cp "build/darwin-arm64/MyGit $VERSION arm64.dmg" "dist/MyGit-$VERSION-macos-arm64.dmg"
+          cp build/linux-amd64/*.deb build/linux-amd64/install.sh dist/
+          # The updates keep their names: the manifests point at them.
+          cp build/*/mygit-*.tar.gz build/*/update-*.json dist/
+          cp build/*/*.delta dist/ 2>/dev/null || true
+          ls -l dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: unix
+          path: dist/
+
+  # Windows builds on Windows, where mygo makes the NSIS installer.
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Set the version from the tag
+        shell: bash
+        run: jq --arg v "${GITHUB_REF_NAME#v}" '.version = $v' mygo.json > mygo.tmp && mv mygo.tmp mygo.json
+      - name: Build
+        shell: bash
+        env:
+          MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: go tool mygo build -platform windows/amd64
+      - name: Package
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir dist
+          cp build/windows-amd64/*Setup*.exe "dist/MyGit-$VERSION-windows-amd64-setup.exe"
+          (cd build/windows-amd64 && 7z a -bd "../../dist/MyGit-$VERSION-windows-amd64.zip" MyGit.exe icon.png > /dev/null)
+          cp build/windows-amd64/mygit-*.tar.gz build/windows-amd64/update-*.json dist/
+          cp build/windows-amd64/*.delta dist/ 2>/dev/null || true
+          ls -l dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows
+          path: dist/
+
+  publish:
+    needs: [unix, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "MyGit ${GITHUB_REF_NAME#v}" \
+            --generate-notes

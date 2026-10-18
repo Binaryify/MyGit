@@ -24,6 +24,15 @@ func (a *app) view(c *ui.Context) {
 	root := ui.Column(c).Fill().FontSize(12)
 	root.Children(func() {
 		a.toolbar(c)
+		a.updateBar(c)
+		if a.notice != "" {
+			ui.Row(c).Padding(6, 12).Gap(8).Background(t.Accent.Alpha(0.1)).AlignItems(ui.Center).Children(func() {
+				ui.Text(c, a.notice).Wrap().Grow(1)
+				if ui.Button(c, loc.Close()).Clicked() {
+					a.notice = ""
+				}
+			})
+		}
 		if a.errMsg != "" {
 			ui.Row(c).Padding(6, 12).Gap(8).Background(t.Danger.Alpha(0.12)).AlignItems(ui.Center).Children(func() {
 				ui.Text(c, a.errMsg).TextColor(t.Danger).Wrap().Grow(1)

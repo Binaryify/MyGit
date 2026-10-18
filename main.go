@@ -63,6 +63,7 @@ func main() {
 			mygo.App.OnQuit(func() { s.Close() })
 		}
 		ready = true
+		watchUpdates()
 		if len(pending) > 0 { // started to open them
 			for _, p := range pending {
 				openDir(p)

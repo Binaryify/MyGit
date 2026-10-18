@@ -3071,3 +3071,93 @@ func StageLinesTooltip() string { return In(i18n.Locale()).StageLinesTooltip() }
 func (msgs Messages) StageLinesTooltip() string {
 	return Catalog.Format(msgs.locale, "stageLinesTooltip", nil)
 }
+
+// UpdateAvailable says "MyGit {version} is available"
+// in the language the app shows.
+func UpdateAvailable(version string) string { return In(i18n.Locale()).UpdateAvailable(version) }
+
+// UpdateAvailable says "MyGit {version} is available"
+// in the language of msgs.
+func (msgs Messages) UpdateAvailable(version string) string {
+	return Catalog.Format(msgs.locale, "updateAvailable", map[string]any{"version": version})
+}
+
+// UpdateInstall says "Update and Restart"
+// in the language the app shows.
+func UpdateInstall() string { return In(i18n.Locale()).UpdateInstall() }
+
+// UpdateInstall says "Update and Restart"
+// in the language of msgs.
+func (msgs Messages) UpdateInstall() string {
+	return Catalog.Format(msgs.locale, "updateInstall", nil)
+}
+
+// UpdateInstalling says "Updating… {percent}%"
+// in the language the app shows.
+func UpdateInstalling(percent int) string { return In(i18n.Locale()).UpdateInstalling(percent) }
+
+// UpdateInstalling says "Updating… {percent}%"
+// in the language of msgs.
+func (msgs Messages) UpdateInstalling(percent int) string {
+	return Catalog.Format(msgs.locale, "updateInstalling", map[string]any{"percent": percent})
+}
+
+// UpdateCheck says "Check for Updates"
+// in the language the app shows.
+func UpdateCheck() string { return In(i18n.Locale()).UpdateCheck() }
+
+// UpdateCheck says "Check for Updates"
+// in the language of msgs.
+func (msgs Messages) UpdateCheck() string {
+	return Catalog.Format(msgs.locale, "updateCheck", nil)
+}
+
+// UpdateCheckFailed says "Couldn't check for updates: no network, or GitHub can't be reached"
+// in the language the app shows.
+func UpdateCheckFailed() string { return In(i18n.Locale()).UpdateCheckFailed() }
+
+// UpdateCheckFailed says "Couldn't check for updates: no network, or GitHub can't be reached"
+// in the language of msgs.
+func (msgs Messages) UpdateCheckFailed() string {
+	return Catalog.Format(msgs.locale, "updateCheckFailed", nil)
+}
+
+// UpdateLatest says "MyGit {version} is the latest"
+// in the language the app shows.
+func UpdateLatest(version string) string { return In(i18n.Locale()).UpdateLatest(version) }
+
+// UpdateLatest says "MyGit {version} is the latest"
+// in the language of msgs.
+func (msgs Messages) UpdateLatest(version string) string {
+	return Catalog.Format(msgs.locale, "updateLatest", map[string]any{"version": version})
+}
+
+// UpdateFailed says "The update failed: try again later, or download it from GitHub"
+// in the language the app shows.
+func UpdateFailed() string { return In(i18n.Locale()).UpdateFailed() }
+
+// UpdateFailed says "The update failed: try again later, or download it from GitHub"
+// in the language of msgs.
+func (msgs Messages) UpdateFailed() string {
+	return Catalog.Format(msgs.locale, "updateFailed", nil)
+}
+
+// About says "About MyGit"
+// in the language the app shows.
+func About() string { return In(i18n.Locale()).About() }
+
+// About says "About MyGit"
+// in the language of msgs.
+func (msgs Messages) About() string {
+	return Catalog.Format(msgs.locale, "about", nil)
+}
+
+// AboutDetail says "A light git client: the history with its graph, changes to stage and commit, and their diffs."
+// in the language the app shows.
+func AboutDetail() string { return In(i18n.Locale()).AboutDetail() }
+
+// AboutDetail says "A light git client: the history with its graph, changes to stage and commit, and their diffs."
+// in the language of msgs.
+func (msgs Messages) AboutDetail() string {
+	return Catalog.Format(msgs.locale, "aboutDetail", nil)
+}

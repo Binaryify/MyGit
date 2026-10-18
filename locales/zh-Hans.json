@@ -302,5 +302,14 @@
   "unstageLines": "取消暂存选中行",
   "discardLines": "丢弃选中行",
   "stageLines": "暂存选中行",
-  "stageLinesTooltip": "点击或拖动行号选中行"
+  "stageLinesTooltip": "点击或拖动行号选中行",
+  "updateAvailable": "MyGit {version} 可以更新了",
+  "updateInstall": "更新并重启",
+  "updateInstalling": "正在更新 {percent}%",
+  "updateCheck": "检查更新",
+  "updateCheckFailed": "检查更新失败：网络不通或 GitHub 无法访问",
+  "updateLatest": "已是最新版本 {version}",
+  "updateFailed": "更新失败，请稍后再试或从 GitHub 下载",
+  "about": "关于 MyGit",
+  "aboutDetail": "轻量的 git 客户端：带分支图的历史、暂存与提交、差异对比。"
 }

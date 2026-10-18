@@ -79,6 +79,7 @@ type app struct {
 
 	busy     string // the operation running, as the toolbar says it
 	errMsg   string
+	notice   string // news that isn't an error, as an update check's
 	trustDir string // a repository another user owns, dropped, to trust
 	sidebarW float32
 	logH     float32

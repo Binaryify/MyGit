@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Vet (macOS, Windows and Linux)
+        run: |
+          go vet ./...
+          GOOS=windows GOARCH=amd64 go vet ./...
+          GOOS=linux GOARCH=amd64 go vet ./...
+      - name: Test
+        run: go test ./...
+      - name: Build
+        run: go tool mygo build -platform darwin/arm64,windows/amd64,linux/amd64
+      - uses: actions/upload-artifact@v7
+        with:
+          name: MyGit
+          path: |
+            build/darwin-arm64/*.dmg
+            build/windows-amd64/MyGit.exe
+            build/linux-amd64/*.deb
+            build/linux-amd64/*.tar.gz

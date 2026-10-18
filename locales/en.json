@@ -806,5 +806,35 @@
         "type": "String"
       }
     }
-  }
+  },
+  "updateAvailable": "MyGit {version} is available",
+  "@updateAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateInstall": "Update and Restart",
+  "updateInstalling": "Updating… {percent}%",
+  "@updateInstalling": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "updateCheck": "Check for Updates",
+  "updateCheckFailed": "Couldn't check for updates: no network, or GitHub can't be reached",
+  "updateLatest": "MyGit {version} is the latest",
+  "@updateLatest": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateFailed": "The update failed: try again later, or download it from GitHub",
+  "about": "About MyGit",
+  "aboutDetail": "A light git client: the history with its graph, changes to stage and commit, and their diffs."
 }
