@@ -281,3 +281,52 @@ func TestStashAndOperations(t *testing.T) {
 		t.Fatalf("operation after continuing %q", op)
 	}
 }
+
+func TestRebaseInteractive(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	for _, name := range []string{"a", "b", "c", "d"} {
+		write(t, r, name+".txt", name)
+		if err := r.Stage(ctx, name+".txt"); err != nil {
+			t.Fatal(err)
+		}
+		if err := r.Commit(ctx, name, false); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var log []Commit
+	_ = r.Log(ctx, Scope{}, 10, func(c []Commit) { log = append(log, c...) })
+	base := log[3].Hash // a
+	steps, err := r.RebaseSteps(ctx, base)
+	if err != nil || len(steps) != 3 || steps[0].Subject != "b" {
+		t.Fatalf("steps %+v, %v", steps, err)
+	}
+	// d first, reworded; b with c squashed into it... as c, b; drop nothing.
+	b, c, d := steps[0], steps[1], steps[2]
+	d.Action, d.Message = Reword, "dee\n\nbody"
+	c.Action = Fixup
+	if err := CheckSteps([]RebaseStep{c, b}); err == nil {
+		t.Fatal("a fixup first is fine?")
+	}
+	if err := r.RebaseInteractive(ctx, base, []RebaseStep{d, b, c}); err != nil {
+		t.Fatal(err)
+	}
+	log = nil
+	_ = r.Log(ctx, Scope{}, 10, func(c []Commit) { log = append(log, c...) })
+	var subjects []string
+	for _, c := range log {
+		subjects = append(subjects, c.Subject)
+	}
+	if !slices.Equal(subjects, []string{"b", "dee", "a"}) {
+		t.Fatalf("history %v", subjects)
+	}
+	if out, _ := r.Git(ctx, "show", "--stat", "--format=", "HEAD"); !strings.Contains(out, "b.txt") || !strings.Contains(out, "c.txt") {
+		t.Fatalf("b's commit doesn't hold c's change: %s", out)
+	}
+	if r.Operation() != NoOperation {
+		t.Fatal("rebase still under way")
+	}
+	if !r.IsAncestor(ctx, base) {
+		t.Fatal("a isn't HEAD's ancestor")
+	}
+}

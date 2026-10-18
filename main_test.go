@@ -343,3 +343,47 @@ func TestConflictBar(t *testing.T) {
 		t.Fatalf("main.go %q", b)
 	}
 }
+
+func TestMove(t *testing.T) {
+	for _, c := range []struct {
+		rows []int
+		to   int
+		want string
+	}{
+		{[]int{0}, 3, "bca"}, {[]int{2}, 0, "cab"}, {[]int{0, 2}, 2, "bac"}, {[]int{1}, 1, "abc"},
+	} {
+		if got := string(move([]byte("abc"), c.rows, c.to)); got != c.want {
+			t.Errorf("move %v to %d: %q, want %q", c.rows, c.to, got, c.want)
+		}
+	}
+}
+
+func TestInteractiveRebaseDialog(t *testing.T) {
+	tt := newTester(t)
+	if _, err := tt.a.repo.Git(context.Background(), "switch", "-q", "feature"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tt.a.repo.Git(context.Background(), "-c", "user.name=a", "-c", "user.email=a@a", "commit", "-q", "--allow-empty", "-m", "Polish"); err != nil {
+		t.Fatal(err)
+	}
+	tt.a.refresh()
+	tt.settle()
+	if err := tt.RightClick("Add the feature"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("从此处交互式变基…"); err != nil {
+		t.Fatal(err)
+	}
+	tt.settle()
+	p := &tt.a.rebase
+	if !p.open || len(p.steps) != 2 || p.steps[1].Subject != "Polish" {
+		t.Fatalf("plan %+v", p)
+	}
+	p.steps[1].Action = git.Fixup
+	tt.Frame()
+	tt.click(t, "开始变基")
+	out, _ := tt.a.repo.Git(context.Background(), "log", "--format=%s", "-2")
+	if tt.a.errMsg != "" || out != "Add the feature\nStart\n" {
+		t.Fatalf("error %q, log %q", tt.a.errMsg, out)
+	}
+}

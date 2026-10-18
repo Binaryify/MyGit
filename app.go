@@ -64,6 +64,7 @@ type app struct {
 
 	confirm confirmation
 	prompt  prompt
+	rebase  rebasePlan
 
 	busy     string // the operation running, as the toolbar says it
 	errMsg   string

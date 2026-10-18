@@ -51,13 +51,15 @@ func command(ctx context.Context, dir string, args ...string) *exec.Cmd {
 }
 
 func run(ctx context.Context, dir string, args ...string) (string, error) {
-	return runInput(ctx, dir, "", args...)
+	return runInput(ctx, dir, "", nil, args...)
 }
 
-// runInput runs git with input on its standard input.
-func runInput(ctx context.Context, dir, input string, args ...string) (string, error) {
+// runInput runs git with input on its standard input and env added to
+// its environment.
+func runInput(ctx context.Context, dir, input string, env []string, args ...string) (string, error) {
 	var stdout, stderr bytes.Buffer
 	cmd := command(ctx, dir, args...)
+	cmd.Env = append(cmd.Env, env...)
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	if input != "" {
 		cmd.Stdin = strings.NewReader(input)

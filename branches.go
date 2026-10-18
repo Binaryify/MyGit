@@ -188,6 +188,9 @@ func (a *app) commitMenu(m *ui.Menu, cm git.Commit) {
 		a.run("撤销 "+cm.Short(), func(ctx context.Context) error { return a.repo.Revert(ctx, cm) }, nil)
 	}
 	a.mergeItems(m, cm.Hash)
+	if m.Item("从此处交互式变基…").Chosen() {
+		a.planRebase(cm)
+	}
 	if a.status.Branch != "" {
 		m.Submenu("将 "+a.status.Branch+" 重置到此", func(m *ui.Menu) {
 			reset := func(mode git.ResetMode) {

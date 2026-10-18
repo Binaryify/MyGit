@@ -32,6 +32,7 @@ func (a *app) view(c *ui.Context) {
 			ui.SplitVertical(c, &a.logH, func() { a.logView(c) }, func() { a.detailView(c) }).Fill()
 		}).Grow(1)
 	})
+	a.rebaseView(c)
 	a.promptView(c)
 	a.confirmView(c)
 	c.OnShortcut(ui.Cmd, ui.KeyR, a.refresh)

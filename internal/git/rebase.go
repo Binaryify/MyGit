@@ -1,0 +1,129 @@
+package git
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+// RebaseAction is what an interactive rebase does with a commit.
+type RebaseAction string
+
+const (
+	Pick   RebaseAction = "pick"   // keep it
+	Reword RebaseAction = "reword" // keep it with a new message
+	Edit   RebaseAction = "edit"   // stop after it, to amend it
+	Squash RebaseAction = "squash" // meld it into the one before, messages joined
+	Fixup  RebaseAction = "fixup"  // meld it into the one before, its message dropped
+	Drop   RebaseAction = "drop"   // leave it out
+)
+
+// RebaseStep is a commit of an interactive rebase and what to do with it.
+type RebaseStep struct {
+	Action  RebaseAction
+	Hash    string
+	Subject string
+	Message string // a reworded commit's new message
+}
+
+// ErrMerges says the commits to rebase have merges, which an interactive
+// rebase would flatten.
+var ErrMerges = errors.New("这段历史里有合并提交，交互式变基会把它们拉平，请从合并之后的提交开始")
+
+// RebaseSteps lists the commits from the one after base to HEAD, oldest
+// first, all picked; base "" starts from the root.
+func (r *Repo) RebaseSteps(ctx context.Context, base string) ([]RebaseStep, error) {
+	rng := "HEAD"
+	if base != "" {
+		rng = base + "..HEAD"
+	}
+	out, err := r.Git(ctx, "log", "--reverse", "-z", "--format=%H\x1f%P\x1f%s", rng)
+	if err != nil {
+		return nil, err
+	}
+	var steps []RebaseStep
+	for _, rec := range strings.Split(out, "\x00") {
+		f := strings.Split(strings.TrimPrefix(rec, "\n"), "\x1f")
+		if len(f) != 3 {
+			continue
+		}
+		if strings.Contains(f[1], " ") {
+			return nil, ErrMerges
+		}
+		steps = append(steps, RebaseStep{Action: Pick, Hash: f[0], Subject: f[2]})
+	}
+	return steps, nil
+}
+
+// CheckSteps tells what's wrong with a rebase's steps, nil when nothing.
+func CheckSteps(steps []RebaseStep) error {
+	for _, s := range steps {
+		switch s.Action {
+		case Drop:
+			continue
+		case Squash, Fixup:
+			return errors.New("第一个保留的提交不能合并到前一个提交")
+		case Reword:
+			if strings.TrimSpace(s.Message) == "" {
+				return errors.New("改写说明的提交需要新的说明")
+			}
+		}
+		return nil
+	}
+	return nil
+}
+
+// RebaseInteractive replays the steps on base, "" for the root. Git reads
+// the todo list from a file written for it, and a reworded commit is
+// picked and then amended with its message, so git opens no editor. A
+// rebase stopped by a conflict or an edit goes on with Continue.
+func (r *Repo) RebaseInteractive(ctx context.Context, base string, steps []RebaseStep) error {
+	if err := CheckSteps(steps); err != nil {
+		return err
+	}
+	// The files stay while the rebase may stop and go on.
+	dir := filepath.Join(r.GitDir, "mygit-rebase")
+	_ = os.RemoveAll(dir)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	var todo strings.Builder
+	for i, s := range steps {
+		if s.Action != Reword {
+			fmt.Fprintf(&todo, "%s %s\n", s.Action, s.Hash)
+			continue
+		}
+		msg := filepath.Join(dir, fmt.Sprintf("message-%d", i))
+		if err := os.WriteFile(msg, []byte(s.Message), 0o644); err != nil {
+			return err
+		}
+		fmt.Fprintf(&todo, "pick %s\nexec git commit --amend --only --allow-empty -F %s\n", s.Hash, shellQuote(msg))
+	}
+	todoFile := filepath.Join(dir, "todo")
+	if err := os.WriteFile(todoFile, []byte(todo.String()), 0o644); err != nil {
+		return err
+	}
+	args := []string{"rebase", "-i"}
+	if base == "" {
+		args = append(args, "--root")
+	} else {
+		args = append(args, base)
+	}
+	_, err := runInput(ctx, r.Dir, "", []string{"GIT_SEQUENCE_EDITOR=cp " + shellQuote(todoFile)}, args...)
+	return err
+}
+
+// shellQuote quotes a path for the shell git runs editors and execs in,
+// with slashes, which Git for Windows' shell reads too.
+func shellQuote(path string) string {
+	return "'" + strings.ReplaceAll(filepath.ToSlash(path), "'", `'\''`) + "'"
+}
+
+// IsAncestor tells whether a commit is in HEAD's history.
+func (r *Repo) IsAncestor(ctx context.Context, hash string) bool {
+	_, err := r.Git(ctx, "merge-base", "--is-ancestor", hash, "HEAD")
+	return err == nil
+}

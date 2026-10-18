@@ -149,7 +149,7 @@ func (r *Repo) Apply(ctx context.Context, patch string, cached, reverse bool) er
 	if reverse {
 		args = append(args, "--reverse")
 	}
-	_, err := runInput(ctx, r.Dir, patch, append(args, "-")...)
+	_, err := runInput(ctx, r.Dir, patch, nil, append(args, "-")...)
 	return err
 }
 
