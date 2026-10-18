@@ -66,6 +66,7 @@ type app struct {
 	prompt  prompt
 	rebase  rebasePlan
 	push    pushPlan
+	cred    credPrompt
 
 	busy     string // the operation running, as the toolbar says it
 	errMsg   string

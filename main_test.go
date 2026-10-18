@@ -455,3 +455,24 @@ func TestWelcome(t *testing.T) {
 		t.Fatalf("error %q, texts %q", w.errMsg, tt.Texts())
 	}
 }
+
+func TestCredentialDialog(t *testing.T) {
+	tt := newTester(t)
+	done := make(chan credAnswer, 1)
+	tt.a.askCredential("Password for 'https://ada@example.com': ", done)
+	tt.Frame()
+	if !tt.HasText("git 需要验证") {
+		t.Fatalf("texts %q", tt.Texts())
+	}
+	tt.Type("ghp_token")
+	tt.click(t, "确定")
+	if r := <-done; !r.ok || r.value != "ghp_token" {
+		t.Fatalf("answer %+v", r)
+	}
+	tt.a.askCredential("Username for 'https://example.com': ", done)
+	tt.Frame()
+	tt.click(t, "取消")
+	if r := <-done; r.ok {
+		t.Fatalf("canceled answer %+v", r)
+	}
+}

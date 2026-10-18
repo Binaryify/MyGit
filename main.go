@@ -15,13 +15,18 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
+	"mygit/internal/askpass"
 	"mygit/internal/git"
 )
 
-// windows are the open repositories' windows, by working tree.
-var windows = map[string]*mygo.Window{}
+// apps are the open repositories' windows, by working tree.
+var apps = map[string]*app{}
 
 func main() {
+	// Run by git for a prompt, hand it to the running app.
+	if code, ok := askpass.Main(os.Args); ok {
+		os.Exit(code)
+	}
 	mygo.App.SetName("MyGit")
 	if !mygo.App.RequestSingleInstanceLock() {
 		return // the running MyGit opens it
@@ -35,6 +40,10 @@ func main() {
 	})
 	mygo.App.WhenReady(func() {
 		mygo.App.SetMenu(appMenu())
+		if s, err := askpass.Listen(askUser); err == nil {
+			git.Env = func(dir string) []string { return s.Env(dir) }
+			mygo.App.OnQuit(func() { s.Close() })
+		}
 		cwd, _ := os.Getwd()
 		openArg(os.Args[1:], cwd)
 	})
@@ -72,9 +81,9 @@ func openDir(dir string) {
 
 // open shows a repository's window, the one open already if there is one.
 func open(repo *git.Repo) {
-	if w := windows[repo.Dir]; w != nil {
-		w.Show()
-		w.Focus()
+	if a := apps[repo.Dir]; a != nil {
+		a.win.Show()
+		a.win.Focus()
 		return
 	}
 	_ = mygo.App.AddRecentDocument(repo.Dir)
@@ -88,8 +97,8 @@ func open(repo *git.Repo) {
 		StateKey:  "main",
 		Content:   ui.View(a.view),
 	})
-	windows[repo.Dir] = a.win
-	a.win.OnClosed(func() { delete(windows, repo.Dir) })
+	apps[repo.Dir] = a
+	a.win.OnClosed(func() { delete(apps, repo.Dir) })
 	a.start()
 	closeWelcome()
 }
@@ -125,4 +134,20 @@ func appMenu() *mygo.Menu {
 		{Role: mygo.RoleEditMenu},
 		{Role: mygo.RoleWindowMenu},
 	})
+}
+
+// askUser asks a prompt of git's in the window of the repository it runs
+// in, and waits for the answer.
+func askUser(dir, prompt string) (string, bool) {
+	done := make(chan credAnswer, 1)
+	mygo.RunOnMain(func() {
+		a := apps[dir]
+		if a == nil {
+			done <- credAnswer{}
+			return
+		}
+		a.askCredential(prompt, done)
+	})
+	r := <-done
+	return r.value, r.ok
 }

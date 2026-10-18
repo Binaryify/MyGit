@@ -38,6 +38,10 @@ func (r *Repo) Git(ctx context.Context, args ...string) (string, error) {
 	return run(ctx, r.Dir, args...)
 }
 
+// Env adds to the environment of git run in a working tree, as the app's
+// askpass for its prompts.
+var Env func(dir string) []string
+
 // command is git with the settings every call shares: no prompts, which
 // a window can't answer, and output that parses the same everywhere.
 func command(ctx context.Context, dir string, args ...string) *exec.Cmd {
@@ -46,6 +50,9 @@ func command(ctx context.Context, dir string, args ...string) *exec.Cmd {
 	// No prompts and no editors, which a window can't answer: continuing a
 	// merge or a rebase takes the message git proposes.
 	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0", "GIT_EDITOR=true", "LC_ALL=C")
+	if Env != nil {
+		cmd.Env = append(cmd.Env, Env(dir)...)
+	}
 	hideWindow(cmd)
 	return cmd
 }

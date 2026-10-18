@@ -39,6 +39,7 @@ func (a *app) view(c *ui.Context) {
 	a.pushView(c)
 	a.promptView(c)
 	a.confirmView(c)
+	a.credentialView(c)
 	c.OnShortcut(ui.Cmd, ui.KeyR, a.refresh)
 }
 
