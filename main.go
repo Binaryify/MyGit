@@ -22,6 +22,13 @@ import (
 // apps are the open repositories' windows, by working tree.
 var apps = map[string]*app{}
 
+// ready tells whether the app can make windows, and pending holds the
+// folders the system asked to open before it could.
+var (
+	ready   bool
+	pending []string
+)
+
 func main() {
 	// Run by git for a prompt, hand it to the running app.
 	if code, ok := askpass.Main(os.Args); ok {
@@ -33,7 +40,15 @@ func main() {
 		return // the running MyGit opens it
 	}
 	mygo.App.OnSecondInstance(func(args []string, cwd string) { openArg(args, cwd) })
-	mygo.App.OnOpenFile(func(path string) { openDir(path) }) // Open Recent, the Dock menu
+	// Folders dropped on the icon, Open Recent, the Dock menu: those that
+	// come as the app starts wait for it to be ready.
+	mygo.App.OnOpenFile(func(path string) {
+		if ready {
+			openDir(path)
+		} else {
+			pending = append(pending, path)
+		}
+	})
 	mygo.App.OnActivate(func(visible bool) {
 		if !visible {
 			showWelcome() // the Dock icon clicked with no window open
@@ -44,6 +59,13 @@ func main() {
 		if s, err := askpass.Listen(askUser); err == nil {
 			git.Env = func(dir string) []string { return s.Env(dir) }
 			mygo.App.OnQuit(func() { s.Close() })
+		}
+		ready = true
+		if len(pending) > 0 { // started to open them
+			for _, p := range pending {
+				openDir(p)
+			}
+			return
 		}
 		cwd, _ := os.Getwd()
 		openArg(os.Args[1:], cwd)
