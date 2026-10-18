@@ -318,9 +318,28 @@ func TestConflictBar(t *testing.T) {
 	if tt.a.op != git.Merging || !tt.HasText("正在合并，有 1 个冲突文件：解决后暂存，再点继续") {
 		t.Fatalf("op %q, texts %q", tt.a.op, tt.Texts())
 	}
-	tt.click(t, "中止…")
-	tt.click(t, "中止")
-	if tt.a.op != git.NoOperation {
-		t.Fatalf("op after aborting %q", tt.a.op)
+	// Resolve it in the merge view with their side, and go on.
+	tt.click(t, "main.go")
+	m := tt.a.detail.merge
+	if m == nil || len(m.blocks) != 1 || !tt.HasText("冲突 1 / 1") {
+		t.Fatalf("merge %+v, texts %q", m, tt.Texts())
+	}
+	if m.ours.Buffer.String() != "package mine\n" || m.theirs.Buffer.String() != "package other\n" {
+		t.Fatalf("sides %q, %q", m.ours.Buffer.String(), m.theirs.Buffer.String())
+	}
+	tt.click(t, "采用右侧")
+	if m.result.Buffer.String() != "package other\n" || !tt.HasText("没有剩余冲突") {
+		t.Fatalf("result %q", m.result.Buffer.String())
+	}
+	tt.click(t, "保存并标记为已解决")
+	if tt.a.errMsg != "" || len(tt.a.staged) != 1 || tt.HasText("main.go 有冲突") {
+		t.Fatalf("error %q, staged %v", tt.a.errMsg, tt.a.staged)
+	}
+	tt.click(t, "继续")
+	if tt.a.op != git.NoOperation || tt.a.errMsg != "" {
+		t.Fatalf("op after continuing %q, error %q", tt.a.op, tt.a.errMsg)
+	}
+	if b, _ := os.ReadFile(filepath.Join(r.Dir, "main.go")); string(b) != "package other\n" {
+		t.Fatalf("main.go %q", b)
 	}
 }

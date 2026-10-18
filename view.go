@@ -202,6 +202,10 @@ func (a *app) detailView(c *ui.Context) {
 		case d.commit != nil:
 			a.commitHeader(c, d.commit)
 			ui.Split(c.Key("files"), &a.filesW, func() { a.filesPane(c) }, func() { a.diffView(c) }).Grow(1)
+		case d.merge != nil:
+			a.mergeView(c, d.merge)
+		case d.change != nil && d.change.Conflict:
+			ui.Column(c).Fill().Center().Children(func() { ui.Spinner(c).Size(18, 18) })
 		case d.change != nil:
 			ui.Row(c).Padding(8, 12).Gap(8).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 				ui.Text(c, d.change.Path).Bold().SingleLine()

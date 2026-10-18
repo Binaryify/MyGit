@@ -162,3 +162,43 @@ func (r *Repo) Discard(ctx context.Context, c Change) error {
 	_, err := r.Git(ctx, "restore", "--worktree", "--", c.Path)
 	return err
 }
+
+// Stage is a version of a file in conflict, as the index holds it.
+type Stage int
+
+const (
+	BaseStage   Stage = 1 // the common ancestor's
+	OursStage   Stage = 2 // HEAD's
+	TheirsStage Stage = 3 // the other side's
+)
+
+// ShowStage reads a version of a file in conflict, "" when that side has
+// none (a file added on one side).
+func (r *Repo) ShowStage(ctx context.Context, path string, s Stage) string {
+	out, err := r.Git(ctx, "show", ":"+strconv.Itoa(int(s))+":"+path)
+	if err != nil {
+		return ""
+	}
+	return out
+}
+
+// Resolve writes a file's resolved text and stages it, which marks its
+// conflict resolved.
+func (r *Repo) Resolve(ctx context.Context, path, text string) error {
+	if err := os.WriteFile(filepath.Join(r.Dir, filepath.FromSlash(path)), []byte(text), 0o644); err != nil {
+		return err
+	}
+	return r.Stage(ctx, path)
+}
+
+// TakeSide resolves a file in conflict with one side's version whole.
+func (r *Repo) TakeSide(ctx context.Context, path string, s Stage) error {
+	side := "--ours"
+	if s == TheirsStage {
+		side = "--theirs"
+	}
+	if _, err := r.Git(ctx, "checkout", side, "--", path); err != nil {
+		return err
+	}
+	return r.Stage(ctx, path)
+}

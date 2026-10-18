@@ -82,6 +82,7 @@ type detail struct {
 	files   []editor.FilePatch
 	fileSel int
 	diff    *editor.DiffState
+	merge   *merger           // a file in conflict's
 	raw     string            // the change's patch as git printed it
 	patch   *editor.FilePatch // the change's, when its lines can be chosen
 	gen     int
@@ -346,6 +347,12 @@ func (a *app) showFile(i int) {
 // Shown again as the change moves on, it keeps the diff, with its
 // selection and scroll, while the patch is the same.
 func (a *app) showChange(c git.Change, staged bool) {
+	if c.Conflict {
+		if a.detail.merge == nil || a.detail.merge.path != c.Path {
+			a.showConflict(c)
+		}
+		return
+	}
 	same := a.detail.change != nil && a.detail.change.Path == c.Path && a.detail.staged == staged
 	if !same {
 		a.detail = detail{change: &c, staged: staged, gen: a.detail.gen + 1, loading: true}
