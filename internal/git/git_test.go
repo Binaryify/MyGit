@@ -330,3 +330,44 @@ func TestRebaseInteractive(t *testing.T) {
 		t.Fatal("a isn't HEAD's ancestor")
 	}
 }
+
+func TestBlameAndRemote(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	write(t, r, "a.txt", "one\ntwo\n")
+	_ = r.Stage(ctx, "a.txt")
+	_ = r.Commit(ctx, "first\n\nwith a body", false)
+	write(t, r, "a.txt", "one\nTWO\n")
+	_ = r.Stage(ctx, "a.txt")
+	_ = r.Commit(ctx, "second", false)
+	lines, err := r.Blame(ctx, "", "a.txt")
+	if err != nil || len(lines) != 2 || lines[0].Summary != "first" || lines[1].Summary != "second" ||
+		lines[1].Text != "TWO" || lines[0].Author != "Ada" {
+		t.Fatalf("blame %+v, %v", lines, err)
+	}
+	if m := r.Message(ctx, lines[0].Hash); m != "first\n\nwith a body" {
+		t.Fatalf("message %q", m)
+	}
+	// A bare clone as origin: nothing to push once pushed.
+	origin := t.TempDir()
+	if _, err := run(ctx, origin, "init", "-q", "--bare"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Git(ctx, "remote", "add", "origin", origin); err != nil {
+		t.Fatal(err)
+	}
+	st, _ := r.Status(ctx)
+	if out, err := r.Outgoing(ctx, st); err != nil || len(out) != 2 {
+		t.Fatalf("outgoing before pushing %d, %v", len(out), err)
+	}
+	if err := r.Push(ctx, st, false); err != nil {
+		t.Fatal(err)
+	}
+	st, _ = r.Status(ctx)
+	if out, err := r.Outgoing(ctx, st); err != nil || len(out) != 0 || st.Upstream != "origin/main" {
+		t.Fatalf("outgoing after pushing %d, %v, upstream %q", len(out), err, st.Upstream)
+	}
+	if err := r.Pull(ctx, PullRebase); err != nil {
+		t.Fatal(err)
+	}
+}

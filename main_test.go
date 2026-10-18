@@ -387,3 +387,55 @@ func TestInteractiveRebaseDialog(t *testing.T) {
 		t.Fatalf("error %q, log %q", tt.a.errMsg, out)
 	}
 }
+
+func TestBlameAndParents(t *testing.T) {
+	tt := newTester(t)
+	tt.click(t, "Merge the feature")
+	d := tt.a.detail
+	if d.commit == nil || len(d.files) != 1 || d.files[0].NewName != "feature.go" || !tt.HasText("对比父提交 1（"+d.commit.Parents[0][:8]+"）") {
+		t.Fatalf("merge against its first parent: %+v", d.files)
+	}
+	tt.a.showParent(1)
+	tt.settle()
+	if d := tt.a.detail; len(d.files) != 1 || d.files[0].NewName != "main.go" {
+		t.Fatalf("merge against its second parent: %+v", d.files)
+	}
+	if err := tt.RightClick("main.go"); err != nil { // the merge's file
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("Blame（逐行追溯）"); err != nil {
+		t.Fatalf("%v; menu %q", err, tt.Menu())
+	}
+	tt.settle()
+	b := tt.a.detail.blame
+	if b == nil || len(b.lines) != 3 || b.lines[2].Summary != "Write main" {
+		t.Fatalf("blame %+v", b)
+	}
+	tt.a.revealCommit(b.lines[0].Hash)
+	tt.settle()
+	if d := tt.a.detail; d.commit == nil || d.commit.Subject != "Start" {
+		t.Fatalf("revealed %+v", d.commit)
+	}
+}
+
+func TestPushDialog(t *testing.T) {
+	tt := newTester(t)
+	origin := t.TempDir()
+	ctx := context.Background()
+	if out, err := exec.Command("git", "init", "-q", "--bare", origin).CombinedOutput(); err != nil {
+		t.Fatalf("%v %s", err, out)
+	}
+	if _, err := tt.a.repo.Git(ctx, "remote", "add", "origin", origin); err != nil {
+		t.Fatal(err)
+	}
+	tt.a.refresh()
+	tt.settle()
+	tt.click(t, "推送…")
+	if !tt.HasText("推送 main → origin/main（新建）") || !tt.HasText("4 个提交") {
+		t.Fatalf("texts %q", tt.Texts())
+	}
+	tt.click(t, "推送")
+	if tt.a.errMsg != "" || tt.a.status.Upstream != "origin/main" {
+		t.Fatalf("error %q, upstream %q", tt.a.errMsg, tt.a.status.Upstream)
+	}
+}

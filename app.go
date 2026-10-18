@@ -65,6 +65,7 @@ type app struct {
 	confirm confirmation
 	prompt  prompt
 	rebase  rebasePlan
+	push    pushPlan
 
 	busy     string // the operation running, as the toolbar says it
 	errMsg   string
@@ -84,6 +85,9 @@ type detail struct {
 	fileSel int
 	diff    *editor.DiffState
 	merge   *merger           // a file in conflict's
+	blame   *blame            // a file's, shown in place of the diff
+	message string            // the commit's whole message
+	parent  int               // the merge's parent its change is against
 	raw     string            // the change's patch as git printed it
 	patch   *editor.FilePatch // the change's, when its lines can be chosen
 	gen     int
@@ -308,20 +312,38 @@ func (a *app) showStash(s git.Stash) {
 	a.showPatch(c, func(ctx context.Context) (string, error) { return a.repo.StashShow(ctx, s.Ref) })
 }
 
-// showPatch loads the files of a commit's patch, which load reads.
+// showPatch loads the files of a commit's patch, which load reads, and
+// its message.
 func (a *app) showPatch(c git.Commit, load func(ctx context.Context) (string, error)) {
-	if a.detail.commit != nil && a.detail.commit.Hash == c.Hash {
+	if a.detail.commit != nil && a.detail.commit.Hash == c.Hash && a.detail.blame == nil {
 		return
 	}
 	a.detail = detail{commit: &c, gen: a.detail.gen + 1, loading: true}
-	gen := a.detail.gen
-	work(a, func(ctx context.Context) ([]editor.FilePatch, error) {
+	a.loadPatch(load)
+}
+
+// showParent shows a merge's change against another of its parents.
+func (a *app) showParent(i int) {
+	c := *a.detail.commit
+	parent := c.Parents[i]
+	a.detail = detail{commit: &c, parent: i, message: a.detail.message, gen: a.detail.gen + 1, loading: true}
+	a.loadPatch(func(ctx context.Context) (string, error) { return a.repo.DiffFrom(ctx, parent, c.Hash) })
+}
+
+func (a *app) loadPatch(load func(ctx context.Context) (string, error)) {
+	gen, hash := a.detail.gen, a.detail.commit.Hash
+	type result struct {
+		files   []editor.FilePatch
+		message string
+	}
+	work(a, func(ctx context.Context) (result, error) {
 		out, err := load(ctx)
 		if err != nil {
-			return nil, err
+			return result{}, err
 		}
-		return editor.ParsePatch(out)
-	}, func(files []editor.FilePatch, err error) {
+		files, err := editor.ParsePatch(out)
+		return result{files, a.repo.Message(ctx, hash)}, err
+	}, func(r result, err error) {
 		if gen != a.detail.gen {
 			return
 		}
@@ -330,9 +352,9 @@ func (a *app) showPatch(c git.Commit, load func(ctx context.Context) (string, er
 			a.errMsg = err.Error()
 			return
 		}
-		a.detail.files = files
+		a.detail.files, a.detail.message = r.files, r.message
 		a.detail.fileSel = -1
-		if len(files) > 0 {
+		if len(r.files) > 0 {
 			a.showFile(0)
 		}
 	})

@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"path/filepath"
+	"slices"
 	"strings"
 
+	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
@@ -33,6 +36,7 @@ func (a *app) view(c *ui.Context) {
 		}).Grow(1)
 	})
 	a.rebaseView(c)
+	a.pushView(c)
 	a.promptView(c)
 	a.confirmView(c)
 	c.OnShortcut(ui.Cmd, ui.KeyR, a.refresh)
@@ -60,11 +64,22 @@ func (a *app) toolbar(c *ui.Context) {
 		if ui.Button(c, "获取").Tooltip("git fetch --all --prune").Disabled(!idle).Clicked() {
 			a.run("获取", a.repo.Fetch, nil)
 		}
-		if ui.Button(c, "拉取").Tooltip("git pull --ff-only").Disabled(!idle || st.Upstream == "").Clicked() {
-			a.run("拉取", a.repo.Pull, nil)
-		}
-		if ui.Button(c, "推送").Tooltip("git push").Disabled(!idle || st.Branch == "").Clicked() {
-			a.run("推送", func(ctx context.Context) error { return a.repo.Push(ctx, st) }, nil)
+		ui.Button(c, "拉取 ▾").Label("拉取").Disabled(!idle || st.Upstream == "").Menu(func(m *ui.Menu) {
+			pull := func(mode git.PullMode) {
+				a.run("拉取", func(ctx context.Context) error { return a.repo.Pull(ctx, mode) }, nil)
+			}
+			if m.Item("拉取（仅快进）").Chosen() {
+				pull(git.PullFastForward)
+			}
+			if m.Item("拉取并变基").Chosen() {
+				pull(git.PullRebase)
+			}
+			if m.Item("拉取并合并").Chosen() {
+				pull(git.PullMerge)
+			}
+		})
+		if ui.Button(c, "推送…").Tooltip("查看要推送的提交").Disabled(!idle || st.Branch == "").Clicked() {
+			a.openPush()
 		}
 		if ui.Button(c, "刷新").Tooltip("⌘R").Clicked() {
 			a.refresh()
@@ -153,6 +168,10 @@ func (a *app) changeSection(c *ui.Context, title string, staged bool) {
 			if !staged && !ch.Conflict && m.Item("丢弃更改…").Chosen() {
 				a.discard(ch)
 			}
+			m.Separator()
+			if ch.Work != '?' {
+				a.fileMenu(m, ch.Path, "WORKTREE")
+			}
 		})
 	}).Grow(1).Basis(0)
 	if l.Changed() && *sel >= 0 && *sel < len(changes) {
@@ -203,6 +222,8 @@ func (a *app) detailView(c *ui.Context) {
 		case d.commit != nil:
 			a.commitHeader(c, d.commit)
 			ui.Split(c.Key("files"), &a.filesW, func() { a.filesPane(c) }, func() { a.diffView(c) }).Grow(1)
+		case d.blame != nil:
+			a.blameView(c, d.blame)
 		case d.merge != nil:
 			a.mergeView(c, d.merge)
 		case d.change != nil && d.change.Conflict:
@@ -229,14 +250,46 @@ func (a *app) detailView(c *ui.Context) {
 
 func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 	t := c.Theme()
+	d := &a.detail
 	ui.Column(c).Padding(8, 12).Gap(3).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 		ui.Text(c, cm.Subject).Bold().SingleLine()
-		ui.Row(c).Gap(10).Children(func() {
+		ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, cm.Short()).Font("monospace").TextColor(t.Accent).Tooltip(cm.Hash)
 			ui.Text(c, cm.Author).TextColor(t.TextMuted)
 			ui.Text(c, cm.Time.Format("2006-01-02 15:04")).TextColor(t.TextMuted)
+			ui.Box(c).Grow(1)
+			if n := len(cm.Parents); n > 1 {
+				labels := make([]string, n)
+				for i, p := range cm.Parents {
+					labels[i] = fmt.Sprintf("对比父提交 %d（%s）", i+1, p[:8])
+				}
+				label := labels[d.parent]
+				if ui.Select(c.Key("parent"), &label, labels).Label("对比的父提交").Changed() {
+					a.showParent(slices.Index(labels, label))
+				}
+			}
 		})
+		if body := strings.TrimSpace(strings.TrimPrefix(d.message, cm.Subject)); body != "" {
+			ui.Text(c, body).TextColor(t.TextMuted).Wrap().MaxLines(6)
+		}
 	})
+}
+
+// fileMenu is a file's context menu, of a commit's files or the changes.
+func (a *app) fileMenu(m *ui.Menu, path, rev string) {
+	if m.Item("文件历史").Chosen() {
+		a.setScope(git.Scope{Ref: a.scope.Ref, Path: path})
+	}
+	if m.Item("Blame（逐行追溯）").Chosen() {
+		a.showBlame(rev, path)
+	}
+	m.Separator()
+	if m.Item("复制路径").Chosen() {
+		mygo.Clipboard.WriteText(path)
+	}
+	if m.Item("在文件夹中显示").Chosen() {
+		mygo.Shell.ShowItemInFolder(filepath.Join(a.repo.Dir, filepath.FromSlash(path)))
+	}
 }
 
 func (a *app) filesPane(c *ui.Context) {
@@ -253,7 +306,13 @@ func (a *app) filesPane(c *ui.Context) {
 		case f.OldName != f.NewName:
 			code = 'R'
 		}
-		ui.Row(c).Height(24).Padding(0, 10).Gap(6).AlignItems(ui.Center).Tooltip(name).Children(func() {
+		rev := ""
+		if a.detail.commit != nil {
+			rev = a.detail.commit.Hash
+		}
+		ui.Row(c).Height(24).Padding(0, 10).Gap(6).AlignItems(ui.Center).Tooltip(name).ContextMenu(func(m *ui.Menu) {
+			a.fileMenu(m, name, rev)
+		}).Children(func() {
 			ui.Text(c, string(code)).Font("monospace").Bold().TextColor(changeColor(t, code, i == a.detail.fileSel)).Width(12)
 			ui.Text(c, path.Base(name)).SingleLine()
 			if dir := path.Dir(name); dir != "." {

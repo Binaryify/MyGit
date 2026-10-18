@@ -131,3 +131,35 @@ func splitNUL(data []byte, atEOF bool) (int, []byte, error) {
 func (r *Repo) Show(ctx context.Context, hash string) (string, error) {
 	return r.Git(ctx, "show", "--format=", "--patch", "-M", "--diff-merges=first-parent", hash)
 }
+
+// Message is a commit's whole message.
+func (r *Repo) Message(ctx context.Context, hash string) string {
+	out, _ := r.Git(ctx, "log", "-1", "--format=%B", hash)
+	return strings.TrimSpace(out)
+}
+
+// DiffFrom is the patch from a commit to another, as a merge's change
+// against its second parent.
+func (r *Repo) DiffFrom(ctx context.Context, from, to string) (string, error) {
+	return r.Git(ctx, "diff", "-M", "--no-ext-diff", from, to)
+}
+
+// Outgoing are the commits a push would send: those after the upstream,
+// or, with none, those on no remote.
+func (r *Repo) Outgoing(ctx context.Context, st Status) ([]Commit, error) {
+	rng := []string{"@{upstream}..HEAD"}
+	if st.Upstream == "" {
+		rng = []string{"HEAD", "--not", "--remotes"}
+	}
+	out, err := r.Git(ctx, append([]string{"log", "-z", "--format=" + logFormat}, rng...)...)
+	if err != nil {
+		return nil, err
+	}
+	var commits []Commit
+	for _, rec := range strings.Split(out, "\x00") {
+		if c, ok := parseCommit(rec); ok {
+			commits = append(commits, c)
+		}
+	}
+	return commits, nil
+}

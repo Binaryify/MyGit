@@ -26,20 +26,39 @@ func (r *Repo) Fetch(ctx context.Context) error {
 	return err
 }
 
-// Pull brings the upstream's commits in when that needs no merge.
-func (r *Repo) Pull(ctx context.Context) error {
-	_, err := r.Git(ctx, "pull", "--ff-only")
+// PullMode is how a pull joins the upstream's commits.
+type PullMode string
+
+const (
+	PullFastForward PullMode = "--ff-only"   // only when no merge is needed
+	PullRebase      PullMode = "--rebase"    // replay the branch's commits on them
+	PullMerge       PullMode = "--no-rebase" // merge them
+)
+
+// Pull brings the upstream's commits in.
+func (r *Repo) Pull(ctx context.Context, mode PullMode) error {
+	_, err := r.Git(ctx, "pull", string(mode))
 	return err
 }
 
 // Push sends the branch to its upstream, or to origin under its own name,
-// which becomes its upstream, when it has none.
-func (r *Repo) Push(ctx context.Context, st Status) error {
-	if st.Upstream == "" && st.Branch != "" {
-		_, err := r.Git(ctx, "push", "-u", "origin", st.Branch)
-		return err
+// which becomes its upstream, when it has none. Forced, it overwrites the
+// remote's branch, if it is still where it was last fetched.
+func (r *Repo) Push(ctx context.Context, st Status, force bool) error {
+	args := []string{"push"}
+	if force {
+		args = append(args, "--force-with-lease")
 	}
-	_, err := r.Git(ctx, "push")
+	if st.Upstream == "" && st.Branch != "" {
+		args = append(args, "-u", "origin", st.Branch)
+	}
+	_, err := r.Git(ctx, args...)
+	return err
+}
+
+// PushTags sends every tag to origin.
+func (r *Repo) PushTags(ctx context.Context) error {
+	_, err := r.Git(ctx, "push", "origin", "--tags")
 	return err
 }
 
