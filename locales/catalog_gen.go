@@ -3161,3 +3161,75 @@ func AboutDetail() string { return In(i18n.Locale()).AboutDetail() }
 func (msgs Messages) AboutDetail() string {
 	return Catalog.Format(msgs.locale, "aboutDetail", nil)
 }
+
+// GeneratedTag says "Generated"
+// in the language the app shows.
+func GeneratedTag() string { return In(i18n.Locale()).GeneratedTag() }
+
+// GeneratedTag says "Generated"
+// in the language of msgs.
+func (msgs Messages) GeneratedTag() string {
+	return Catalog.Format(msgs.locale, "generatedTag", nil)
+}
+
+// GeneratedFolded says "A generated file, folded"
+// in the language the app shows.
+func GeneratedFolded() string { return In(i18n.Locale()).GeneratedFolded() }
+
+// GeneratedFolded says "A generated file, folded"
+// in the language of msgs.
+func (msgs Messages) GeneratedFolded() string {
+	return Catalog.Format(msgs.locale, "generatedFolded", nil)
+}
+
+// GeneratedLines says "{added} lines added, {deleted} deleted"
+// in the language the app shows.
+func GeneratedLines(added int, deleted int) string {
+	return In(i18n.Locale()).GeneratedLines(added, deleted)
+}
+
+// GeneratedLines says "{added} lines added, {deleted} deleted"
+// in the language of msgs.
+func (msgs Messages) GeneratedLines(added int, deleted int) string {
+	return Catalog.Format(msgs.locale, "generatedLines", map[string]any{"added": added, "deleted": deleted})
+}
+
+// ShowDiff says "Show Diff"
+// in the language the app shows.
+func ShowDiff() string { return In(i18n.Locale()).ShowDiff() }
+
+// ShowDiff says "Show Diff"
+// in the language of msgs.
+func (msgs Messages) ShowDiff() string {
+	return Catalog.Format(msgs.locale, "showDiff", nil)
+}
+
+// ViewedCount says "{viewed} of {count} viewed"
+// in the language the app shows.
+func ViewedCount(viewed int, count int) string { return In(i18n.Locale()).ViewedCount(viewed, count) }
+
+// ViewedCount says "{viewed} of {count} viewed"
+// in the language of msgs.
+func (msgs Messages) ViewedCount(viewed int, count int) string {
+	return Catalog.Format(msgs.locale, "viewedCount", map[string]any{"viewed": viewed, "count": count})
+}
+
+// MarkViewed says "Mark as Viewed"
+// in the language the app shows.
+func MarkViewed() string { return In(i18n.Locale()).MarkViewed() }
+
+// MarkViewed says "Mark as Viewed"
+// in the language of msgs.
+func (msgs Messages) MarkViewed() string {
+	return Catalog.Format(msgs.locale, "markViewed", nil)
+}
+
+// MarkUnviewed says "Mark as Not Viewed"
+// in the language the app shows.
+func MarkUnviewed() string { return In(i18n.Locale()).MarkUnviewed() }
+
+// MarkUnviewed says "Mark as Not Viewed"
+// in the language of msgs.
+func (msgs Messages) MarkUnviewed() string {
+	return Catalog.Format(msgs.locale, "markUnviewed", nil)
+}

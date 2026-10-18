@@ -58,6 +58,7 @@ type app struct {
 	leftTab                  int // the left panel's: changes or the stash
 	staged                   []git.Change
 	unstaged                 []git.Change
+	genMarked                map[string]bool // the changes .gitattributes marks generated
 	stagedList, unstagedList ui.ListState
 	stagedSel, unstagedSel   int
 
@@ -66,6 +67,9 @@ type app struct {
 
 	detail   detail
 	fileList ui.ListState // of the commit's files
+
+	unfolded map[string]bool // generated files whose diffs were asked for, by foldKey
+	viewed   map[string]bool // files marked viewed, by viewKey
 
 	confirm      confirmation
 	branchesOpen bool   // the branches' popover
@@ -93,8 +97,10 @@ type detail struct {
 	change *git.Change
 	staged bool // the change's staged side, else its working tree's
 
-	files   []editor.FilePatch
-	fileSel int
+	files     []editor.FilePatch
+	fileSel   int
+	generated []bool          // of files, those people don't write
+	folded    bool            // the file shown is generated, its diff folded until asked
 	diff    *editor.DiffState
 	merge   *merger           // a file in conflict's
 	blame   *blame            // a file's, shown in place of the diff
@@ -109,7 +115,8 @@ type detail struct {
 
 func newApp(repo *git.Repo) *app {
 	return &app{repo: repo, logSel: -1, stagedSel: -1, unstagedSel: -1, stashSel: -1,
-		sidebarW: prefs.SidebarW, logH: prefs.LogH, filesW: prefs.FilesW}
+		sidebarW: prefs.SidebarW, logH: prefs.LogH, filesW: prefs.FilesW,
+		unfolded: map[string]bool{}, viewed: map[string]bool{}}
 }
 
 func (a *app) start() {
@@ -196,6 +203,7 @@ type snapshot struct {
 	refs     string
 	op       git.Operation
 	stashes  []git.Stash
+	marked   map[string]bool // the changes .gitattributes marks generated
 }
 
 // refresh reads the status, and the history again when a ref moved. A
@@ -214,7 +222,11 @@ func (a *app) refresh() {
 		b, _ := a.repo.Branches(ctx)
 		rb, _ := a.repo.RemoteBranches(ctx)
 		stashes, _ := a.repo.Stashes(ctx)
-		return snapshot{st, b, rb, a.repo.Refs(ctx), a.repo.Operation(), stashes}, nil
+		paths := make([]string, len(st.Changes))
+		for i, c := range st.Changes {
+			paths[i] = c.Path
+		}
+		return snapshot{st, b, rb, a.repo.Refs(ctx), a.repo.Operation(), stashes, a.repo.Generated(ctx, paths)}, nil
 	}, func(s snapshot, err error) {
 		a.refreshing = false
 		if a.again {
@@ -225,6 +237,7 @@ func (a *app) refresh() {
 			a.errMsg = err.Error()
 			return
 		}
+		a.genMarked = s.marked
 		a.setStatus(s.status)
 		a.branches, a.remotes, a.op, a.stashes = s.branches, s.remotes, s.op, s.stashes
 		a.stashSel = min(a.stashSel, len(a.stashes)-1)
@@ -372,6 +385,7 @@ func (a *app) loadPatch(load func(ctx context.Context) (string, error)) {
 	type result struct {
 		files   []editor.FilePatch
 		message string
+		marked  map[string]bool
 	}
 	work(a, func(ctx context.Context) (result, error) {
 		out, err := load(ctx)
@@ -383,7 +397,11 @@ func (a *app) loadPatch(load func(ctx context.Context) (string, error)) {
 		if !strings.Contains(hash, "..") {
 			msg = a.repo.Message(ctx, hash)
 		}
-		return result{files, msg}, err
+		names := make([]string, len(files))
+		for i, f := range files {
+			names[i] = fileName(f)
+		}
+		return result{files, msg, a.repo.Generated(ctx, names)}, err
 	}, func(r result, err error) {
 		if gen != a.detail.gen {
 			return
@@ -394,8 +412,15 @@ func (a *app) loadPatch(load func(ctx context.Context) (string, error)) {
 			return
 		}
 		a.detail.files, a.detail.message = r.files, r.message
+		a.detail.generated = make([]bool, len(r.files))
+		for i := range r.files {
+			a.detail.generated[i] = isGenerated(fileName(r.files[i]), r.marked, &r.files[i], nil)
+		}
 		a.detail.fileSel = -1
-		if len(r.files) > 0 {
+		// The first file people wrote, past lockfiles and the like.
+		if first := slices.Index(a.detail.generated, false); first >= 0 {
+			a.showFile(first)
+		} else if len(r.files) > 0 {
 			a.showFile(0)
 		}
 	})
@@ -403,8 +428,28 @@ func (a *app) loadPatch(load func(ctx context.Context) (string, error)) {
 
 // showFile shows the diff of a file of the commit shown.
 func (a *app) showFile(i int) {
-	a.detail.fileSel = i
-	a.detail.diff = patchDiff(a.detail.files[i])
+	d := &a.detail
+	d.fileSel = i
+	d.folded = d.generated[i] && !a.unfolded[foldKey(d.commit.Hash, fileName(d.files[i]))]
+	d.diff = nil
+	if !d.folded {
+		d.diff = patchDiff(d.files[i])
+	}
+}
+
+// unfold shows the diff of the generated file shown.
+func (a *app) unfold() {
+	d := &a.detail
+	switch {
+	case d.commit != nil && d.fileSel >= 0:
+		a.unfolded[foldKey(d.commit.Hash, fileName(d.files[d.fileSel]))] = true
+		a.showFile(d.fileSel)
+	case d.change != nil:
+		a.unfolded[foldKey("", d.change.Path)] = true
+		ch, staged := *d.change, d.staged
+		a.detail = detail{gen: d.gen}
+		a.showChange(ch, staged)
+	}
 }
 
 // showChange shows the diff of a change, staged or in the working tree.
@@ -425,6 +470,8 @@ func (a *app) showChange(c git.Change, staged bool) {
 	}
 	gen := a.detail.gen
 	ignoreSpace := prefs.IgnoreWhitespace
+	byName := isGenerated(c.Path, a.genMarked, nil, nil)
+	unfolded := a.unfolded[foldKey("", c.Path)]
 	// The working tree's file, whole and editable, when it is changed in
 	// place and its patch, all of it, can be cut for staging.
 	whole := !staged && c.Work == 'M' && !ignoreSpace
@@ -433,12 +480,16 @@ func (a *app) showChange(c git.Change, staged bool) {
 		patch    *editor.FilePatch
 		old, new string // the whole texts
 		diff     *editor.DiffState
+		folded   bool
 	}
 	work(a, func(ctx context.Context) (result, error) {
 		if c.Work == '?' && !staged { // untracked: all of it is new
 			text, err := a.repo.ReadFile(c.Path)
 			if err != nil {
 				return result{}, err
+			}
+			if !unfolded && (byName || isGenerated(c.Path, nil, nil, firstLines(text, 5))) {
+				return result{raw: text, folded: true}, nil
 			}
 			return result{raw: text, diff: textDiff(c.Path, "", text)}, nil
 		}
@@ -451,6 +502,10 @@ func (a *app) showChange(c git.Change, staged bool) {
 			return result{raw: out}, err
 		}
 		r := result{raw: out, patch: &files[0]}
+		if !unfolded && (byName || isGenerated(c.Path, nil, &files[0], nil)) {
+			r.folded = true
+			return r, nil
+		}
 		if whole {
 			r.old = a.repo.ReadIndex(ctx, c.Path)
 			if r.new, err = a.repo.ReadFile(c.Path); err != nil {
@@ -486,6 +541,7 @@ func (a *app) showChange(c git.Change, staged bool) {
 			}
 		}
 		a.detail.raw, a.detail.patch, a.detail.diff, a.detail.whole = r.raw, r.patch, r.diff, whole && r.diff != nil
+		a.detail.folded = r.folded
 		a.detail.change = &c
 		if r.patch != nil && patch.Partial(*r.patch) && !ignoreSpace {
 			a.reviewLines(r.diff)

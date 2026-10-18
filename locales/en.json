@@ -836,5 +836,32 @@
   },
   "updateFailed": "The update failed: try again later, or download it from GitHub",
   "about": "About MyGit",
-  "aboutDetail": "A light git client: the history with its graph, changes to stage and commit, and their diffs."
+  "aboutDetail": "A light git client: the history with its graph, changes to stage and commit, and their diffs.",
+  "generatedTag": "Generated",
+  "generatedFolded": "A generated file, folded",
+  "generatedLines": "{added} lines added, {deleted} deleted",
+  "@generatedLines": {
+    "placeholders": {
+      "added": {
+        "type": "int"
+      },
+      "deleted": {
+        "type": "int"
+      }
+    }
+  },
+  "showDiff": "Show Diff",
+  "viewedCount": "{viewed} of {count} viewed",
+  "@viewedCount": {
+    "placeholders": {
+      "viewed": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "markViewed": "Mark as Viewed",
+  "markUnviewed": "Mark as Not Viewed"
 }

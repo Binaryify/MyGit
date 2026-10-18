@@ -311,5 +311,12 @@
   "updateLatest": "已是最新版本 {version}",
   "updateFailed": "更新失败，请稍后再试或从 GitHub 下载",
   "about": "关于 MyGit",
-  "aboutDetail": "轻量的 git 客户端：带分支图的历史、暂存与提交、差异对比。"
+  "aboutDetail": "轻量的 git 客户端：带分支图的历史、暂存与提交、差异对比。",
+  "generatedTag": "生成",
+  "generatedFolded": "生成的文件，已折叠",
+  "generatedLines": "新增 {added} 行，删除 {deleted} 行",
+  "showDiff": "显示 diff",
+  "viewedCount": "已看 {viewed}/{count}",
+  "markViewed": "标记为已看",
+  "markUnviewed": "取消已看"
 }

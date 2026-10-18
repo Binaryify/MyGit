@@ -194,7 +194,10 @@ func (a *app) changeSection(c *ui.Context, title string, staged bool) {
 				code = ch.Staged
 			}
 			name, dir := path.Base(ch.Path), path.Dir(ch.Path)
-			ui.Text(c, name).SingleLine().Shrink(0)
+			nameText := ui.Text(c, name).SingleLine().Shrink(0)
+			if !chosen && isGenerated(ch.Path, a.genMarked, nil, nil) {
+				nameText.TextColor(t.TextMuted)
+			}
 			muted := t.TextMuted
 			if chosen {
 				muted = t.AccentText.Alpha(0.75)
@@ -418,6 +421,19 @@ func (a *app) fileMenu(m *ui.Menu, path, rev string) {
 func (a *app) filesPane(c *ui.Context) {
 	t := c.Theme()
 	files := a.detail.files
+	ui.Column(c).Fill().Children(func() {
+		if len(files) > 1 {
+			ui.Row(c).Height(26).Padding(0, 10).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
+				ui.Text(c, loc.ViewedCount(a.viewedCount(), len(files))).FontSize(11).TextColor(t.TextMuted)
+			})
+		}
+		a.filesList(c)
+	})
+}
+
+func (a *app) filesList(c *ui.Context) {
+	t := c.Theme()
+	files := a.detail.files
 	l := ui.List(c, &a.fileList, len(files), func(i int) {
 		f := files[i]
 		code, name := byte('M'), f.NewName
@@ -433,7 +449,13 @@ func (a *app) filesPane(c *ui.Context) {
 		if a.detail.commit != nil {
 			rev = a.detail.commit.Hash
 		}
-		ui.Row(c).Height(24).Padding(0, 8, 0, 10).Gap(6).AlignItems(ui.Center).Tooltip(name).ContextMenu(func(m *ui.Menu) {
+		viewed, gen := a.isViewed(i), a.detail.generated[i]
+		row := ui.Row(c).Height(24).Padding(0, 8, 0, 4).Gap(6).AlignItems(ui.Center).Tooltip(name)
+		row.ContextMenu(func(m *ui.Menu) {
+			if m.Item(map[bool]string{true: loc.MarkUnviewed(), false: loc.MarkViewed()}[viewed]).Chosen() {
+				a.toggleViewed(i)
+			}
+			m.Separator()
 			a.fileMenu(m, name, rev)
 		}).Children(func() {
 			chosen := i == a.detail.fileSel
@@ -441,19 +463,41 @@ func (a *app) filesPane(c *ui.Context) {
 			if chosen {
 				muted = t.AccentText.Alpha(0.75)
 			}
-			ui.Text(c, path.Base(name)).SingleLine().Shrink(0)
+			// Viewed, as GitHub's checkbox: a check, or a ring while the
+			// pointer is over the row.
+			mark, label := "check", loc.MarkUnviewed()
+			if !viewed {
+				mark, label = "circle", loc.MarkViewed()
+			}
+			if viewed || row.Hovered() || chosen {
+				if iconButton(c, mark, label) {
+					a.toggleViewed(i)
+				}
+			} else {
+				ui.Box(c).Size(22, 22)
+			}
+			nameText := ui.Text(c, path.Base(name)).SingleLine().Shrink(0)
+			if (viewed || gen) && !chosen {
+				nameText.TextColor(t.TextMuted)
+			}
 			if dir := path.Dir(name); dir != "." {
 				ui.Text(c, dir).FontSize(11).TextColor(muted).SingleLine().Grow(1).Basis(0)
 			} else {
 				ui.Box(c).Grow(1)
 			}
+			if gen {
+				ui.Text(c, loc.GeneratedTag()).FontSize(10).TextColor(muted).Shrink(0)
+			}
 			ui.Text(c, string(code)).Font("monospace").FontSize(11).Bold().TextColor(changeColor(t, code, chosen)).
 				Width(14).TextAlign(ui.Center).Tooltip(changeName(code))
 		})
-	}).Fill()
+	}).Grow(1).Basis(0)
 	if l.Changed() && a.detail.fileSel >= 0 && a.detail.fileSel < len(files) {
 		a.showFile(a.detail.fileSel)
 	}
+	// Space marks the file chosen viewed and goes on to the next, as
+	// GitHub's review does with its checkbox.
+	a.fileList.Handle.OnShortcut(c, 0, ui.KeySpace, func() { a.toggleViewed(a.detail.fileSel) })
 }
 
 func (a *app) diffView(c *ui.Context) {
@@ -462,6 +506,14 @@ func (a *app) diffView(c *ui.Context) {
 	switch {
 	case d.loading:
 		ui.Column(c).Fill().Center().Children(func() { ui.Spinner(c).Size(18, 18) })
+	case d.folded:
+		var p *editor.FilePatch
+		if d.commit != nil && d.fileSel >= 0 && d.fileSel < len(d.files) {
+			p = &d.files[d.fileSel]
+		} else {
+			p = d.patch
+		}
+		a.foldedView(c, p, a.unfold)
 	case d.commit != nil && d.fileSel >= 0 && d.fileSel < len(d.files) && d.files[d.fileSel].Binary:
 		ui.Column(c).Fill().Center().Children(func() { ui.Text(c, loc.BinaryFile()).TextColor(t.TextMuted) })
 	case d.diff != nil:

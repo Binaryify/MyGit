@@ -225,3 +225,31 @@ func (r *Repo) TakeSide(ctx context.Context, path string, s Stage) error {
 	}
 	return r.Stage(ctx, path)
 }
+
+// Generated are those of paths .gitattributes marks generated or vendored,
+// as GitHub's linguist reads them.
+func (r *Repo) Generated(ctx context.Context, paths []string) map[string]bool {
+	marked := map[string]bool{}
+	if len(paths) == 0 {
+		return marked
+	}
+	out, err := runInput(ctx, r.Dir, strings.Join(paths, "\x00")+"\x00", nil,
+		"check-attr", "-z", "--stdin", "linguist-generated", "linguist-vendored")
+	if err != nil {
+		return marked
+	}
+	f := strings.Split(out, "\x00")
+	for i := 0; i+2 < len(f); i += 3 {
+		if v := f[i+2]; v == "set" || v == "true" {
+			marked[f[i]] = true
+		}
+	}
+	return marked
+}
+
+// Blob is a file's content at a revision, as git cat-file prints it: rev
+// "" for the index's, else a commit's or tree's.
+func (r *Repo) Blob(ctx context.Context, rev, path string) ([]byte, error) {
+	out, err := r.Git(ctx, "cat-file", "blob", rev+":"+path)
+	return []byte(out), err
+}
