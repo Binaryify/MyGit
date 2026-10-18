@@ -39,7 +39,7 @@ func TestEmptyRepository(t *testing.T) {
 	r := repo(t)
 	ctx := context.Background()
 	n := 0
-	if err := r.Log(ctx, 10, func(c []Commit) { n += len(c) }); err != nil || n != 0 {
+	if err := r.Log(ctx, Scope{}, 10, func(c []Commit) { n += len(c) }); err != nil || n != 0 {
 		t.Fatalf("log of an empty repository: %d commits, %v", n, err)
 	}
 	write(t, r, "a.txt", "a\n")
@@ -86,7 +86,7 @@ func TestStageCommitLog(t *testing.T) {
 		t.Fatal(err)
 	}
 	var all []Commit
-	if err := r.Log(ctx, 1, func(c []Commit) { all = append(all, c...) }); err != nil {
+	if err := r.Log(ctx, Scope{}, 1, func(c []Commit) { all = append(all, c...) }); err != nil {
 		t.Fatal(err)
 	}
 	if len(all) != 2 || all[0].Subject != "second" || all[1].Subject != "first" ||
@@ -120,3 +120,28 @@ func TestParseStatusRename(t *testing.T) {
 }
 
 func lines(s string) []string { return strings.Split(s, "\n") }
+
+func TestLogScope(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	commit := func(name, text, msg string) {
+		write(t, r, name, text)
+		if err := r.Stage(ctx, name); err != nil {
+			t.Fatal(err)
+		}
+		if err := r.Commit(ctx, msg, false); err != nil {
+			t.Fatal(err)
+		}
+	}
+	commit("a.txt", "1", "a1")
+	commit("b.txt", "1", "b1")
+	commit("a.txt", "2", "a2")
+	var got []Commit
+	if err := r.Log(ctx, Scope{Path: "a.txt"}, 10, func(c []Commit) { got = append(got, c...) }); err != nil {
+		t.Fatal(err)
+	}
+	// b1 is left out, and a2's parent becomes a1.
+	if len(got) != 2 || got[0].Subject != "a2" || got[1].Subject != "a1" || got[0].Parents[0] != got[1].Hash {
+		t.Fatalf("log of a.txt %+v", got)
+	}
+}

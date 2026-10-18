@@ -24,12 +24,34 @@ func (c *Commit) Short() string { return c.Hash[:min(len(c.Hash), 8)] }
 
 const logFormat = "%H\x1f%P\x1f%an\x1f%at\x1f%s\x1f%D"
 
-// Log streams the history of every branch, tag and remote, children before
-// their parents, to batch in groups as git prints it, so the first
-// commits show before a long history is read.
-func (r *Repo) Log(ctx context.Context, batchSize int, batch func([]Commit)) error {
-	cmd := command(ctx, r.Dir, "log", "--branches", "--tags", "--remotes", "HEAD",
-		"--date-order", "-z", "--format="+logFormat)
+// Scope is the part of the history the log lists: every branch, tag and
+// remote, or one ref's history, and of those the commits that changed a
+// path.
+type Scope struct {
+	Ref  string // "" for all of them
+	Path string // "" for every commit
+}
+
+func (s Scope) args() []string {
+	var args []string
+	if s.Ref == "" {
+		args = []string{"--branches", "--tags", "--remotes", "HEAD"}
+	} else {
+		args = []string{s.Ref}
+	}
+	if s.Path != "" {
+		// A commit's parents become the nearest ones that changed the path
+		// too, so the graph joins the commits listed.
+		args = append(args, "--parents", "--", s.Path)
+	}
+	return args
+}
+
+// Log streams the history in scope, children before their parents, to
+// batch in groups as git prints it, so the first commits show before a
+// long history is read.
+func (r *Repo) Log(ctx context.Context, scope Scope, batchSize int, batch func([]Commit)) error {
+	cmd := command(ctx, r.Dir, append([]string{"log", "--date-order", "-z", "--format=" + logFormat}, scope.args()...)...)
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		return err

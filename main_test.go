@@ -187,3 +187,27 @@ func TestStageSelectedLinesAndHunks(t *testing.T) {
 		t.Fatalf("working tree %q", b)
 	}
 }
+
+func TestSearchAndScope(t *testing.T) {
+	tt := newTester(t)
+	tt.click(t, "搜索历史")
+	tt.Type("FEATURE")
+	tt.settle()
+	if n := tt.a.logCount(); n != 2 || !tt.HasText("2 / 4 个提交") || tt.HasText("Write main") {
+		t.Fatalf("%d matches, texts %q", n, tt.Texts())
+	}
+	tt.click(t, "Add the feature")
+	if d := tt.a.detail; d.commit == nil || d.commit.Subject != "Add the feature" {
+		t.Fatalf("chose %+v", d.commit)
+	}
+	tt.a.search = ""
+	tt.a.setScope(git.Scope{Path: "feature.go"})
+	tt.settle()
+	if len(tt.a.commits) != 1 || !tt.HasText("只看改动了 feature.go 的提交") {
+		t.Fatalf("history of feature.go: %d commits", len(tt.a.commits))
+	}
+	tt.click(t, "显示全部")
+	if len(tt.a.commits) != 4 {
+		t.Fatalf("all of it again: %d commits", len(tt.a.commits))
+	}
+}

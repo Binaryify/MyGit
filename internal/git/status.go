@@ -28,7 +28,9 @@ type Status struct {
 
 // Status reads git status --porcelain=v2.
 func (r *Repo) Status(ctx context.Context) (Status, error) {
-	out, err := r.Git(ctx, "status", "--porcelain=v2", "--branch", "-z", "--untracked-files=all")
+	// Without optional locks status leaves the index as it is, so a watch
+	// of the repository doesn't see it as a change.
+	out, err := r.Git(ctx, "--no-optional-locks", "status", "--porcelain=v2", "--branch", "-z", "--untracked-files=all")
 	if err != nil {
 		return Status{}, err
 	}

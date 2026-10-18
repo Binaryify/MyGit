@@ -36,7 +36,7 @@ func BenchmarkLoadHistory(b *testing.B) {
 		var commits []git.Commit
 		var rows []graph.Row
 		var l graph.Layout
-		err := r.Log(context.Background(), logBatch, func(batch []git.Commit) {
+		err := r.Log(context.Background(), git.Scope{}, logBatch, func(batch []git.Commit) {
 			for _, c := range batch {
 				rows = append(rows, l.Add(c.Hash, c.Parents))
 			}

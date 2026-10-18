@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"path"
 	"time"
 
 	"github.com/egoist/mygo"
@@ -31,6 +32,16 @@ type app struct {
 	logGen  int // the load running; the batches of older ones are dropped
 	loading bool
 	refs    string // the refs the history was read at, to reload it when they move
+	scope   git.Scope
+
+	// The history's search: the rows of the commits that match it.
+	search    string
+	searchFor string // what matches was found for, with the commits it looked at
+	searched  int
+	matches   []int
+	searchBox ui.Handle
+
+	refreshing, again bool // a refresh is running, and another is due after it
 
 	status                   git.Status
 	branches                 []string
@@ -76,15 +87,45 @@ func newApp(repo *git.Repo) *app {
 
 func (a *app) start() {
 	a.logList.Selected = &a.logSel
-	a.logList.Key = func(i int) any { return a.commits[i].Hash }
-	a.logList.Label = func(i int) string { return a.commits[i].Subject }
+	a.logList.Key = func(i int) any { return a.commits[a.commitAt(i)].Hash }
+	a.logList.Label = func(i int) string { return a.commits[a.commitAt(i)].Subject }
 	a.stagedList.Selected, a.unstagedList.Selected = &a.stagedSel, &a.unstagedSel
 	a.fileList.Selected = &a.detail.fileSel
 	if a.win != nil {
 		a.update = a.win.Update
 		a.win.OnFocus(a.refresh) // the repository may have changed in a terminal
+		a.watch()
 	}
 	a.refresh()
+}
+
+// watch refreshes as files of the working tree or the repository change,
+// as editors and terminals change them. A tree too big to watch is
+// refreshed as the window is focused.
+func (a *app) watch() {
+	ctx, cancel := context.WithCancel(context.Background())
+	a.win.OnClosed(cancel)
+	go func() {
+		w, err := mygo.WatchFiles(ctx, a.repo.Dir, mygo.FileWatchOptions{
+			Recursive: true,
+			HintsOnly: true,
+			Ignore: func(p string, isDir bool) bool {
+				base := path.Base(p)
+				return isDir && (base == "node_modules" || base == "objects" && path.Base(path.Dir(p)) == ".git" ||
+					base == "logs" && path.Base(path.Dir(p)) == ".git")
+			},
+		})
+		if err != nil {
+			return
+		}
+		defer w.Close()
+		for {
+			if _, err := w.Next(ctx); err != nil {
+				return
+			}
+			a.update(a.refresh)
+		}
+	}()
 }
 
 // work runs fn off the main thread, then done on it.
@@ -121,8 +162,14 @@ type snapshot struct {
 	refs     string
 }
 
-// refresh reads the status, and the history again when a ref moved.
+// refresh reads the status, and the history again when a ref moved. A
+// refresh asked for while one runs runs once after it.
 func (a *app) refresh() {
+	if a.refreshing {
+		a.again = true
+		return
+	}
+	a.refreshing = true
 	work(a, func(ctx context.Context) (snapshot, error) {
 		st, err := a.repo.Status(ctx)
 		if err != nil {
@@ -131,6 +178,11 @@ func (a *app) refresh() {
 		b, _ := a.repo.Branches(ctx)
 		return snapshot{st, b, a.repo.Refs(ctx)}, nil
 	}, func(s snapshot, err error) {
+		a.refreshing = false
+		if a.again {
+			a.again = false
+			defer a.refresh()
+		}
 		if err != nil {
 			a.errMsg = err.Error()
 			return
@@ -191,10 +243,14 @@ func (a *app) loadLog() {
 	if a.logSel >= 0 && a.logSel < len(a.commits) {
 		chosen = a.commits[a.logSel].Hash
 	}
+	if a.searching() {
+		chosen = "" // the row of a match isn't the commit's
+	}
 	a.commits, a.rows, a.loading, a.logSel = nil, nil, true, -1
+	a.matches, a.searched = a.matches[:0], 0
 	go func() {
 		var layout graph.Layout
-		err := a.repo.Log(context.Background(), logBatch, func(batch []git.Commit) {
+		err := a.repo.Log(context.Background(), a.scope, logBatch, func(batch []git.Commit) {
 			rows := make([]graph.Row, len(batch))
 			for i := range batch {
 				rows[i] = layout.Add(batch[i].Hash, batch[i].Parents)

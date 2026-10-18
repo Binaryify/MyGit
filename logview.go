@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/egoist/mygo/ui"
 
@@ -22,26 +23,120 @@ var laneColors = []ui.Color{
 
 func laneColor(i int) ui.Color { return laneColors[i%len(laneColors)] }
 
-// logView is the history: a row per commit, with its graph.
+// logView is the history: a row per commit, with its graph, and above it
+// the search and the scope.
 func (a *app) logView(c *ui.Context) {
 	t := c.Theme()
+	a.updateMatches()
 	ui.Column(c).Fill().Children(func() {
 		ui.Row(c).Padding(6, 12).Gap(8).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 			ui.Text(c, "历史").Bold().TextColor(t.TextMuted)
-			ui.Text(c, fmt.Sprintf("%d 个提交", len(a.commits))).TextColor(t.TextMuted)
+			count := fmt.Sprintf("%d 个提交", len(a.commits))
+			if a.searching() {
+				count = fmt.Sprintf("%d / %d 个提交", len(a.matches), len(a.commits))
+			}
+			ui.Text(c, count).TextColor(t.TextMuted)
 			if a.loading {
 				ui.Spinner(c).Size(12, 12)
 			}
+			ui.Box(c).Grow(1)
+			a.scopeButton(c)
+			ui.SearchField(c, &a.search).Placeholder("搜索说明、作者、哈希 ⌘F").Label("搜索历史").Width(260).Bind(&a.searchBox)
 		})
-		lanes := a.visibleLanes()
-		l := ui.List(c.Key("log"), &a.logList, len(a.commits), func(i int) {
-			a.logRow(c, &a.commits[i], &a.rows[i], lanes)
+		if a.scope.Path != "" {
+			ui.Row(c).Padding(4, 12).Gap(8).AlignItems(ui.Center).Background(t.Accent.Alpha(0.1)).Children(func() {
+				ui.Text(c, "只看改动了 "+a.scope.Path+" 的提交").Grow(1)
+				if ui.Button(c, "显示全部").Clicked() {
+					a.setScope(git.Scope{Ref: a.scope.Ref})
+				}
+			})
+		}
+		lanes := 0
+		if !a.searching() {
+			lanes = a.visibleLanes()
+		}
+		l := ui.List(c.Key("log"), &a.logList, a.logCount(), func(i int) {
+			ci := a.commitAt(i)
+			a.logRow(c, &a.commits[ci], &a.rows[ci], lanes)
 		}).Grow(1).Basis(0)
-		if l.Changed() && a.logSel >= 0 && a.logSel < len(a.commits) {
-			a.showCommit(a.logSel)
+		if l.Changed() && a.logSel >= 0 && a.logSel < a.logCount() {
+			a.showCommit(a.commitAt(a.logSel))
 			a.stagedSel, a.unstagedSel = -1, -1
 		}
 	})
+	c.OnShortcut(ui.Cmd, ui.KeyF, func() { a.searchBox.Focus() })
+}
+
+// scopeButton picks the refs the history lists.
+func (a *app) scopeButton(c *ui.Context) {
+	label := "全部分支"
+	switch a.scope.Ref {
+	case "":
+	case "HEAD":
+		label = "当前分支"
+	default:
+		label = a.scope.Ref
+	}
+	ui.Button(c, label+" ▾").Label("显示的分支").Menu(func(m *ui.Menu) {
+		if m.Item("全部分支").Checked(a.scope.Ref == "").Chosen() {
+			a.setScope(git.Scope{Path: a.scope.Path})
+		}
+		if m.Item("当前分支").Checked(a.scope.Ref == "HEAD").Chosen() {
+			a.setScope(git.Scope{Ref: "HEAD", Path: a.scope.Path})
+		}
+		m.Separator()
+		for _, b := range a.branches {
+			if m.Item(b).Checked(a.scope.Ref == b).Chosen() {
+				a.setScope(git.Scope{Ref: b, Path: a.scope.Path})
+			}
+		}
+	})
+}
+
+func (a *app) setScope(s git.Scope) {
+	if s != a.scope {
+		a.scope = s
+		a.loadLog()
+	}
+}
+
+func (a *app) searching() bool { return strings.TrimSpace(a.search) != "" }
+
+// logCount and commitAt map the list's rows to commits: all of them, or
+// those matching the search.
+func (a *app) logCount() int {
+	if a.searching() {
+		return len(a.matches)
+	}
+	return len(a.commits)
+}
+
+func (a *app) commitAt(row int) int {
+	if a.searching() {
+		return a.matches[row]
+	}
+	return row
+}
+
+// updateMatches finds the commits matching the search: their subjects or
+// authors containing it, or their hashes starting with it, ignoring case.
+// Commits loaded since the last search are searched on their own.
+func (a *app) updateMatches() {
+	q := strings.ToLower(strings.TrimSpace(a.search))
+	if q != a.searchFor || a.searched > len(a.commits) {
+		a.searchFor, a.searched, a.matches = q, 0, a.matches[:0]
+	}
+	if q == "" {
+		return
+	}
+	for i := a.searched; i < len(a.commits); i++ {
+		cm := &a.commits[i]
+		if strings.HasPrefix(cm.Hash, q) || strings.Contains(strings.ToLower(cm.Subject), q) ||
+			strings.Contains(strings.ToLower(cm.Author), q) {
+			a.matches = append(a.matches, i)
+		}
+	}
+	a.searched = len(a.commits)
 }
 
 // visibleLanes is the widest graph of the rows in view, which the graph
@@ -63,9 +158,11 @@ func (a *app) logRow(c *ui.Context, cm *git.Commit, row *graph.Row, lanes int) {
 	t := c.Theme()
 	head := false
 	ui.Row(c).Height(rowHeight).PaddingX(4).Gap(6).AlignItems(ui.Center).Children(func() {
-		ui.Box(c).Size(float32(lanes*laneWidth+4), rowHeight).Draw(func(p *ui.Painter, r ui.Rect) {
-			drawRow(p, r, row)
-		})
+		if lanes > 0 {
+			ui.Box(c).Size(float32(lanes*laneWidth+4), rowHeight).Draw(func(p *ui.Painter, r ui.Rect) {
+				drawRow(p, r, row)
+			})
+		}
 		for _, ref := range cm.Refs {
 			if ref == "HEAD" {
 				head = true
