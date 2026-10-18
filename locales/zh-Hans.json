@@ -318,5 +318,8 @@
   "showDiff": "显示 diff",
   "viewedCount": "已看 {viewed}/{count}",
   "markViewed": "标记为已看",
-  "markUnviewed": "取消已看"
+  "markUnviewed": "取消已看",
+  "imageBefore": "之前",
+  "imageAfter": "之后",
+  "imageError": "无法显示图片：{error}"
 }

@@ -3233,3 +3233,33 @@ func MarkUnviewed() string { return In(i18n.Locale()).MarkUnviewed() }
 func (msgs Messages) MarkUnviewed() string {
 	return Catalog.Format(msgs.locale, "markUnviewed", nil)
 }
+
+// ImageBefore says "Before"
+// in the language the app shows.
+func ImageBefore() string { return In(i18n.Locale()).ImageBefore() }
+
+// ImageBefore says "Before"
+// in the language of msgs.
+func (msgs Messages) ImageBefore() string {
+	return Catalog.Format(msgs.locale, "imageBefore", nil)
+}
+
+// ImageAfter says "After"
+// in the language the app shows.
+func ImageAfter() string { return In(i18n.Locale()).ImageAfter() }
+
+// ImageAfter says "After"
+// in the language of msgs.
+func (msgs Messages) ImageAfter() string {
+	return Catalog.Format(msgs.locale, "imageAfter", nil)
+}
+
+// ImageError says "Can't show the image: {error}"
+// in the language the app shows.
+func ImageError(error string) string { return In(i18n.Locale()).ImageError(error) }
+
+// ImageError says "Can't show the image: {error}"
+// in the language of msgs.
+func (msgs Messages) ImageError(error string) string {
+	return Catalog.Format(msgs.locale, "imageError", map[string]any{"error": error})
+}

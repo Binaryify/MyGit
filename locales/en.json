@@ -863,5 +863,15 @@
     }
   },
   "markViewed": "Mark as Viewed",
-  "markUnviewed": "Mark as Not Viewed"
+  "markUnviewed": "Mark as Not Viewed",
+  "imageBefore": "Before",
+  "imageAfter": "After",
+  "imageError": "Can't show the image: {error}",
+  "@imageError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -99,18 +99,19 @@ type detail struct {
 
 	files     []editor.FilePatch
 	fileSel   int
-	generated []bool          // of files, those people don't write
-	folded    bool            // the file shown is generated, its diff folded until asked
-	diff    *editor.DiffState
-	merge   *merger           // a file in conflict's
-	blame   *blame            // a file's, shown in place of the diff
-	message string            // the commit's whole message
-	parent  int               // the merge's parent its change is against
-	raw     string            // the change's patch as git printed it
-	whole   bool              // the change shows whole files, the new one to edit
-	patch   *editor.FilePatch // the change's, when its lines can be chosen
-	gen     int
-	loading bool
+	generated []bool  // of files, those people don't write
+	folded    bool    // the file shown is generated, its diff folded until asked
+	images    *images // the file shown is a picture: its sides, in place of a diff
+	diff      *editor.DiffState
+	merge     *merger           // a file in conflict's
+	blame     *blame            // a file's, shown in place of the diff
+	message   string            // the commit's whole message
+	parent    int               // the merge's parent its change is against
+	raw       string            // the change's patch as git printed it
+	whole     bool              // the change shows whole files, the new one to edit
+	patch     *editor.FilePatch // the change's, when its lines can be chosen
+	gen       int
+	loading   bool
 }
 
 func newApp(repo *git.Repo) *app {
@@ -431,9 +432,12 @@ func (a *app) showFile(i int) {
 	d := &a.detail
 	d.fileSel = i
 	d.folded = d.generated[i] && !a.unfolded[foldKey(d.commit.Hash, fileName(d.files[i]))]
-	d.diff = nil
-	if !d.folded {
-		d.diff = patchDiff(d.files[i])
+	d.diff, d.images = nil, nil
+	if f := d.files[i]; isImage(fileName(f)) {
+		d.folded = false
+		a.loadImages(a.commitSides(f.OldName, f.NewName))
+	} else if !d.folded {
+		d.diff = patchDiff(f)
 	}
 }
 
@@ -465,6 +469,14 @@ func (a *app) showChange(c git.Change, staged bool) {
 		return
 	}
 	same := a.detail.change != nil && a.detail.change.Path == c.Path && a.detail.staged == staged
+	if isImage(c.Path) { // the picture's sides, read again as it changes
+		if !same || a.detail.images == nil {
+			a.detail = detail{change: &c, staged: staged, gen: a.detail.gen + 1}
+		}
+		a.detail.change = &c
+		a.loadImages(changeSides(c, staged))
+		return
+	}
 	if !same {
 		a.detail = detail{change: &c, staged: staged, gen: a.detail.gen + 1, loading: true}
 	}

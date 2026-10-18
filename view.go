@@ -506,6 +506,8 @@ func (a *app) diffView(c *ui.Context) {
 	switch {
 	case d.loading:
 		ui.Column(c).Fill().Center().Children(func() { ui.Spinner(c).Size(18, 18) })
+	case d.images != nil:
+		a.imageView(c, d.images)
 	case d.folded:
 		var p *editor.FilePatch
 		if d.commit != nil && d.fileSel >= 0 && d.fileSel < len(d.files) {
