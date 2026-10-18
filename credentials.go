@@ -5,6 +5,8 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+
+	loc "mygit/locales"
 )
 
 // credPrompt is git's or ssh's question for a username, a password, a
@@ -53,20 +55,20 @@ func (p *credPrompt) view(c *ui.Context) {
 	}
 	if ui.Modal(c, &p.open, func() {
 		ui.Column(c).Gap(12).Width(420).Children(func() {
-			ui.Text(c, "git 需要验证").Bold().FontSize(15)
+			ui.Text(c, loc.CredTitle()).Bold().FontSize(15)
 			ui.Text(c, p.prompt).TextColor(t.TextMuted).Wrap()
 			in := ui.TextInput(c, &p.value).Label(p.prompt).AutoFocus()
 			if secret(p.prompt) {
 				in.Password()
-				ui.Text(c, "GitHub 等网站要填个人访问令牌（token），不是登录密码。验证成功后由 git 的凭据管理器记住。").
+				ui.Text(c, loc.CredTokenHint()).
 					FontSize(11).TextColor(t.TextMuted).Wrap()
 			}
 			submitted := in.Submitted()
 			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
-				if ui.Button(c, "取消").Clicked() {
+				if ui.Button(c, loc.Cancel()).Clicked() {
 					answer(false)
 				}
-				if ui.PrimaryButton(c, "确定").Clicked() || submitted {
+				if ui.PrimaryButton(c, loc.Ok()).Clicked() || submitted {
 					answer(true)
 				}
 			})

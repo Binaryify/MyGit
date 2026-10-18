@@ -7,12 +7,14 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
+
+	loc "mygit/locales"
 )
 
 // ignoreItems add an untracked file, or the files of its type or folder,
 // to the .gitignore at the top of the working tree.
 func (a *app) ignoreItems(m *ui.Menu, file string) {
-	m.Submenu("添加到 .gitignore", func(m *ui.Menu) {
+	m.Submenu(loc.AddToGitignore(), func(m *ui.Menu) {
 		if m.Item("/" + file).Chosen() {
 			a.addIgnore("/" + file)
 		}
@@ -28,7 +30,7 @@ func (a *app) ignoreItems(m *ui.Menu, file string) {
 // addIgnore appends a pattern to .gitignore, on a line of its own.
 func (a *app) addIgnore(pattern string) {
 	if err := appendIgnore(a.repo.Dir, pattern); err != nil {
-		a.errMsg = "写入 .gitignore 失败：" + err.Error()
+		a.errMsg = loc.ErrGitignore(err.Error())
 		return
 	}
 	a.refresh()

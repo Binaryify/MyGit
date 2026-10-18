@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	loc "mygit/locales"
 )
 
 // RebaseAction is what an interactive rebase does with a commit.
@@ -31,7 +33,11 @@ type RebaseStep struct {
 
 // ErrMerges says the commits to rebase have merges, which an interactive
 // rebase would flatten.
-var ErrMerges = errors.New("这段历史里有合并提交，交互式变基会把它们拉平，请从合并之后的提交开始")
+var ErrMerges error = mergesError{}
+
+type mergesError struct{}
+
+func (mergesError) Error() string { return loc.GitMerges() }
 
 // RebaseSteps lists the commits from the one after base to HEAD, oldest
 // first, all picked; base "" starts from the root.
@@ -65,10 +71,10 @@ func CheckSteps(steps []RebaseStep) error {
 		case Drop:
 			continue
 		case Squash, Fixup:
-			return errors.New("第一个保留的提交不能合并到前一个提交")
+			return errors.New(loc.GitSquashFirst())
 		case Reword:
 			if strings.TrimSpace(s.Message) == "" {
-				return errors.New("改写说明的提交需要新的说明")
+				return errors.New(loc.GitRewordEmpty())
 			}
 		}
 		return nil

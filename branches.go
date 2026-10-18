@@ -8,6 +8,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"mygit/internal/git"
+	loc "mygit/locales"
 )
 
 // prompt asks for a name, of a branch or a tag, in a dialog.
@@ -38,7 +39,7 @@ func (a *app) promptView(c *ui.Context) {
 				ui.Checkbox(c, &p.checked, p.check)
 			}
 			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
-				if ui.Button(c, "取消").Clicked() {
+				if ui.Button(c, loc.Cancel()).Clicked() {
 					p.open = false
 				}
 				ok := strings.TrimSpace(p.value) != ""
@@ -54,55 +55,55 @@ func (a *app) promptView(c *ui.Context) {
 // branchItems are what a local branch's menu does with it.
 func (a *app) branchItems(m *ui.Menu, b string) {
 	cur := a.status.Branch
-	if b != cur && m.Item("切换到此分支").Chosen() {
+	if b != cur && m.Item(loc.BranchSwitch()).Chosen() {
 		a.switchTo(b)
 	}
 	if b != cur {
 		a.mergeItems(m, b)
 	}
-	if m.Item("从此分支新建分支…").Chosen() {
+	if m.Item(loc.BranchNewFrom()).Chosen() {
 		a.newBranch(b)
 	}
-	if m.Item("显示此分支的历史").Chosen() {
+	if m.Item(loc.BranchHistory()).Chosen() {
 		a.setScope(git.Scope{Ref: b})
 	}
 	m.Separator()
-	if m.Item("重命名…").Chosen() {
-		a.ask1("重命名分支 "+b, "重命名", b, func(to string) {
-			a.run("重命名分支", func(ctx context.Context) error { return a.repo.RenameBranch(ctx, b, to) }, nil)
+	if m.Item(loc.RenameMenu()).Chosen() {
+		a.ask1(loc.BranchRenameTitle(b), loc.Rename(), b, func(to string) {
+			a.run(loc.OpRenameBranch(), func(ctx context.Context) error { return a.repo.RenameBranch(ctx, b, to) }, nil)
 		})
 	}
-	if b != cur && m.Item("删除").Chosen() {
+	if b != cur && m.Item(loc.Delete()).Chosen() {
 		a.deleteBranch(b)
 	}
 }
 
 // remoteItems are what a remote branch's menu does with it.
 func (a *app) remoteItems(m *ui.Menu, rb string) {
-	if m.Item("检出为本地分支").Chosen() {
-		a.run("检出 "+rb, func(ctx context.Context) error { return a.repo.CheckoutRemote(ctx, rb) }, nil)
+	if m.Item(loc.BranchCheckoutLocal()).Chosen() {
+		a.run(loc.OpCheckout(rb), func(ctx context.Context) error { return a.repo.CheckoutRemote(ctx, rb) }, nil)
 	}
 	a.mergeItems(m, rb)
-	if m.Item("从此分支新建分支…").Chosen() {
+	if m.Item(loc.BranchNewFrom()).Chosen() {
 		a.newBranch(rb)
 	}
 	m.Separator()
-	if m.Item("删除远程分支…").Chosen() {
-		a.ask("删除远程分支 "+rb+"？", "会从远程仓库删除这个分支。", "删除", func() {
-			a.run("删除远程分支", func(ctx context.Context) error { return a.repo.DeleteRemoteBranch(ctx, rb) }, nil)
+	if m.Item(loc.BranchDeleteRemote()).Chosen() {
+		a.ask(loc.BranchDeleteRemoteTitle(rb), loc.BranchDeleteRemoteMessage(), loc.Delete(), func() {
+			a.run(loc.OpDeleteRemoteBranch(), func(ctx context.Context) error { return a.repo.DeleteRemoteBranch(ctx, rb) }, nil)
 		})
 	}
 }
 
 func (a *app) switchTo(b string) {
-	a.run("切换到 "+b, func(ctx context.Context) error { return a.repo.Switch(ctx, b) }, nil)
+	a.run(loc.OpSwitchTo(b), func(ctx context.Context) error { return a.repo.Switch(ctx, b) }, nil)
 }
 
 // branchesButton opens the branches' popover, as IntelliJ's: a search,
 // a new branch, and the local and remote branches the search matches,
 // each with its menu. Enter switches to the first local one.
 func (a *app) branchesButton(c *ui.Context, label string) {
-	b := ui.Button(c, label).Label("分支")
+	b := ui.Button(c, label).Label(loc.Branches())
 	if b.Clicked() {
 		a.branchesOpen, a.branchFilter = !a.branchesOpen, ""
 	}
@@ -122,12 +123,12 @@ func (a *app) branchesButton(c *ui.Context, label string) {
 			}
 		}
 		ui.Column(c).Width(320).Gap(4).Children(func() {
-			in := ui.TextInput(c, &a.branchFilter).Placeholder("搜索分支").Label("搜索分支").AutoFocus()
+			in := ui.TextInput(c, &a.branchFilter).Placeholder(loc.BranchSearch()).Label(loc.BranchSearch()).AutoFocus()
 			if in.Submitted() && len(local) > 0 && local[0] != a.status.Branch {
 				a.branchesOpen = false
 				a.switchTo(local[0])
 			}
-			if branchRow(c, "＋ 新建分支…", false) {
+			if branchRow(c, loc.BranchNew(), false) {
 				a.branchesOpen = false
 				a.newBranch("")
 			}
@@ -143,10 +144,10 @@ func (a *app) branchesButton(c *ui.Context, label string) {
 						})
 					}
 				}
-				section("本地分支", local, a.branchItems)
-				section("远程分支", remote, a.remoteItems)
+				section(loc.BranchesLocal(), local, a.branchItems)
+				section(loc.BranchesRemote(), remote, a.remoteItems)
 				if len(local)+len(remote) == 0 {
-					ui.Text(c, "没有匹配的分支").TextColor(t.TextMuted).Padding(8)
+					ui.Text(c, loc.BranchesNone()).TextColor(t.TextMuted).Padding(8)
 				}
 			})
 		})
@@ -173,7 +174,7 @@ func branchRowElement(c *ui.Context, name string, current bool) ui.Element {
 		ui.Text(c, mark).Width(12).TextColor(t.Accent)
 		ui.Text(c, name).SingleLine().Grow(1).Basis(0)
 		if current {
-			ui.Text(c, "当前").FontSize(11).TextColor(t.TextMuted)
+			ui.Text(c, loc.BranchCurrent()).FontSize(11).TextColor(t.TextMuted)
 		}
 	})
 	return row
@@ -191,26 +192,26 @@ func (a *app) mergeItems(m *ui.Menu, rev string) {
 	if cur == "" {
 		cur = "HEAD"
 	}
-	if m.Item("与 " + cur + " 比较").Chosen() {
-		a.showCompare("比较 "+cur+" → "+shortRev(rev), "HEAD", rev)
+	if m.Item(loc.CompareWith(cur)).Chosen() {
+		a.showCompare(loc.CompareTitle(cur, shortRev(rev)), "HEAD", rev)
 	}
-	if m.Item("合并到 " + cur).Chosen() {
-		a.run("合并 "+rev, func(ctx context.Context) error { return a.repo.Merge(ctx, rev) }, nil)
+	if m.Item(loc.MergeInto(cur)).Chosen() {
+		a.run(loc.OpMerge(shortRev(rev)), func(ctx context.Context) error { return a.repo.Merge(ctx, rev) }, nil)
 	}
-	if m.Item("将 " + cur + " 变基到此").Chosen() {
-		a.run("变基到 "+rev, func(ctx context.Context) error { return a.repo.Rebase(ctx, rev) }, nil)
+	if m.Item(loc.RebaseOnto(cur)).Chosen() {
+		a.run(loc.OpRebaseOnto(shortRev(rev)), func(ctx context.Context) error { return a.repo.Rebase(ctx, rev) }, nil)
 	}
 }
 
 // newBranch asks for a branch's name, made at start (HEAD when empty) and
 // checked out.
 func (a *app) newBranch(start string) {
-	title := "新建分支"
+	title := loc.NewBranch()
 	if start != "" {
-		title += "（基于 " + shortRev(start) + "）"
+		title = loc.NewBranchFrom(shortRev(start))
 	}
-	a.ask1(title, "创建并切换", "", func(name string) {
-		a.run("新建分支 "+name, func(ctx context.Context) error {
+	a.ask1(title, loc.CreateAndSwitch(), "", func(name string) {
+		a.run(loc.OpNewBranch(name), func(ctx context.Context) error {
 			return a.repo.CreateBranch(ctx, name, start, true)
 		}, nil)
 	})
@@ -219,12 +220,12 @@ func (a *app) newBranch(start string) {
 // deleteBranch deletes a merged branch at once, and asks before deleting
 // one whose commits would be lost.
 func (a *app) deleteBranch(b string) {
-	a.run("删除分支 "+b, func(ctx context.Context) error {
+	a.run(loc.OpDeleteBranch(b), func(ctx context.Context) error {
 		err := a.repo.DeleteBranch(ctx, b, false)
 		if git.NotMerged(err) {
 			a.update(func() {
-				a.ask("分支 "+b+" 还没有合并", "删除后，只在这个分支上的提交会丢失。", "仍然删除", func() {
-					a.run("删除分支 "+b, func(ctx context.Context) error { return a.repo.DeleteBranch(ctx, b, true) }, nil)
+				a.ask(loc.BranchNotMergedTitle(b), loc.BranchNotMergedMessage(), loc.DeleteAnyway(), func() {
+					a.run(loc.OpDeleteBranch(b), func(ctx context.Context) error { return a.repo.DeleteBranch(ctx, b, true) }, nil)
 				})
 			})
 			return nil
@@ -235,58 +236,58 @@ func (a *app) deleteBranch(b string) {
 
 // commitMenu is a commit's context menu in the history.
 func (a *app) commitMenu(m *ui.Menu, cm git.Commit) {
-	if m.Item("复制哈希").Chosen() {
+	if m.Item(loc.CopyHash()).Chosen() {
 		mygo.Clipboard.WriteText(cm.Hash)
 	}
-	if m.Item("复制说明").Chosen() {
+	if m.Item(loc.CopyMessage()).Chosen() {
 		mygo.Clipboard.WriteText(cm.Subject)
 	}
 	m.Separator()
-	if m.Item("从此提交新建分支…").Chosen() {
+	if m.Item(loc.CommitNewBranch()).Chosen() {
 		a.newBranch(cm.Hash)
 	}
-	if m.Item("新建标签…").Chosen() {
-		a.prompt = prompt{open: true, title: "新建标签（" + cm.Short() + "）", button: "创建", message: "说明（可选，填写则为附注标签）",
+	if m.Item(loc.CommitNewTag()).Chosen() {
+		a.prompt = prompt{open: true, title: loc.NewTagTitle(cm.Short()), button: loc.Create(), message: loc.TagMessage(),
 			ok: func(name, msg string) {
-				a.run("新建标签 "+name, func(ctx context.Context) error { return a.repo.Tag(ctx, name, cm.Hash, msg) }, nil)
+				a.run(loc.OpNewTag(name), func(ctx context.Context) error { return a.repo.Tag(ctx, name, cm.Hash, msg) }, nil)
 			}}
 	}
-	if m.Item("与工作区比较").Chosen() {
-		a.showCompare("比较 "+cm.Short()+" → 工作区", cm.Hash, "")
+	if m.Item(loc.CompareWorktree()).Chosen() {
+		a.showCompare(loc.CompareTitle(cm.Short(), loc.Worktree()), cm.Hash, "")
 	}
-	if m.Item("检出此提交").Chosen() {
-		a.run("检出 "+cm.Short(), func(ctx context.Context) error { return a.repo.CheckoutDetached(ctx, cm.Hash) }, nil)
+	if m.Item(loc.CheckoutCommit()).Chosen() {
+		a.run(loc.OpCheckout(cm.Short()), func(ctx context.Context) error { return a.repo.CheckoutDetached(ctx, cm.Hash) }, nil)
 	}
 	m.Separator()
-	if m.Item("Cherry-pick").Chosen() {
-		a.run("Cherry-pick "+cm.Short(), func(ctx context.Context) error { return a.repo.CherryPick(ctx, cm) }, nil)
+	if m.Item(loc.CherryPick()).Chosen() {
+		a.run(loc.CherryPick()+" "+cm.Short(), func(ctx context.Context) error { return a.repo.CherryPick(ctx, cm) }, nil)
 	}
-	if m.Item("撤销提交（revert）").Chosen() {
-		a.run("撤销 "+cm.Short(), func(ctx context.Context) error { return a.repo.Revert(ctx, cm) }, nil)
+	if m.Item(loc.RevertCommit()).Chosen() {
+		a.run(loc.OpRevert(cm.Short()), func(ctx context.Context) error { return a.repo.Revert(ctx, cm) }, nil)
 	}
 	a.mergeItems(m, cm.Hash)
-	if m.Item("从此处交互式变基…").Chosen() {
+	if m.Item(loc.RebaseFromHere()).Chosen() {
 		a.planRebase(cm)
 	}
 	if a.status.Branch != "" {
-		m.Submenu("将 "+a.status.Branch+" 重置到此", func(m *ui.Menu) {
+		m.Submenu(loc.ResetTo(a.status.Branch), func(m *ui.Menu) {
 			reset := func(mode git.ResetMode) {
-				a.run("重置", func(ctx context.Context) error { return a.repo.Reset(ctx, cm.Hash, mode) }, nil)
+				a.run(loc.OpReset(), func(ctx context.Context) error { return a.repo.Reset(ctx, cm.Hash, mode) }, nil)
 			}
-			if m.Item("Soft：保留更改，并暂存").Chosen() {
+			if m.Item(loc.ResetSoft()).Chosen() {
 				reset(git.ResetSoft)
 			}
-			if m.Item("Mixed：保留更改，不暂存").Chosen() {
+			if m.Item(loc.ResetMixed()).Chosen() {
 				reset(git.ResetMixed)
 			}
-			if m.Item("Hard：丢弃所有更改…").Chosen() {
-				a.ask("硬重置到 "+cm.Short()+"？", "工作区和暂存区的所有更改都会丢失，无法撤销。", "硬重置", func() { reset(git.ResetHard) })
+			if m.Item(loc.ResetHard()).Chosen() {
+				a.ask(loc.ResetHardTitle(cm.Short()), loc.ResetHardMessage(), loc.ResetHardButton(), func() { reset(git.ResetHard) })
 			}
 		})
 	}
 	for _, ref := range cm.Refs {
-		if tag, ok := strings.CutPrefix(ref, "tag: "); ok && m.Item("删除标签 "+tag).Chosen() {
-			a.run("删除标签 "+tag, func(ctx context.Context) error { return a.repo.DeleteTag(ctx, tag) }, nil)
+		if tag, ok := strings.CutPrefix(ref, "tag: "); ok && m.Item(loc.DeleteTag(tag)).Chosen() {
+			a.run(loc.OpDeleteTag(tag), func(ctx context.Context) error { return a.repo.DeleteTag(ctx, tag) }, nil)
 		}
 	}
 }

@@ -40,3 +40,15 @@ func titleBar(c *ui.Context) ui.Element {
 	return ui.Row(c).Height(max(bar.Height, titleBarHeight)).Padding(0, bar.Right+8, 0, left).
 		Gap(8).AlignItems(ui.Center).DragWindow()
 }
+
+// shortcut writes a key with the command modifier the way the platform
+// does: ⌘F on macOS, Ctrl+F elsewhere.
+func shortcut(key string) string {
+	if runtime.GOOS == "darwin" {
+		return "⌘" + key
+	}
+	if key == "↩" {
+		key = "Enter"
+	}
+	return "Ctrl+" + key
+}

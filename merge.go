@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
 	"mygit/internal/conflict"
 	"mygit/internal/git"
+	loc "mygit/locales"
 )
 
 // merger resolves a file in conflict, as IntelliJ's merge window: our
@@ -95,43 +95,43 @@ func (m *merger) take(ch conflict.Choice) {
 func (a *app) mergeView(c *ui.Context, m *merger) {
 	t := c.Theme()
 	m.sync()
-	left, right := "我们的（HEAD）", "他们的"
+	left, right := loc.MergeOurs(), loc.MergeTheirs()
 	if a.op == git.Rebasing { // rebasing, HEAD is the branch rebased onto
-		left, right = "上游（ours）", "你的提交（theirs）"
+		left, right = loc.MergeUpstream(), loc.MergeYours()
 	}
 	ui.Column(c).Fill().Children(func() {
 		ui.Row(c).Padding(6, 12).Gap(6).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 			ui.Text(c, m.path).Bold().SingleLine()
 			if n := len(m.blocks); n > 0 {
-				ui.Text(c, fmt.Sprintf("冲突 %d / %d", m.cur+1, n)).TextColor(t.TextMuted)
-				if ui.Button(c, "◀").Label("上一个冲突").Disabled(m.cur == 0).Clicked() {
+				ui.Text(c, loc.ConflictOf(m.cur+1, n)).TextColor(t.TextMuted)
+				if ui.Button(c, "◀").Label(loc.PrevConflict()).Disabled(m.cur == 0).Clicked() {
 					m.goTo(m.cur - 1)
 				}
-				if ui.Button(c, "▶").Label("下一个冲突").Disabled(m.cur >= n-1).Clicked() {
+				if ui.Button(c, "▶").Label(loc.NextConflict()).Disabled(m.cur >= n-1).Clicked() {
 					m.goTo(m.cur + 1)
 				}
-				if ui.Button(c, "采用左侧").Clicked() {
+				if ui.Button(c, loc.TakeLeft()).Clicked() {
 					m.take(conflict.Ours)
 				}
-				if ui.Button(c, "采用右侧").Clicked() {
+				if ui.Button(c, loc.TakeRight()).Clicked() {
 					m.take(conflict.Theirs)
 				}
-				if ui.Button(c, "两者都要").Clicked() {
+				if ui.Button(c, loc.TakeBoth()).Clicked() {
 					m.take(conflict.Both)
 				}
 			} else {
-				ui.Text(c, "没有剩余冲突").TextColor(t.TextMuted)
+				ui.Text(c, loc.NoConflictsLeft()).TextColor(t.TextMuted)
 			}
 			ui.Box(c).Grow(1)
-			ui.Button(c, "整个文件 ▾").Label("整个文件").Menu(func(menu *ui.Menu) {
-				if menu.Item("全部采用左侧（" + left + "）").Chosen() {
+			ui.Button(c, loc.WholeFile()+" ▾").Label(loc.WholeFile()).Menu(func(menu *ui.Menu) {
+				if menu.Item(loc.TakeAllLeft(left)).Chosen() {
 					a.takeSide(m.path, git.OursStage)
 				}
-				if menu.Item("全部采用右侧（" + right + "）").Chosen() {
+				if menu.Item(loc.TakeAllRight(right)).Chosen() {
 					a.takeSide(m.path, git.TheirsStage)
 				}
 			})
-			if ui.PrimaryButton(c, "保存并标记为已解决").Disabled(a.busy != "").Clicked() {
+			if ui.PrimaryButton(c, loc.SaveResolved()).Disabled(a.busy != "").Clicked() {
 				a.saveResolution(m)
 			}
 		})
@@ -142,13 +142,13 @@ func (a *app) mergeView(c *ui.Context, m *merger) {
 			})
 		}
 		ui.SplitPercent(c.Key("merge1"), &m.split1, func() { pane(left, m.ours) }, func() {
-			ui.SplitPercent(c.Key("merge2"), &m.split2, func() { pane("结果", m.result) }, func() { pane(right, m.theirs) }).Fill()
+			ui.SplitPercent(c.Key("merge2"), &m.split2, func() { pane(loc.MergeResult(), m.result) }, func() { pane(right, m.theirs) }).Fill()
 		}).Grow(1)
 	})
 }
 
 func (a *app) takeSide(path string, s git.Stage) {
-	a.run("解决冲突", func(ctx context.Context) error { return a.repo.TakeSide(ctx, path, s) }, func() { a.detail = detail{} })
+	a.run(loc.OpResolve(), func(ctx context.Context) error { return a.repo.TakeSide(ctx, path, s) }, func() { a.detail = detail{} })
 }
 
 // saveResolution writes the result and marks the file resolved, asking
@@ -156,10 +156,10 @@ func (a *app) takeSide(path string, s git.Stage) {
 func (a *app) saveResolution(m *merger) {
 	save := func() {
 		text := m.result.Buffer.String()
-		a.run("解决冲突", func(ctx context.Context) error { return a.repo.Resolve(ctx, m.path, text) }, func() { a.detail = detail{} })
+		a.run(loc.OpResolve(), func(ctx context.Context) error { return a.repo.Resolve(ctx, m.path, text) }, func() { a.detail = detail{} })
 	}
 	if n := len(m.blocks); n > 0 {
-		a.ask("还有冲突没解决", fmt.Sprintf("结果里还有 %d 处冲突标记，仍然保存并标记为已解决？", n), "仍然保存", save)
+		a.ask(loc.ConflictsLeftTitle(), loc.ConflictsLeftMessage(n), loc.SaveAnyway(), save)
 		return
 	}
 	save()

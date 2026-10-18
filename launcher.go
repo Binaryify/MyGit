@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo"
+
+	loc "mygit/locales"
 )
 
 // installLauncher writes a mygit command to a folder on the PATH, so that
@@ -19,16 +21,16 @@ func installLauncher() {
 		exe, err = filepath.EvalSymlinks(exe)
 	}
 	if err != nil {
-		launcherMessage("找不到 MyGit 的可执行文件", err.Error())
+		launcherMessage(loc.LauncherNoExe(), err.Error())
 		return
 	}
 	if runtime.GOOS == "windows" {
-		launcherMessage("命令行工具", "把这个文件夹加入 PATH 后，就能在终端里用 mygit 打开仓库：\n"+filepath.Dir(exe))
+		launcherMessage(loc.LauncherTitle(), loc.LauncherWindows(filepath.Dir(exe)))
 		return
 	}
 	dir, err := launcherDir()
 	if err != nil {
-		launcherMessage("没有可写的 PATH 目录", "把这个可执行文件链接到 PATH 里的目录即可：\n"+exe)
+		launcherMessage(loc.LauncherNoDir(), loc.LauncherLink(exe))
 		return
 	}
 	path := filepath.Join(dir, "mygit")
@@ -36,10 +38,10 @@ func installLauncher() {
 	// another working folder.
 	script := fmt.Sprintf("#!/bin/sh\ndir=$(cd \"${1:-.}\" && pwd) || exit 1\n%s \"$dir\" >/dev/null 2>&1 &\n", shellWord(exe))
 	if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
-		launcherMessage("安装失败", err.Error())
+		launcherMessage(loc.LauncherFailed(), err.Error())
 		return
 	}
-	launcherMessage("已安装命令行工具", "现在可以在终端里运行：\n  mygit .\n\n命令写在 "+path)
+	launcherMessage(loc.LauncherDone(), loc.LauncherDoneMessage(path))
 }
 
 // launcherDir is the first folder of the PATH the user can write to,

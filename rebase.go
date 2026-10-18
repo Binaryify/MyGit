@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"slices"
 
 	"github.com/egoist/mygo/ui"
 
 	"mygit/internal/git"
+	loc "mygit/locales"
 )
 
 // rebasePlan is an interactive rebase being planned: the commits from one
@@ -20,7 +22,10 @@ type rebasePlan struct {
 
 var rebaseActions = []git.RebaseAction{git.Pick, git.Reword, git.Edit, git.Squash, git.Fixup, git.Drop}
 
-var rebaseLabels = []string{"保留 pick", "改写说明 reword", "停下修改 edit", "合并到上一个 squash", "合并并丢弃说明 fixup", "丢弃 drop"}
+// rebaseLabels name the actions, in the language shown.
+func rebaseLabels() []string {
+	return []string{loc.RebasePick(), loc.RebaseReword(), loc.RebaseEdit(), loc.RebaseSquash(), loc.RebaseFixup(), loc.RebaseDrop()}
+}
 
 // planRebase lists HEAD's commits from cm on, if cm is in HEAD's history.
 func (a *app) planRebase(cm git.Commit) {
@@ -30,7 +35,7 @@ func (a *app) planRebase(cm git.Commit) {
 	}
 	work(a, func(ctx context.Context) ([]git.RebaseStep, error) {
 		if !a.repo.IsAncestor(ctx, cm.Hash) {
-			return nil, errNotInHead
+			return nil, errors.New(loc.ErrNotInHead())
 		}
 		return a.repo.RebaseSteps(ctx, base)
 	}, func(steps []git.RebaseStep, err error) {
@@ -42,12 +47,6 @@ func (a *app) planRebase(cm git.Commit) {
 		a.rebase.list.Reorder = func(rows []int, to int) { a.rebase.steps = move(a.rebase.steps, rows, to) }
 	})
 }
-
-type textError string
-
-func (e textError) Error() string { return string(e) }
-
-const errNotInHead = textError("只能从当前分支的历史里开始交互式变基")
 
 // move moves the items at rows before the item at to, as a list's
 // reordering asks.
@@ -76,8 +75,8 @@ func (a *app) rebaseView(c *ui.Context) {
 	t := c.Theme()
 	ui.Modal(c, &p.open, func() {
 		ui.Column(c).Gap(10).Width(760).Height(520).Children(func() {
-			ui.Text(c, "交互式变基").Bold().FontSize(15)
-			ui.Text(c, "从旧到新排列，拖动可以重排。").TextColor(t.TextMuted)
+			ui.Text(c, loc.RebaseTitle()).Bold().FontSize(15)
+			ui.Text(c, loc.RebaseHint()).TextColor(t.TextMuted)
 			ui.List(c.Key("steps"), &p.list, len(p.steps), func(i int) {
 				s := &p.steps[i]
 				ui.Column(c).Padding(6, 4).Gap(6).Children(func() {
@@ -87,16 +86,17 @@ func (a *app) rebaseView(c *ui.Context) {
 						if s.Action == git.Drop {
 							subject.TextColor(t.TextMuted)
 						}
-						label := rebaseLabels[slices.Index(rebaseActions, s.Action)]
-						if ui.Select(c.Key(s.Hash), &label, rebaseLabels).Label("操作").Width(200).Changed() {
-							s.Action = rebaseActions[slices.Index(rebaseLabels, label)]
+						labels := rebaseLabels()
+						label := labels[slices.Index(rebaseActions, s.Action)]
+						if ui.Select(c.Key(s.Hash), &label, labels).Label(loc.RebaseAction()).Width(200).Changed() {
+							s.Action = rebaseActions[slices.Index(labels, label)]
 							if s.Action == git.Reword && s.Message == "" {
 								s.Message = s.Subject
 							}
 						}
 					})
 					if s.Action == git.Reword {
-						ui.TextArea(c.Key("msg"+s.Hash), &s.Message).Label("新的说明").Lines(1, 4)
+						ui.TextArea(c.Key("msg"+s.Hash), &s.Message).Label(loc.RebaseNewMessage()).Lines(1, 4)
 					}
 				})
 			}).Grow(1).Basis(0)
@@ -107,13 +107,13 @@ func (a *app) rebaseView(c *ui.Context) {
 				} else {
 					ui.Box(c).Grow(1)
 				}
-				if ui.Button(c, "取消").Clicked() {
+				if ui.Button(c, loc.Cancel()).Clicked() {
 					p.open = false
 				}
-				if ui.PrimaryButton(c, "开始变基").Disabled(err != nil || a.busy != "").Clicked() {
+				if ui.PrimaryButton(c, loc.RebaseStart()).Disabled(err != nil || a.busy != "").Clicked() {
 					p.open = false
 					base, steps := p.base, slices.Clone(p.steps)
-					a.run("交互式变基", func(ctx context.Context) error { return a.repo.RebaseInteractive(ctx, base, steps) }, nil)
+					a.run(loc.OpRebaseInteractive(), func(ctx context.Context) error { return a.repo.RebaseInteractive(ctx, base, steps) }, nil)
 				}
 			})
 		})

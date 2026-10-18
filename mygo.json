@@ -17,5 +17,9 @@
         }
       ]
     }
+  },
+  "i18n": {
+    "dir": "locales",
+    "source": "en"
   }
 }

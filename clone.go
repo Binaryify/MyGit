@@ -10,6 +10,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"mygit/internal/git"
+	loc "mygit/locales"
 )
 
 // clonePlan is the clone dialog: a URL, the folder to clone into, and the
@@ -43,17 +44,17 @@ func (w *welcome) cloneView(c *ui.Context) {
 	t := c.Theme()
 	if ui.Modal(c, &p.open, func() {
 		ui.Column(c).Gap(10).Width(460).Children(func() {
-			ui.Text(c, "克隆仓库").Bold().FontSize(15)
-			if ui.TextInput(c, &p.url).Placeholder("https://github.com/user/repo.git 或 git@…").Label("仓库地址").AutoFocus().Changed() && !p.named {
+			ui.Text(c, loc.CloneTitle()).Bold().FontSize(15)
+			if ui.TextInput(c, &p.url).Placeholder(loc.CloneURLPlaceholder()).Label(loc.CloneURL()).AutoFocus().Changed() && !p.named {
 				p.name = git.RepoName(strings.TrimSpace(p.url))
 			}
 			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 				ui.Text(c, homeRelative(p.parent)).TextColor(t.TextMuted).SingleLine().Grow(1).Basis(0).Tooltip(p.parent)
-				if ui.Button(c, "更改…").Disabled(p.running).Clicked() {
+				if ui.Button(c, loc.Change()).Disabled(p.running).Clicked() {
 					go w.pickParent()
 				}
 			})
-			if ui.TextInput(c, &p.name).Label("文件夹名").Placeholder("文件夹名").Changed() {
+			if ui.TextInput(c, &p.name).Label(loc.FolderName()).Placeholder(loc.FolderName()).Changed() {
 				p.named = true
 			}
 			switch {
@@ -66,11 +67,11 @@ func (w *welcome) cloneView(c *ui.Context) {
 				ui.Text(c, p.fail).TextColor(t.Danger).Wrap()
 			}
 			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
-				if ui.Button(c, "取消").Clicked() {
+				if ui.Button(c, loc.Cancel()).Clicked() {
 					w.stopClone()
 				}
 				ok := strings.TrimSpace(p.url) != "" && strings.TrimSpace(p.name) != "" && !p.running
-				if ui.PrimaryButton(c, "克隆").Disabled(!ok).Clicked() {
+				if ui.PrimaryButton(c, loc.Clone()).Disabled(!ok).Clicked() {
 					w.startClone()
 				}
 			})
@@ -88,7 +89,7 @@ func (w *welcome) stopClone() {
 }
 
 func (w *welcome) pickParent() {
-	paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: w.win, Title: "克隆到", Directory: true, CreateDirectories: true})
+	paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: w.win, Title: loc.CloneInto(), Directory: true, CreateDirectories: true})
 	if err == nil && len(paths) > 0 {
 		w.win.Update(func() { w.clone.parent = paths[0] })
 	}
@@ -100,7 +101,7 @@ func (w *welcome) startClone() {
 	p := &w.clone
 	url, parent, name := strings.TrimSpace(p.url), p.parent, strings.TrimSpace(p.name)
 	ctx, cancel := context.WithCancel(context.Background())
-	p.running, p.fail, p.progress, p.cancel = true, "", "正在连接…", cancel
+	p.running, p.fail, p.progress, p.cancel = true, "", loc.Connecting(), cancel
 	go func() {
 		err := git.Clone(ctx, parent, url, name, func(line string) {
 			w.win.Update(func() { w.clone.progress = line })
@@ -123,7 +124,7 @@ func (w *welcome) startClone() {
 // initRepo asks for a folder, makes a repository in it and opens it. The
 // dialog waits: call it on a goroutine.
 func (w *welcome) initRepo() {
-	paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: w.win, Title: "在文件夹里新建仓库", Directory: true, CreateDirectories: true})
+	paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: w.win, Title: loc.InitDialog(), Directory: true, CreateDirectories: true})
 	if err != nil || len(paths) == 0 {
 		return
 	}

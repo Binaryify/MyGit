@@ -7,6 +7,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"mygit/internal/git"
+	loc "mygit/locales"
 )
 
 // remotesPlan is the dialog listing the remotes, to add, edit or remove.
@@ -32,9 +33,9 @@ func (a *app) loadRemotes() {
 // editRemote asks for a remote's name and URL, a new one's when r is
 // empty.
 func (a *app) editRemote(r git.Remote) {
-	title, button := "添加远程仓库", "添加"
+	title, button, op := loc.RemoteAddTitle(), loc.Add(), loc.OpAddRemote()
 	if r.Name != "" {
-		title, button = "编辑远程仓库 "+r.Name, "保存"
+		title, button, op = loc.RemoteEditTitle(r.Name), loc.Save(), loc.OpSaveRemote()
 	} else {
 		r.Name = "origin"
 		if len(a.remotes2.list) > 0 {
@@ -42,9 +43,9 @@ func (a *app) editRemote(r git.Remote) {
 		}
 	}
 	old := r
-	a.prompt = prompt{open: true, title: title, button: button, value: r.Name, message: "地址", msgVal: r.URL,
+	a.prompt = prompt{open: true, title: title, button: button, value: r.Name, message: loc.RemoteURL(), msgVal: r.URL,
 		ok: func(name, url string) {
-			a.run(button+"远程仓库", func(ctx context.Context) error {
+			a.run(op, func(ctx context.Context) error {
 				if old.URL == "" {
 					return a.repo.AddRemote(ctx, name, url)
 				}
@@ -69,9 +70,9 @@ func (a *app) remotesView(c *ui.Context) {
 	t := c.Theme()
 	ui.Modal(c, &p.open, func() {
 		ui.Column(c).Gap(10).Width(560).Children(func() {
-			ui.Text(c, "远程仓库").Bold().FontSize(15)
+			ui.Text(c, loc.Remotes()).Bold().FontSize(15)
 			if len(p.list) == 0 {
-				ui.Text(c, "还没有远程仓库").TextColor(t.TextMuted)
+				ui.Text(c, loc.RemotesNone()).TextColor(t.TextMuted)
 			}
 			for _, r := range p.list {
 				ui.Row(c.Key(r.Name)).Gap(8).AlignItems(ui.Center).Padding(4, 0).Children(func() {
@@ -79,25 +80,25 @@ func (a *app) remotesView(c *ui.Context) {
 						ui.Text(c, r.Name).Bold()
 						ui.Text(c, r.URL).FontSize(11).TextColor(t.TextMuted).SingleLine().Tooltip(r.URL)
 					})
-					if ui.Button(c, "获取").Disabled(a.busy != "").Clicked() {
-						a.run("获取 "+r.Name, func(ctx context.Context) error { return a.repo.FetchRemote(ctx, r.Name) }, nil)
+					if ui.Button(c, loc.Fetch()).Disabled(a.busy != "").Clicked() {
+						a.run(loc.OpFetchRemote(r.Name), func(ctx context.Context) error { return a.repo.FetchRemote(ctx, r.Name) }, nil)
 					}
-					if ui.Button(c, "编辑…").Clicked() {
+					if ui.Button(c, loc.Edit()).Clicked() {
 						a.editRemote(r)
 					}
-					if ui.Button(c, "删除…").Clicked() {
-						a.ask("删除远程仓库 "+r.Name+"？", "只删除本地对它的记录和远程分支的引用，不会动远程仓库本身。", "删除", func() {
-							a.run("删除远程仓库", func(ctx context.Context) error { return a.repo.RemoveRemote(ctx, r.Name) }, a.loadRemotes)
+					if ui.Button(c, loc.DeleteMenu()).Clicked() {
+						a.ask(loc.RemoteDeleteTitle(r.Name), loc.RemoteDeleteMessage(), loc.Delete(), func() {
+							a.run(loc.OpDeleteRemote(), func(ctx context.Context) error { return a.repo.RemoveRemote(ctx, r.Name) }, a.loadRemotes)
 						})
 					}
 				})
 			}
 			ui.Row(c).Gap(8).Children(func() {
-				if ui.Button(c, "添加远程仓库…").Clicked() {
+				if ui.Button(c, loc.RemoteAddMenu()).Clicked() {
 					a.editRemote(git.Remote{})
 				}
 				ui.Box(c).Grow(1)
-				if ui.PrimaryButton(c, "完成").Clicked() {
+				if ui.PrimaryButton(c, loc.Done()).Clicked() {
 					p.open = false
 				}
 			})
@@ -107,21 +108,21 @@ func (a *app) remotesView(c *ui.Context) {
 
 // repoMenu is the toolbar's menu of the repository's own things.
 func (a *app) repoMenu(m *ui.Menu) {
-	if m.Item("远程仓库…").Chosen() {
+	if m.Item(loc.RemotesMenu()).Chosen() {
 		a.openRemotes()
 	}
-	if m.Item("在文件夹中显示").Chosen() {
+	if m.Item(loc.ShowInFolder()).Chosen() {
 		mygo.Shell.ShowItemInFolder(a.repo.Dir)
 	}
-	if m.Item("在编辑器中打开仓库").Chosen() {
+	if m.Item(loc.OpenRepoInEditor()).Chosen() {
 		a.openInEditor(a.repo.Dir, 0)
 	}
 	m.Separator()
-	if m.Item("打开仓库…").Chosen() {
+	if m.Item(loc.MenuOpenRepo()).Chosen() {
 		showWelcome()
 	}
 	if recent := recentRepos(); len(recent) > 0 {
-		m.Submenu("最近打开", func(m *ui.Menu) {
+		m.Submenu(loc.MenuRecent(), func(m *ui.Menu) {
 			for _, dir := range recent {
 				if m.Item(homeRelative(dir)).Chosen() {
 					openDir(dir)
@@ -129,11 +130,11 @@ func (a *app) repoMenu(m *ui.Menu) {
 			}
 		})
 	}
-	if m.Item("安装命令行工具…").Chosen() {
+	if m.Item(loc.MenuInstallCLI()).Chosen() {
 		go installLauncher()
 	}
 	m.Separator()
-	if m.Item("设置…").Chosen() {
+	if m.Item(loc.SettingsMenu()).Chosen() {
 		a.settingsOpen = true
 	}
 }

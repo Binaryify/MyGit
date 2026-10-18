@@ -11,6 +11,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"mygit/internal/git"
+	loc "mygit/locales"
 )
 
 //go:embed resources/icon.png
@@ -92,14 +93,14 @@ func (w *welcome) body(c *ui.Context) {
 		ui.Column(c).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Image(c, icon).Size(96, 96)
 			ui.Text(c, "MyGit").FontSize(24).Bold()
-			ui.Text(c, "轻量的 git 客户端").TextColor(t.TextMuted)
+			ui.Text(c, loc.Tagline()).TextColor(t.TextMuted)
 		})
 		w.dropZone(c)
 		ui.Row(c).Gap(8).Children(func() {
-			if ui.Button(c, "克隆仓库…").Grow(1).Clicked() {
+			if ui.Button(c, loc.CloneMenu()).Grow(1).Clicked() {
 				w.clone = clonePlan{open: true, parent: defaultParent()}
 			}
-			if ui.Button(c, "新建仓库…").Grow(1).Clicked() {
+			if ui.Button(c, loc.InitMenu()).Grow(1).Clicked() {
 				go w.initRepo()
 			}
 		})
@@ -108,9 +109,9 @@ func (w *welcome) body(c *ui.Context) {
 		}
 		if w.unsafe != "" {
 			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
-				ui.Text(c, "确认这是你自己的仓库，就可以让 git 信任它（写入 git 的 safe.directory 设置）。").
+				ui.Text(c, loc.TrustHint()).
 					FontSize(12).TextColor(t.TextMuted).Wrap().Grow(1).Basis(0)
-				if ui.PrimaryButton(c, "信任并打开").Clicked() {
+				if ui.PrimaryButton(c, loc.TrustOpen()).Clicked() {
 					dir := w.unsafe
 					if err := git.Trust(dir); err != nil {
 						w.errMsg = err.Error()
@@ -121,7 +122,7 @@ func (w *welcome) body(c *ui.Context) {
 			})
 		}
 		if len(w.recent) > 0 {
-			ui.Text(c, "最近打开").Bold().TextColor(t.TextMuted)
+			ui.Text(c, loc.Recent()).Bold().TextColor(t.TextMuted)
 			ui.Scroll(c).Grow(1).Basis(0).Gap(2).Children(func() {
 				for _, dir := range w.recent {
 					w.recentRow(c, dir)
@@ -135,15 +136,15 @@ func (w *welcome) body(c *ui.Context) {
 func (w *welcome) dropZone(c *ui.Context) {
 	t := c.Theme()
 	zone := ui.ButtonBase(c).Column().Height(150).Center().Gap(6).Radius(14).Border(1.5, t.Border).
-		BorderStyle(ui.BorderDashed).Cursor(ui.CursorPointer).Label("拖入或选择仓库文件夹")
+		BorderStyle(ui.BorderDashed).Cursor(ui.CursorPointer).Label(loc.DropZoneLabel())
 	if zone.FileDragOver() {
 		zone.Border(2, t.Accent).Background(t.Selection)
 	} else if zone.Hovered() {
 		zone.Background(t.SurfaceHover)
 	}
 	zone.Children(func() {
-		ui.Text(c, "把仓库文件夹拖到这里").FontSize(15).Bold()
-		ui.Text(c, "或点击选择文件夹").TextColor(t.TextMuted)
+		ui.Text(c, loc.DropZoneTitle()).FontSize(15).Bold()
+		ui.Text(c, loc.DropZoneSubtitle()).TextColor(t.TextMuted)
 	})
 	if zone.Clicked() {
 		go w.pick()
@@ -153,7 +154,7 @@ func (w *welcome) dropZone(c *ui.Context) {
 func (w *welcome) recentRow(c *ui.Context, dir string) {
 	t := c.Theme()
 	row := ui.ButtonBase(c.Key(dir)).Padding(8, 10).Gap(10).Radius(8).AlignItems(ui.Center).
-		Cursor(ui.CursorPointer).Tooltip(dir).Label("打开 " + filepath.Base(dir))
+		Cursor(ui.CursorPointer).Tooltip(dir).Label(loc.OpenRepoNamed(filepath.Base(dir)))
 	if row.Hovered() {
 		row.Background(t.SurfaceHover)
 	}
@@ -178,7 +179,7 @@ func homeRelative(p string) string {
 
 // pick asks for a folder. The dialog waits: call it on a goroutine.
 func (w *welcome) pick() {
-	paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: w.win, Title: "打开 git 仓库", Directory: true})
+	paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: w.win, Title: loc.OpenRepoDialog(), Directory: true})
 	if err == nil && len(paths) > 0 {
 		w.win.Update(func() { w.open(paths[0]) })
 	}
@@ -214,8 +215,8 @@ func dropHint(c *ui.Context) {
 	t := c.Theme()
 	ui.Column(c).Absolute().Top(8).Right(8).Bottom(8).Left(8).Center().Gap(6).Radius(14).
 		Background(t.Background.Alpha(0.88)).Border(2, t.Accent).BorderStyle(ui.BorderDashed).Children(func() {
-		ui.Text(c, "松开以打开仓库").FontSize(16).Bold()
-		ui.Text(c, "每个仓库在自己的窗口里打开").TextColor(t.TextMuted)
+		ui.Text(c, loc.DropHintTitle()).FontSize(16).Bold()
+		ui.Text(c, loc.DropHintSubtitle()).TextColor(t.TextMuted)
 	})
 }
 

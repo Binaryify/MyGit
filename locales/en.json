@@ -1,0 +1,810 @@
+{
+  "@@locale": "en",
+  "opFailed": "{op} failed: {error}",
+  "@opFailed": {
+    "placeholders": {
+      "op": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "opStage": "Stage",
+  "opUnstage": "Unstage",
+  "opDiscard": "Discard",
+  "opCommit": "Commit",
+  "opFetch": "Fetch",
+  "opPull": "Pull",
+  "opFetchRemote": "Fetch {remote}",
+  "@opFetchRemote": {
+    "placeholders": {
+      "remote": {
+        "type": "String"
+      }
+    }
+  },
+  "opSwitchTo": "Switch to {branch}",
+  "@opSwitchTo": {
+    "placeholders": {
+      "branch": {
+        "type": "String"
+      }
+    }
+  },
+  "opRenameBranch": "Rename branch",
+  "opCheckout": "Check out {rev}",
+  "@opCheckout": {
+    "placeholders": {
+      "rev": {
+        "type": "String"
+      }
+    }
+  },
+  "opDeleteRemoteBranch": "Delete remote branch",
+  "opMerge": "Merge {rev}",
+  "@opMerge": {
+    "placeholders": {
+      "rev": {
+        "type": "String"
+      }
+    }
+  },
+  "opRebaseOnto": "Rebase onto {rev}",
+  "@opRebaseOnto": {
+    "placeholders": {
+      "rev": {
+        "type": "String"
+      }
+    }
+  },
+  "opNewBranch": "New branch {name}",
+  "@opNewBranch": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "opDeleteBranch": "Delete branch {name}",
+  "@opDeleteBranch": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "opNewTag": "New tag {name}",
+  "@opNewTag": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "opRevert": "Revert {rev}",
+  "@opRevert": {
+    "placeholders": {
+      "rev": {
+        "type": "String"
+      }
+    }
+  },
+  "opReset": "Reset",
+  "opDeleteTag": "Delete tag {name}",
+  "@opDeleteTag": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "opPushTags": "Push tags",
+  "opResolve": "Resolve conflict",
+  "opRebaseInteractive": "Interactive rebase",
+  "opSaveRemote": "Save remote",
+  "opAddRemote": "Add remote",
+  "opDeleteRemote": "Delete remote",
+  "opStash": "Stash",
+  "opApply": "Apply {ref}",
+  "@opApply": {
+    "placeholders": {
+      "ref": {
+        "type": "String"
+      }
+    }
+  },
+  "opPop": "Pop {ref}",
+  "@opPop": {
+    "placeholders": {
+      "ref": {
+        "type": "String"
+      }
+    }
+  },
+  "opDrop": "Delete {ref}",
+  "@opDrop": {
+    "placeholders": {
+      "ref": {
+        "type": "String"
+      }
+    }
+  },
+  "opSkip": "Skip",
+  "errReadHistory": "Couldn't read the history: {error}",
+  "@errReadHistory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errSave": "Couldn't save: {error}",
+  "@errSave": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errOpen": "Couldn't open: {error}",
+  "@errOpen": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errEditor": "Couldn't open the editor: {error}",
+  "@errEditor": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errNoCommand": "Can't find {cmd}",
+  "@errNoCommand": {
+    "placeholders": {
+      "cmd": {
+        "type": "String"
+      }
+    }
+  },
+  "errNoCommandSet": "Can't find {cmd}: set its full path in Settings",
+  "@errNoCommandSet": {
+    "placeholders": {
+      "cmd": {
+        "type": "String"
+      }
+    }
+  },
+  "errGitignore": "Couldn't write .gitignore: {error}",
+  "@errGitignore": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errNotInHistory": "{hash} isn't in the history shown (the branch filter may hide it)",
+  "@errNotInHistory": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "errNotInHead": "An interactive rebase starts from a commit of the current branch's history",
+  "gitUnsafe": "{dir} is owned by another user, and git refuses to work in it for safety",
+  "@gitUnsafe": {
+    "placeholders": {
+      "dir": {
+        "type": "String"
+      }
+    }
+  },
+  "gitNotRepo": "{dir} isn't a git repository",
+  "@gitNotRepo": {
+    "placeholders": {
+      "dir": {
+        "type": "String"
+      }
+    }
+  },
+  "gitMerges": "These commits include merges, which an interactive rebase would flatten: start after the last merge",
+  "gitSquashFirst": "The first commit kept can't be melded into the one before it",
+  "gitRewordEmpty": "A reworded commit needs its new message",
+  "trashTitle": "Move the file to the Trash?",
+  "trashMessage": "The untracked file “{path}” goes to the Trash.",
+  "@trashMessage": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "trashButton": "Move to Trash",
+  "discardTitle": "Discard changes?",
+  "discardMessage": "The changes to “{path}” will be discarded. This can't be undone.",
+  "@discardMessage": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "discardLinesTitle": "Discard these changes?",
+  "discardLinesMessage": "The selected changes will be removed from the working tree. This can't be undone.",
+  "cancel": "Cancel",
+  "close": "Close",
+  "ok": "OK",
+  "done": "Done",
+  "create": "Create",
+  "delete": "Delete",
+  "deleteMenu": "Delete…",
+  "save": "Save",
+  "edit": "Edit…",
+  "add": "Add",
+  "rename": "Rename",
+  "renameMenu": "Rename…",
+  "stage": "Stage",
+  "unstage": "Unstage",
+  "discard": "Discard",
+  "changeLabel": "Change",
+  "branchSwitch": "Switch to This Branch",
+  "branchNewFrom": "New Branch from Here…",
+  "branchHistory": "Show This Branch's History",
+  "branchRenameTitle": "Rename branch {name}",
+  "@branchRenameTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "branchCheckoutLocal": "Check Out as Local Branch",
+  "branchDeleteRemote": "Delete Remote Branch…",
+  "branchDeleteRemoteTitle": "Delete remote branch {name}?",
+  "@branchDeleteRemoteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "branchDeleteRemoteMessage": "The branch will be deleted from the remote repository.",
+  "branches": "Branches",
+  "branchSearch": "Search branches",
+  "branchNew": "+ New Branch…",
+  "branchesLocal": "Local",
+  "branchesRemote": "Remote",
+  "branchesNone": "No branches match",
+  "branchCurrent": "current",
+  "compareWith": "Compare with {branch}",
+  "@compareWith": {
+    "placeholders": {
+      "branch": {
+        "type": "String"
+      }
+    }
+  },
+  "compareTitle": "Compare {from} → {to}",
+  "@compareTitle": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "mergeInto": "Merge into {branch}",
+  "@mergeInto": {
+    "placeholders": {
+      "branch": {
+        "type": "String"
+      }
+    }
+  },
+  "rebaseOnto": "Rebase {branch} onto This",
+  "@rebaseOnto": {
+    "placeholders": {
+      "branch": {
+        "type": "String"
+      }
+    }
+  },
+  "newBranch": "New Branch",
+  "newBranchFrom": "New branch (from {rev})",
+  "@newBranchFrom": {
+    "placeholders": {
+      "rev": {
+        "type": "String"
+      }
+    }
+  },
+  "createAndSwitch": "Create and Switch",
+  "branchNotMergedTitle": "Branch {name} isn't merged",
+  "@branchNotMergedTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "branchNotMergedMessage": "Commits only on this branch will be lost.",
+  "deleteAnyway": "Delete Anyway",
+  "copyHash": "Copy Hash",
+  "copyMessage": "Copy Message",
+  "commitNewBranch": "New Branch from Here…",
+  "commitNewTag": "New Tag…",
+  "newTagTitle": "New tag ({rev})",
+  "@newTagTitle": {
+    "placeholders": {
+      "rev": {
+        "type": "String"
+      }
+    }
+  },
+  "tagMessage": "Message (optional, makes an annotated tag)",
+  "compareWorktree": "Compare with Working Tree",
+  "worktree": "working tree",
+  "checkoutCommit": "Check Out This Commit",
+  "cherryPick": "Cherry-Pick",
+  "revertCommit": "Revert Commit",
+  "rebaseFromHere": "Interactively Rebase from Here…",
+  "resetTo": "Reset {branch} to Here",
+  "@resetTo": {
+    "placeholders": {
+      "branch": {
+        "type": "String"
+      }
+    }
+  },
+  "resetSoft": "Soft: keep changes, staged",
+  "resetMixed": "Mixed: keep changes, unstaged",
+  "resetHard": "Hard: discard all changes…",
+  "resetHardTitle": "Hard reset to {rev}?",
+  "@resetHardTitle": {
+    "placeholders": {
+      "rev": {
+        "type": "String"
+      }
+    }
+  },
+  "resetHardMessage": "All changes in the working tree and the index will be lost. This can't be undone.",
+  "resetHardButton": "Hard Reset",
+  "deleteTag": "Delete Tag {name}",
+  "@deleteTag": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cloneTitle": "Clone Repository",
+  "cloneURLPlaceholder": "https://github.com/user/repo.git or git@…",
+  "cloneURL": "Repository URL",
+  "change": "Change…",
+  "folderName": "Folder name",
+  "clone": "Clone",
+  "cloneInto": "Clone into",
+  "connecting": "Connecting…",
+  "initDialog": "New repository in a folder",
+  "tagline": "A light git client",
+  "cloneMenu": "Clone Repository…",
+  "initMenu": "New Repository…",
+  "trustHint": "If this is your own repository, git can trust it (git's safe.directory setting).",
+  "trustOpen": "Trust and Open",
+  "trustTooltip": "Adds it to git's safe.directory setting",
+  "recent": "Recent",
+  "dropZoneLabel": "Drop or choose a repository's folder",
+  "dropZoneTitle": "Drop a repository's folder here",
+  "dropZoneSubtitle": "or click to choose a folder",
+  "openRepoNamed": "Open {name}",
+  "@openRepoNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "openRepoDialog": "Open Git Repository",
+  "cantOpenFolder": "Can't open this folder",
+  "dropHintTitle": "Drop to open the repository",
+  "dropHintSubtitle": "Each repository opens in a window of its own",
+  "credTitle": "Git needs to sign in",
+  "credTokenHint": "Sites like GitHub take a personal access token here, not your password. Git's credential manager remembers what works.",
+  "blameHint": "Double-click a line to find its commit in the history",
+  "notCommitted": "Uncommitted",
+  "newRemoteBranch": "{branch} (new)",
+  "@newRemoteBranch": {
+    "placeholders": {
+      "branch": {
+        "type": "String"
+      }
+    }
+  },
+  "pushTitle": "Push {branch} → {target}",
+  "@pushTitle": {
+    "placeholders": {
+      "branch": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "pushNothing": "No commits to push",
+  "commitCount": "{count, plural, one {# commit} other {# commits}}",
+  "@commitCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "forcePush": "Force push (--force-with-lease: only if nobody else updated the remote branch)",
+  "pushTags": "Push Tags",
+  "push": "Push",
+  "forcePushButton": "Force Push",
+  "launcherNoExe": "Can't find MyGit's executable",
+  "launcherTitle": "Command line tool",
+  "launcherWindows": "Add this folder to PATH to open repositories with mygit in a terminal:\n{dir}",
+  "@launcherWindows": {
+    "placeholders": {
+      "dir": {
+        "type": "String"
+      }
+    }
+  },
+  "launcherNoDir": "No folder on PATH can be written",
+  "launcherLink": "Link this executable into a folder on PATH:\n{exe}",
+  "@launcherLink": {
+    "placeholders": {
+      "exe": {
+        "type": "String"
+      }
+    }
+  },
+  "launcherFailed": "Couldn't install",
+  "launcherDone": "Command line tool installed",
+  "launcherDoneMessage": "Now run, in a terminal:\n  mygit .\n\nThe command is {path}",
+  "@launcherDoneMessage": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "addToGitignore": "Add to .gitignore",
+  "history": "History",
+  "commitsMatching": "{matches} / {count, plural, one {# commit} other {# commits}}",
+  "@commitsMatching": {
+    "placeholders": {
+      "matches": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pathOnly": "Only commits that changed {path}",
+  "@pathOnly": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "showAll": "Show All",
+  "allBranches": "All Branches",
+  "currentBranch": "Current Branch",
+  "branchesShown": "Branches shown",
+  "searchPlaceholder": "Search messages, authors, hashes  {shortcut}",
+  "searchHistory": "Search history",
+  "clearSearch": "Clear search",
+  "menuFile": "File",
+  "menuOpenRepo": "Open Repository…",
+  "menuRecent": "Open Recent",
+  "menuInstallCLI": "Install Command Line Tool…",
+  "menuEdit": "Edit",
+  "menuWindow": "Window",
+  "remotesMenu": "Remotes…",
+  "showInFolder": "Show in Folder",
+  "openRepoInEditor": "Open Repository in Editor",
+  "settingsMenu": "Settings…",
+  "languageMenu": "Language",
+  "languageSystem": "System",
+  "repository": "Repository",
+  "mergeOurs": "Ours (HEAD)",
+  "mergeTheirs": "Theirs",
+  "mergeUpstream": "Upstream (ours)",
+  "mergeYours": "Your commit (theirs)",
+  "conflictOf": "Conflict {n} of {count}",
+  "@conflictOf": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "prevConflict": "Previous conflict",
+  "nextConflict": "Next conflict",
+  "takeLeft": "Take Left",
+  "takeRight": "Take Right",
+  "takeBoth": "Take Both",
+  "noConflictsLeft": "No conflicts left",
+  "wholeFile": "Whole File",
+  "takeAllLeft": "Take All from Left ({side})",
+  "@takeAllLeft": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "takeAllRight": "Take All from Right ({side})",
+  "@takeAllRight": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "saveResolved": "Save and Mark Resolved",
+  "mergeResult": "Result",
+  "conflictsLeftTitle": "Conflicts are left",
+  "conflictsLeftMessage": "{count, plural, one {# conflict marker is} other {# conflict markers are}} left in the result. Save and mark it resolved anyway?",
+  "@conflictsLeftMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "saveAnyway": "Save Anyway",
+  "rebasePick": "Keep (pick)",
+  "rebaseReword": "Reword",
+  "rebaseEdit": "Stop to edit",
+  "rebaseSquash": "Meld into previous (squash)",
+  "rebaseFixup": "Meld, drop message (fixup)",
+  "rebaseDrop": "Drop",
+  "rebaseTitle": "Interactive Rebase",
+  "rebaseHint": "Oldest first; drag to reorder.",
+  "rebaseAction": "Action",
+  "rebaseNewMessage": "New message",
+  "rebaseStart": "Start Rebase",
+  "remoteAddTitle": "Add Remote",
+  "remoteEditTitle": "Edit remote {name}",
+  "@remoteEditTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteURL": "URL",
+  "remotes": "Remotes",
+  "remotesNone": "No remotes yet",
+  "fetch": "Fetch",
+  "remoteDeleteTitle": "Delete remote {name}?",
+  "@remoteDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteDeleteMessage": "Only the local record of it and its branches go; the remote repository stays.",
+  "remoteAddMenu": "Add Remote…",
+  "editorSystem": "System default",
+  "editorOther": "Other…",
+  "settings": "Settings",
+  "externalEditor": "External editor",
+  "editorCommandPlaceholder": "A command or program path, as /usr/local/bin/nvim-qt",
+  "editorCommand": "Editor command",
+  "editorLineHint": "Command line editors (code, zed…) open at the line.",
+  "diffSection": "Diffs",
+  "diffUnified": "One above the other (else side by side)",
+  "ignoreWhitespace": "Ignore whitespace changes",
+  "language": "Language",
+  "changesTab": "Changes",
+  "stashTab": "Stash ({count})",
+  "@stashTab": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stashChanges": "Stash Changes…",
+  "stashTitle": "Stash changes",
+  "stashUntracked": "Include untracked files",
+  "stashNone": "No stashes",
+  "stashApply": "Apply",
+  "stashPop": "Pop (Apply and Delete)",
+  "stashBranch": "New Branch from Here…",
+  "stashBranchTitle": "New branch from {ref}",
+  "@stashBranchTitle": {
+    "placeholders": {
+      "ref": {
+        "type": "String"
+      }
+    }
+  },
+  "stashDeleteTitle": "Delete {ref}?",
+  "@stashDeleteTitle": {
+    "placeholders": {
+      "ref": {
+        "type": "String"
+      }
+    }
+  },
+  "stashDeleteMessage": "{subject}\nIt can't be recovered once deleted.",
+  "@stashDeleteMessage": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "opNameMerge": "merge",
+  "opNameRebase": "rebase",
+  "opNameCherryPick": "cherry-pick",
+  "opNameRevert": "revert",
+  "opConflicts": "A {op} stopped: {count, plural, one {# file is} other {# files are}} in conflict. Resolve and stage them, then continue.",
+  "@opConflicts": {
+    "placeholders": {
+      "op": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "opResolved": "A {op} stopped: its conflicts are resolved, it can continue.",
+  "@opResolved": {
+    "placeholders": {
+      "op": {
+        "type": "String"
+      }
+    }
+  },
+  "abortMenu": "Abort…",
+  "abortTitle": "Abort the {op}?",
+  "@abortTitle": {
+    "placeholders": {
+      "op": {
+        "type": "String"
+      }
+    }
+  },
+  "abortMessage": "Back to before the {op}; conflicts resolved since are lost.",
+  "@abortMessage": {
+    "placeholders": {
+      "op": {
+        "type": "String"
+      }
+    }
+  },
+  "abort": "Abort",
+  "opAbort": "Abort {op}",
+  "@opAbort": {
+    "placeholders": {
+      "op": {
+        "type": "String"
+      }
+    }
+  },
+  "skipCommit": "Skip This Commit",
+  "continue": "Continue",
+  "opContinue": "Continue {op}",
+  "@opContinue": {
+    "placeholders": {
+      "op": {
+        "type": "String"
+      }
+    }
+  },
+  "detached": "(detached HEAD)",
+  "fetchAll": "Fetch All Remotes",
+  "fetchRemote": "Fetch {remote}",
+  "@fetchRemote": {
+    "placeholders": {
+      "remote": {
+        "type": "String"
+      }
+    }
+  },
+  "pull": "Pull",
+  "pullFF": "Pull (Fast-Forward Only)",
+  "pullRebase": "Pull and Rebase",
+  "pullMerge": "Pull and Merge",
+  "pushMenu": "Push…",
+  "pushTooltip": "See the commits to push",
+  "refresh": "Refresh",
+  "messagePlaceholder": "Commit message ({shortcut} to commit)",
+  "message": "Commit message",
+  "amend": "Amend last commit",
+  "commit": "Commit",
+  "commitFiles": "{count, plural, one {Commit # File} other {Commit # Files}}",
+  "@commitFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "staged": "Staged Changes",
+  "changes": "Changes",
+  "unstageAll": "Unstage All",
+  "stageAll": "Stage All",
+  "openFile": "Open File",
+  "discardChanges": "Discard Changes",
+  "discardMenu": "Discard Changes…",
+  "statusM": "Modified",
+  "statusA": "Added",
+  "statusD": "Deleted",
+  "statusR": "Renamed",
+  "statusC": "Copied",
+  "statusU": "Untracked",
+  "statusConflict": "Conflict",
+  "statusT": "Type changed",
+  "sideWorktree": "Working tree",
+  "sideStaged": "Staged",
+  "detailEmpty": "Choose a commit or a change to see its diff",
+  "filesDiffer": "{count, plural, one {# file differs} other {# files differ}}",
+  "@filesDiffer": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "parentN": "Against parent {n} ({hash})",
+  "@parentN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "parentLabel": "Parent compared",
+  "openInEditor": "Open in Editor",
+  "fileHistory": "File History",
+  "blame": "Blame",
+  "copyPath": "Copy Path",
+  "binaryFile": "Binary file",
+  "noDiff": "No differences",
+  "unstageLines": "Unstage Selected Lines",
+  "discardLines": "Discard Selected Lines",
+  "stageLines": "Stage Selected Lines",
+  "stageLinesTooltip": "Click or drag line numbers to select lines",
+  "@searchPlaceholder": {
+    "placeholders": {
+      "shortcut": {
+        "type": "String"
+      }
+    }
+  },
+  "@messagePlaceholder": {
+    "placeholders": {
+      "shortcut": {
+        "type": "String"
+      }
+    }
+  }
+}

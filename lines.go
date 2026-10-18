@@ -7,6 +7,7 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 
 	"mygit/internal/patch"
+	loc "mygit/locales"
 )
 
 // reviewLines lets the lines of a change's diff be chosen, by their
@@ -21,15 +22,15 @@ func (a *app) reviewLines(d *editor.DiffState) {
 		chosen := a.hunkLines(h.Hunk)
 		bar.Gap(4).Children(func() {
 			if a.detail.staged {
-				if ui.Button(c, "取消暂存").Clicked() {
+				if ui.Button(c, loc.Unstage()).Clicked() {
 					a.applyLines(chosen, lineUnstage)
 				}
 				return
 			}
-			if ui.Button(c, "丢弃").Clicked() {
+			if ui.Button(c, loc.Discard()).Clicked() {
 				a.applyLines(chosen, lineDiscard)
 			}
-			if ui.PrimaryButton(c, "暂存").Clicked() {
+			if ui.PrimaryButton(c, loc.Stage()).Clicked() {
 				a.applyLines(chosen, lineStage)
 			}
 		})
@@ -170,11 +171,11 @@ func (a *app) applyLines(chosen map[patch.Line]bool, act lineAction) {
 	}
 	switch act {
 	case lineStage:
-		apply("暂存", true, false)
+		apply(loc.OpStage(), true, false)
 	case lineUnstage:
-		apply("取消暂存", true, true)
+		apply(loc.OpUnstage(), true, true)
 	case lineDiscard:
-		a.ask("丢弃这些更改？", "选中的更改会从工作区删除，无法撤销。", "丢弃", func() { apply("丢弃", false, true) })
+		a.ask(loc.DiscardLinesTitle(), loc.DiscardLinesMessage(), loc.Discard(), func() { apply(loc.OpDiscard(), false, true) })
 	}
 }
 
@@ -192,7 +193,7 @@ func (a *app) ask(title, message, button string, yes func()) {
 
 func (a *app) confirmView(c *ui.Context) {
 	q := &a.confirm
-	if ui.AlertDialog(c, &q.open, q.title, q.message, "取消", q.button) == 1 && q.yes != nil {
+	if ui.AlertDialog(c, &q.open, q.title, q.message, loc.Cancel(), q.button) == 1 && q.yes != nil {
 		q.yes()
 	}
 }

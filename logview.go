@@ -1,13 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
 
 	"mygit/internal/git"
 	"mygit/internal/graph"
+	loc "mygit/locales"
 )
 
 const (
@@ -30,10 +30,10 @@ func (a *app) logView(c *ui.Context) {
 	a.updateMatches()
 	ui.Column(c).Fill().Children(func() {
 		ui.Row(c).Padding(6, 12).Gap(8).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
-			ui.Text(c, "历史").Bold().TextColor(t.TextMuted)
-			count := fmt.Sprintf("%d 个提交", len(a.commits))
+			ui.Text(c, loc.History()).Bold().TextColor(t.TextMuted)
+			count := loc.CommitCount(len(a.commits))
 			if a.searching() {
-				count = fmt.Sprintf("%d / %d 个提交", len(a.matches), len(a.commits))
+				count = loc.CommitsMatching(len(a.matches), len(a.commits))
 			}
 			ui.Text(c, count).TextColor(t.TextMuted)
 			if a.loading {
@@ -45,8 +45,8 @@ func (a *app) logView(c *ui.Context) {
 		})
 		if a.scope.Path != "" {
 			ui.Row(c).Padding(4, 12).Gap(8).AlignItems(ui.Center).Background(t.Accent.Alpha(0.1)).Children(func() {
-				ui.Text(c, "只看改动了 "+a.scope.Path+" 的提交").Grow(1)
-				if ui.Button(c, "显示全部").Clicked() {
+				ui.Text(c, loc.PathOnly(a.scope.Path)).Grow(1)
+				if ui.Button(c, loc.ShowAll()).Clicked() {
 					a.setScope(git.Scope{Ref: a.scope.Ref})
 				}
 			})
@@ -72,19 +72,19 @@ func (a *app) logView(c *ui.Context) {
 
 // scopeButton picks the refs the history lists.
 func (a *app) scopeButton(c *ui.Context) {
-	label := "全部分支"
+	label := loc.AllBranches()
 	switch a.scope.Ref {
 	case "":
 	case "HEAD":
-		label = "当前分支"
+		label = loc.CurrentBranch()
 	default:
 		label = a.scope.Ref
 	}
-	ui.Button(c, label+" ▾").Label("显示的分支").Menu(func(m *ui.Menu) {
-		if m.Item("全部分支").Checked(a.scope.Ref == "").Chosen() {
+	ui.Button(c, label+" ▾").Label(loc.BranchesShown()).Menu(func(m *ui.Menu) {
+		if m.Item(loc.AllBranches()).Checked(a.scope.Ref == "").Chosen() {
 			a.setScope(git.Scope{Path: a.scope.Path})
 		}
-		if m.Item("当前分支").Checked(a.scope.Ref == "HEAD").Chosen() {
+		if m.Item(loc.CurrentBranch()).Checked(a.scope.Ref == "HEAD").Chosen() {
 			a.setScope(git.Scope{Ref: "HEAD", Path: a.scope.Path})
 		}
 		m.Separator()
@@ -235,7 +235,7 @@ func (a *app) compareChosen() bool {
 		return false
 	}
 	newer, older := a.commits[rows[0]], a.commits[rows[1]] // the list is newest first
-	a.showCompare(fmt.Sprintf("比较 %s → %s", older.Short(), newer.Short()), older.Hash, newer.Hash)
+	a.showCompare(loc.CompareTitle(older.Short(), newer.Short()), older.Hash, newer.Hash)
 	return true
 }
 
@@ -246,9 +246,9 @@ func (a *app) searchField(c *ui.Context) {
 	ui.Row(c).Width(280).Height(28).Gap(6).PaddingX(8).Radius(6).AlignItems(ui.Center).
 		Background(t.Surface).Border(1, t.Border).Children(func() {
 		ui.Icon(c, icons["search"]).Size(13, 13).TextColor(t.TextMuted)
-		ui.TextInputBase(c, &a.search).Placeholder("搜索说明、作者、哈希  ⌘F").Label("搜索历史").
+		ui.TextInputBase(c, &a.search).Placeholder(loc.SearchPlaceholder(shortcut("F"))).Label(loc.SearchHistory()).
 			Grow(1).Bind(&a.searchBox)
-		if a.search != "" && iconButton(c, "x", "清除搜索") {
+		if a.search != "" && iconButton(c, "x", loc.ClearSearch()) {
 			a.search = ""
 		}
 	})

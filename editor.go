@@ -11,6 +11,8 @@ import (
 	"sync"
 
 	"github.com/egoist/mygo"
+
+	loc "mygit/locales"
 )
 
 // openInEditor opens a file, at a line from 1 when given, or a folder in
@@ -19,14 +21,14 @@ func (a *app) openInEditor(path string, line int) {
 	cmd := strings.TrimSpace(prefs.Editor)
 	if cmd == "" {
 		if err := mygo.Shell.OpenPath(path); err != nil {
-			a.errMsg = "打不开：" + err.Error()
+			a.errMsg = loc.ErrOpen(err.Error())
 		}
 		return
 	}
 	go func() {
 		err := runEditor(cmd, path, line)
 		if err != nil {
-			a.update(func() { a.errMsg = "打开编辑器失败：" + err.Error() })
+			a.update(func() { a.errMsg = loc.ErrEditor(err.Error()) })
 		}
 	}()
 }
@@ -70,7 +72,7 @@ func lookEditor(cmd string) (string, error) {
 		return exe, nil
 	}
 	if runtime.GOOS == "windows" || filepath.IsAbs(cmd) {
-		return "", errors.New("找不到 " + cmd)
+		return "", errors.New(loc.ErrNoCommand(cmd))
 	}
 	loginPathOnce.Do(func() {
 		shell := os.Getenv("SHELL")
@@ -86,7 +88,7 @@ func lookEditor(cmd string) (string, error) {
 			return exe, nil
 		}
 	}
-	return "", errors.New("找不到 " + cmd + "，请在设置里填写它的完整路径")
+	return "", errors.New(loc.ErrNoCommandSet(cmd))
 }
 
 // openChangeInEditor opens the file of the change shown, at the line of

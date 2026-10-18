@@ -15,6 +15,7 @@ import (
 	"mygit/internal/git"
 	"mygit/internal/graph"
 	"mygit/internal/patch"
+	loc "mygit/locales"
 )
 
 // logBatch is how many commits the history shows at a time as it loads.
@@ -179,7 +180,7 @@ func (a *app) run(label string, fn func(ctx context.Context) error, then func())
 	work(a, func(ctx context.Context) (struct{}, error) { return struct{}{}, fn(ctx) }, func(_ struct{}, err error) {
 		a.busy = ""
 		if err != nil {
-			a.errMsg = label + "失败：" + err.Error()
+			a.errMsg = loc.OpFailed(label, err.Error())
 		} else if then != nil {
 			then()
 		}
@@ -311,7 +312,7 @@ func (a *app) loadLog() {
 			}
 			a.loading = false
 			if err != nil {
-				a.errMsg = "读取历史失败：" + err.Error()
+				a.errMsg = loc.ErrReadHistory(err.Error())
 			}
 		})
 	}()
@@ -499,7 +500,7 @@ func (a *app) saveFile() {
 	}
 	text, path := d.diff.New.String(), d.change.Path
 	if err := a.repo.WriteFile(path, text); err != nil {
-		a.errMsg = "保存失败：" + err.Error()
+		a.errMsg = loc.ErrSave(err.Error())
 		return
 	}
 	d.diff.New.MarkSaved()
@@ -533,7 +534,7 @@ func fileName(p editor.FilePatch) string {
 }
 
 func (a *app) stage(c git.Change) {
-	a.run("暂存", func(ctx context.Context) error { return a.repo.Stage(ctx, c.Path) }, nil)
+	a.run(loc.OpStage(), func(ctx context.Context) error { return a.repo.Stage(ctx, c.Path) }, nil)
 }
 
 func (a *app) unstage(c git.Change) {
@@ -541,7 +542,7 @@ func (a *app) unstage(c git.Change) {
 	if c.OldPath != "" {
 		paths = append(paths, c.OldPath) // a rename is staged as both
 	}
-	a.run("取消暂存", func(ctx context.Context) error { return a.repo.Unstage(ctx, paths...) }, nil)
+	a.run(loc.OpUnstage(), func(ctx context.Context) error { return a.repo.Unstage(ctx, paths...) }, nil)
 }
 
 // trash moves a file to the trash.
@@ -550,24 +551,24 @@ var trash = func(path string) error { return mygo.Shell.TrashItem(path) }
 // discard throws a change of the working tree away, once the user says so.
 func (a *app) discard(c git.Change) {
 	if c.Work == '?' { // a file git doesn't have: to the trash, where it can be found again
-		a.ask("把文件移到废纸篓？", "未跟踪的文件“"+c.Path+"”会移到废纸篓。", "移到废纸篓", func() {
-			a.run("丢弃", func(context.Context) error {
+		a.ask(loc.TrashTitle(), loc.TrashMessage(c.Path), loc.TrashButton(), func() {
+			a.run(loc.OpDiscard(), func(context.Context) error {
 				return trash(filepath.Join(a.repo.Dir, filepath.FromSlash(c.Path)))
 			}, nil)
 		})
 		return
 	}
-	a.ask("丢弃更改？", "“"+c.Path+"”的更改会被丢弃，无法撤销。", "丢弃", func() {
-		a.run("丢弃", func(ctx context.Context) error { return a.repo.Discard(ctx, c) }, nil)
+	a.ask(loc.DiscardTitle(), loc.DiscardMessage(c.Path), loc.Discard(), func() {
+		a.run(loc.OpDiscard(), func(ctx context.Context) error { return a.repo.Discard(ctx, c) }, nil)
 	})
 }
 
 func (a *app) stageAll() {
-	a.run("暂存", func(ctx context.Context) error { return a.repo.Stage(ctx, ".") }, nil)
+	a.run(loc.OpStage(), func(ctx context.Context) error { return a.repo.Stage(ctx, ".") }, nil)
 }
 
 func (a *app) unstageAll() {
-	a.run("取消暂存", func(ctx context.Context) error { return a.repo.Unstage(ctx, ".") }, nil)
+	a.run(loc.OpUnstage(), func(ctx context.Context) error { return a.repo.Unstage(ctx, ".") }, nil)
 }
 
 func (a *app) canCommit() bool {
@@ -579,7 +580,7 @@ func (a *app) commit() {
 		return
 	}
 	msg, amend := a.message, a.amend
-	a.run("提交", func(ctx context.Context) error { return a.repo.Commit(ctx, msg, amend) }, func() {
+	a.run(loc.OpCommit(), func(ctx context.Context) error { return a.repo.Commit(ctx, msg, amend) }, func() {
 		a.message, a.amend = "", false
 	})
 }

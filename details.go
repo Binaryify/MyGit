@@ -7,6 +7,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"mygit/internal/git"
+	loc "mygit/locales"
 )
 
 // blame is a file's lines, each with the commit that last changed it.
@@ -46,8 +47,8 @@ func (a *app) blameView(c *ui.Context, b *blame) {
 		ui.Row(c).Padding(6, 12).Gap(8).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 			ui.Text(c, "Blame").Bold()
 			ui.Text(c, b.path).SingleLine().Grow(1)
-			ui.Text(c, "双击一行，在历史里定位它的提交").TextColor(t.TextMuted)
-			if ui.Button(c, "关闭").Clicked() {
+			ui.Text(c, loc.BlameHint()).TextColor(t.TextMuted)
+			if ui.Button(c, loc.Close()).Clicked() {
 				a.detail.blame = nil
 			}
 		})
@@ -56,7 +57,7 @@ func (a *app) blameView(c *ui.Context, b *blame) {
 			ui.Row(c).Height(20).Gap(8).PaddingX(8).AlignItems(ui.Center).Children(func() {
 				who, color := ln.Hash[:8], laneColor(int(ln.Hash[0])+int(ln.Hash[1]))
 				if ln.NotCommitted() {
-					who, color = "未提交", t.TextMuted
+					who, color = loc.NotCommitted(), t.TextMuted
 				}
 				// A commit's lines show its hash on their first line only.
 				first := i == 0 || b.lines[i-1].Hash != ln.Hash
@@ -85,7 +86,7 @@ func (a *app) revealCommit(hash string) {
 			return
 		}
 	}
-	a.errMsg = "历史里找不到 " + hash[:8] + "（可能被当前的分支筛选隐藏了）"
+	a.errMsg = loc.ErrNotInHistory(hash[:8])
 }
 
 // pushPlan is the push dialog: the commits a push would send.
@@ -120,16 +121,16 @@ func (a *app) pushView(c *ui.Context) {
 		ui.Column(c).Gap(10).Width(560).Children(func() {
 			target := st.Upstream
 			if target == "" {
-				target = "origin/" + st.Branch + "（新建）"
+				target = loc.NewRemoteBranch("origin/" + st.Branch)
 			}
-			ui.Text(c, "推送 "+st.Branch+" → "+target).Bold().FontSize(15)
+			ui.Text(c, loc.PushTitle(st.Branch, target)).Bold().FontSize(15)
 			switch {
 			case p.loading:
 				ui.Spinner(c).Size(16, 16)
 			case len(p.commits) == 0:
-				ui.Text(c, "没有要推送的提交").TextColor(t.TextMuted)
+				ui.Text(c, loc.PushNothing()).TextColor(t.TextMuted)
 			default:
-				ui.Text(c, fmt.Sprintf("%d 个提交", len(p.commits))).TextColor(t.TextMuted)
+				ui.Text(c, loc.CommitCount(len(p.commits))).TextColor(t.TextMuted)
 				ui.List(c.Key("outgoing"), nil, len(p.commits), func(i int) {
 					cm := p.commits[i]
 					ui.Row(c).Gap(8).Padding(4, 0).Children(func() {
@@ -139,19 +140,19 @@ func (a *app) pushView(c *ui.Context) {
 					})
 				}).MaxHeight(280)
 			}
-			ui.Checkbox(c, &p.force, "强制推送（--force-with-lease，远程分支没被别人更新时才覆盖）")
+			ui.Checkbox(c, &p.force, loc.ForcePush())
 			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
-				if ui.Button(c, "推送标签").Tooltip("git push origin --tags").Clicked() {
+				if ui.Button(c, loc.PushTags()).Tooltip("git push origin --tags").Clicked() {
 					p.open = false
-					a.run("推送标签", a.repo.PushTags, nil)
+					a.run(loc.OpPushTags(), a.repo.PushTags, nil)
 				}
 				ui.Box(c).Grow(1)
-				if ui.Button(c, "取消").Clicked() {
+				if ui.Button(c, loc.Cancel()).Clicked() {
 					p.open = false
 				}
-				label := "推送"
+				label := loc.Push()
 				if p.force {
-					label = "强制推送"
+					label = loc.ForcePushButton()
 				}
 				if ui.PrimaryButton(c, label).Disabled(p.loading || a.busy != "").Clicked() {
 					p.open = false

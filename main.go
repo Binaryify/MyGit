@@ -17,6 +17,7 @@ import (
 
 	"mygit/internal/askpass"
 	"mygit/internal/git"
+	loc "mygit/locales"
 )
 
 // apps are the open repositories' windows, by working tree.
@@ -56,6 +57,7 @@ func main() {
 	})
 	mygo.App.WhenReady(func() {
 		mygo.App.SetMenu(appMenu())
+		mygo.App.OnLocaleChanged(func(string) { mygo.App.SetMenu(appMenu()) }) // its labels, in the new language
 		if s, err := askpass.Listen(askUser); err == nil {
 			git.Env = func(dir string) []string { return s.Env(dir) }
 			mygo.App.OnQuit(func() { s.Close() })
@@ -136,7 +138,7 @@ func open(repo *git.Repo) {
 // wait for their answer: call it on a goroutine.
 func pickAndOpen() {
 	for {
-		paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Title: "打开 git 仓库", Directory: true})
+		paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Title: loc.OpenRepoDialog(), Directory: true})
 		if err != nil || len(paths) == 0 {
 			return
 		}
@@ -145,23 +147,23 @@ func pickAndOpen() {
 			mygo.RunOnMain(func() { open(repo) })
 			return
 		}
-		_, _ = mygo.Dialog.Message(mygo.MessageOptions{Title: "打不开这个文件夹", Message: err.Error()})
+		_, _ = mygo.Dialog.Message(mygo.MessageOptions{Title: loc.CantOpenFolder(), Message: err.Error()})
 	}
 }
 
 func appMenu() *mygo.Menu {
 	return mygo.NewMenu([]*mygo.MenuItem{
 		{Role: mygo.RoleAppMenu},
-		{Label: "文件", Submenu: []*mygo.MenuItem{
-			{Label: "打开仓库…", Accelerator: "CmdOrCtrl+O", Click: func(*mygo.MenuItem, *mygo.Window) { go pickAndOpen() }},
-			{Role: mygo.RoleOpenRecent, Label: "最近打开"},
+		{Label: loc.MenuFile(), Submenu: []*mygo.MenuItem{
+			{Label: loc.MenuOpenRepo(), Accelerator: "CmdOrCtrl+O", Click: func(*mygo.MenuItem, *mygo.Window) { go pickAndOpen() }},
+			{Role: mygo.RoleOpenRecent, Label: loc.MenuRecent()},
 			mygo.Separator(),
-			{Label: "安装命令行工具…", Click: func(*mygo.MenuItem, *mygo.Window) { go installLauncher() }},
+			{Label: loc.MenuInstallCLI(), Click: func(*mygo.MenuItem, *mygo.Window) { go installLauncher() }},
 			mygo.Separator(),
 			{Role: mygo.RoleClose},
 		}},
-		{Role: mygo.RoleEditMenu, Label: "编辑"},
-		{Role: mygo.RoleWindowMenu, Label: "窗口"},
+		{Role: mygo.RoleEditMenu, Label: loc.MenuEdit()},
+		{Role: mygo.RoleWindowMenu, Label: loc.MenuWindow()},
 	})
 }
 

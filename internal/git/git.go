@@ -7,11 +7,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	loc "mygit/locales"
 )
 
 // Repo is a working tree and its repository.
@@ -25,7 +26,7 @@ type Repo struct {
 type UnsafeError struct{ Dir string }
 
 func (e *UnsafeError) Error() string {
-	return e.Dir + " 的所有者不是当前用户，git 出于安全考虑拒绝在里面运行"
+	return loc.GitUnsafe(e.Dir)
 }
 
 // Open finds the repository dir is in.
@@ -36,7 +37,7 @@ func Open(dir string) (*Repo, error) {
 	}
 	lines := strings.Split(strings.TrimSpace(out), "\n")
 	if err != nil || len(lines) != 2 {
-		return nil, fmt.Errorf("%s 不是 git 仓库", dir)
+		return nil, errors.New(loc.GitNotRepo(dir))
 	}
 	return &Repo{Dir: filepath.Clean(strings.TrimSpace(lines[0])), GitDir: filepath.Clean(strings.TrimSpace(lines[1]))}, nil
 }

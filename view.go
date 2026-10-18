@@ -14,6 +14,7 @@ import (
 
 	"mygit/internal/git"
 	"mygit/internal/patch"
+	loc "mygit/locales"
 )
 
 const rowHeight = 26
@@ -26,14 +27,14 @@ func (a *app) view(c *ui.Context) {
 		if a.errMsg != "" {
 			ui.Row(c).Padding(6, 12).Gap(8).Background(t.Danger.Alpha(0.12)).AlignItems(ui.Center).Children(func() {
 				ui.Text(c, a.errMsg).TextColor(t.Danger).Wrap().Grow(1)
-				if a.trustDir != "" && ui.Button(c, "信任并打开").Tooltip("写入 git 的 safe.directory 设置").Clicked() {
+				if a.trustDir != "" && ui.Button(c, loc.TrustOpen()).Tooltip(loc.TrustTooltip()).Clicked() {
 					if err := git.Trust(a.trustDir); err != nil {
 						a.errMsg = err.Error()
 					} else {
 						a.openDropped([]string{a.trustDir})
 					}
 				}
-				if ui.Button(c, "关闭").Clicked() {
+				if ui.Button(c, loc.Close()).Clicked() {
 					a.errMsg, a.trustDir = "", ""
 				}
 			})
@@ -67,7 +68,7 @@ func (a *app) toolbar(c *ui.Context) {
 		ui.Text(c, a.repo.Name()).FontSize(13).Bold().Tooltip(a.repo.Dir)
 		branch := st.Branch
 		if branch == "" {
-			branch = "（游离 HEAD）"
+			branch = loc.Detached()
 		}
 		a.branchesButton(c, "⎇ "+branch+" ▾")
 		if st.Upstream != "" {
@@ -79,40 +80,40 @@ func (a *app) toolbar(c *ui.Context) {
 			ui.Text(c, a.busy+"…").TextColor(t.TextMuted)
 		}
 		idle := a.busy == ""
-		ui.Button(c, "获取 ▾").Label("获取").Disabled(!idle).Menu(func(m *ui.Menu) {
-			if m.Item("获取全部远程").Chosen() {
-				a.run("获取", a.repo.Fetch, nil)
+		ui.Button(c, loc.Fetch()+" ▾").Label(loc.Fetch()).Disabled(!idle).Menu(func(m *ui.Menu) {
+			if m.Item(loc.FetchAll()).Chosen() {
+				a.run(loc.OpFetch(), a.repo.Fetch, nil)
 			}
 			if names := a.remoteNames(); len(names) > 1 {
 				m.Separator()
 				for _, name := range names {
-					if m.Item("获取 " + name).Chosen() {
-						a.run("获取 "+name, func(ctx context.Context) error { return a.repo.FetchRemote(ctx, name) }, nil)
+					if m.Item(loc.FetchRemote(name)).Chosen() {
+						a.run(loc.OpFetchRemote(name), func(ctx context.Context) error { return a.repo.FetchRemote(ctx, name) }, nil)
 					}
 				}
 			}
 		})
-		ui.Button(c, "拉取 ▾").Label("拉取").Disabled(!idle || st.Upstream == "").Menu(func(m *ui.Menu) {
+		ui.Button(c, loc.Pull()+" ▾").Label(loc.Pull()).Disabled(!idle || st.Upstream == "").Menu(func(m *ui.Menu) {
 			pull := func(mode git.PullMode) {
-				a.run("拉取", func(ctx context.Context) error { return a.repo.Pull(ctx, mode) }, nil)
+				a.run(loc.OpPull(), func(ctx context.Context) error { return a.repo.Pull(ctx, mode) }, nil)
 			}
-			if m.Item("拉取（仅快进）").Chosen() {
+			if m.Item(loc.PullFF()).Chosen() {
 				pull(git.PullFastForward)
 			}
-			if m.Item("拉取并变基").Chosen() {
+			if m.Item(loc.PullRebase()).Chosen() {
 				pull(git.PullRebase)
 			}
-			if m.Item("拉取并合并").Chosen() {
+			if m.Item(loc.PullMerge()).Chosen() {
 				pull(git.PullMerge)
 			}
 		})
-		if ui.Button(c, "推送…").Tooltip("查看要推送的提交").Disabled(!idle || st.Branch == "").Clicked() {
+		if ui.Button(c, loc.PushMenu()).Tooltip(loc.PushTooltip()).Disabled(!idle || st.Branch == "").Clicked() {
 			a.openPush()
 		}
-		if ui.Button(c, "刷新").Tooltip("⌘R").Clicked() {
+		if ui.Button(c, loc.Refresh()).Tooltip(shortcut("R")).Clicked() {
 			a.refresh()
 		}
-		ui.Button(c, "⋯").Label("仓库").Menu(a.repoMenu)
+		ui.Button(c, "⋯").Label(loc.Repository()).Menu(a.repoMenu)
 	})
 }
 
@@ -124,23 +125,23 @@ func (a *app) changesPanel(c *ui.Context) {
 		// The message on top, as VS Code has it, where it shows however
 		// many files changed.
 		ui.Column(c).Gap(8).Padding(10).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
-			ui.TextArea(c, &a.message).Placeholder("提交说明（⌘↩ 提交）").Label("提交说明").Lines(2, 8)
+			ui.TextArea(c, &a.message).Placeholder(loc.MessagePlaceholder(shortcut("↩"))).Label(loc.Message()).Lines(2, 8)
 			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
-				if ui.Checkbox(c, &a.amend, "修改上次提交").Changed() {
+				if ui.Checkbox(c, &a.amend, loc.Amend()).Changed() {
 					a.toggleAmend()
 				}
 				ui.Box(c).Grow(1)
-				label := "提交"
+				label := loc.Commit()
 				if n := len(a.staged); n > 0 {
-					label = fmt.Sprintf("提交 %d 个文件", n)
+					label = loc.CommitFiles(n)
 				}
-				if ui.PrimaryButton(c, label).Disabled(!a.canCommit()).Tooltip("⌘↩").Clicked() {
+				if ui.PrimaryButton(c, label).Disabled(!a.canCommit()).Tooltip(shortcut("↩")).Clicked() {
 					a.commit()
 				}
 			})
 		})
-		a.changeSection(c, "暂存的更改", true)
-		a.changeSection(c, "更改", false)
+		a.changeSection(c, loc.Staged(), true)
+		a.changeSection(c, loc.Changes(), false)
 	})
 	c.OnShortcut(ui.Cmd, ui.KeyEnter, a.commit)
 }
@@ -161,10 +162,10 @@ func (a *app) changeSection(c *ui.Context, title string, staged bool) {
 		if len(changes) > 0 {
 			idle := a.busy == ""
 			if staged {
-				if iconButton(c, "minus", "全部取消暂存") && idle {
+				if iconButton(c, "minus", loc.UnstageAll()) && idle {
 					a.unstageAll()
 				}
-			} else if iconButton(c, "plus", "全部暂存") && idle {
+			} else if iconButton(c, "plus", loc.StageAll()) && idle {
 				a.stageAll()
 			}
 		}
@@ -195,15 +196,15 @@ func (a *app) changeSection(c *ui.Context, title string, staged bool) {
 				ui.Box(c).Grow(1)
 			}
 			if row.Hovered() || chosen {
-				if iconButton(c, "open", "打开文件") {
+				if iconButton(c, "open", loc.OpenFile()) {
 					a.openInEditor(filepath.Join(a.repo.Dir, filepath.FromSlash(ch.Path)), 0)
 				}
-				if !staged && !ch.Conflict && iconButton(c, "undo", "丢弃更改") {
+				if !staged && !ch.Conflict && iconButton(c, "undo", loc.DiscardChanges()) {
 					a.discard(ch)
 				}
-				icon, label := "plus", "暂存"
+				icon, label := "plus", loc.Stage()
 				if staged {
-					icon, label = "minus", "取消暂存"
+					icon, label = "minus", loc.Unstage()
 				}
 				if iconButton(c, icon, label) {
 					a.toggleStage(ch, staged)
@@ -217,10 +218,10 @@ func (a *app) changeSection(c *ui.Context, title string, staged bool) {
 				Width(14).TextAlign(ui.Center).Tooltip(changeName(code))
 		})
 		row.ContextMenu(func(m *ui.Menu) {
-			if m.Item(map[bool]string{true: "取消暂存", false: "暂存"}[staged]).Chosen() {
+			if m.Item(map[bool]string{true: loc.Unstage(), false: loc.Stage()}[staged]).Chosen() {
 				a.toggleStage(ch, staged)
 			}
-			if !staged && !ch.Conflict && m.Item("丢弃更改…").Chosen() {
+			if !staged && !ch.Conflict && m.Item(loc.DiscardMenu()).Chosen() {
 				a.discard(ch)
 			}
 			m.Separator()
@@ -297,7 +298,25 @@ func changeColor(t *ui.Theme, code byte, chosen bool) ui.Color {
 }
 
 func changeName(code byte) string {
-	return map[byte]string{'M': "已修改", 'A': "新增", 'D': "已删除", 'R': "已重命名", 'C': "已复制", '?': "未跟踪", 'U': "冲突", 'T': "类型改变"}[code]
+	switch code {
+	case 'M':
+		return loc.StatusM()
+	case 'A':
+		return loc.StatusA()
+	case 'D':
+		return loc.StatusD()
+	case 'R':
+		return loc.StatusR()
+	case 'C':
+		return loc.StatusC()
+	case '?':
+		return loc.StatusU()
+	case 'U':
+		return loc.StatusConflict()
+	case 'T':
+		return loc.StatusT()
+	}
+	return ""
 }
 
 // detailView is the diff of what was chosen last: a commit, with its files
@@ -319,9 +338,9 @@ func (a *app) detailView(c *ui.Context) {
 		case d.change != nil:
 			ui.Row(c).Padding(8, 12).Gap(8).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 				ui.Text(c, d.change.Path).Bold().SingleLine()
-				side := "工作区"
+				side := loc.SideWorktree()
 				if d.staged {
-					side = "已暂存"
+					side = loc.SideStaged()
 				}
 				ui.Badge(c, side)
 				ui.Box(c).Grow(1)
@@ -330,7 +349,7 @@ func (a *app) detailView(c *ui.Context) {
 			a.diffView(c)
 		default:
 			ui.Column(c).Fill().Center().Children(func() {
-				ui.Text(c, "选择一个提交或更改查看差异").TextColor(t.TextMuted)
+				ui.Text(c, loc.DetailEmpty()).TextColor(t.TextMuted)
 			})
 		}
 	})
@@ -342,7 +361,7 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 	ui.Column(c).Padding(8, 12).Gap(3).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 		ui.Text(c, cm.Subject).Bold().SingleLine()
 		if comparing(cm) {
-			ui.Text(c, fmt.Sprintf("%d 个文件有差异", len(d.files))).TextColor(t.TextMuted)
+			ui.Text(c, loc.FilesDiffer(len(d.files))).TextColor(t.TextMuted)
 			return
 		}
 		ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
@@ -353,10 +372,10 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 			if n := len(cm.Parents); n > 1 {
 				labels := make([]string, n)
 				for i, p := range cm.Parents {
-					labels[i] = fmt.Sprintf("对比父提交 %d（%s）", i+1, p[:8])
+					labels[i] = loc.ParentN(i+1, p[:8])
 				}
 				label := labels[d.parent]
-				if ui.Select(c.Key("parent"), &label, labels).Label("对比的父提交").Changed() {
+				if ui.Select(c.Key("parent"), &label, labels).Label(loc.ParentLabel()).Changed() {
 					a.showParent(slices.Index(labels, label))
 				}
 			}
@@ -369,20 +388,20 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 
 // fileMenu is a file's context menu, of a commit's files or the changes.
 func (a *app) fileMenu(m *ui.Menu, path, rev string) {
-	if m.Item("在编辑器中打开").Chosen() {
+	if m.Item(loc.OpenInEditor()).Chosen() {
 		a.openInEditor(filepath.Join(a.repo.Dir, filepath.FromSlash(path)), 0)
 	}
-	if m.Item("文件历史").Chosen() {
+	if m.Item(loc.FileHistory()).Chosen() {
 		a.setScope(git.Scope{Ref: a.scope.Ref, Path: path})
 	}
-	if m.Item("Blame（逐行追溯）").Chosen() {
+	if m.Item(loc.Blame()).Chosen() {
 		a.showBlame(rev, path)
 	}
 	m.Separator()
-	if m.Item("复制路径").Chosen() {
+	if m.Item(loc.CopyPath()).Chosen() {
 		mygo.Clipboard.WriteText(path)
 	}
-	if m.Item("在文件夹中显示").Chosen() {
+	if m.Item(loc.ShowInFolder()).Chosen() {
 		mygo.Shell.ShowItemInFolder(filepath.Join(a.repo.Dir, filepath.FromSlash(path)))
 	}
 }
@@ -435,11 +454,11 @@ func (a *app) diffView(c *ui.Context) {
 	case d.loading:
 		ui.Column(c).Fill().Center().Children(func() { ui.Spinner(c).Size(18, 18) })
 	case d.commit != nil && d.fileSel >= 0 && d.fileSel < len(d.files) && d.files[d.fileSel].Binary:
-		ui.Column(c).Fill().Center().Children(func() { ui.Text(c, "二进制文件").TextColor(t.TextMuted) })
+		ui.Column(c).Fill().Center().Children(func() { ui.Text(c, loc.BinaryFile()).TextColor(t.TextMuted) })
 	case d.diff != nil:
 		editor.DiffView(c.Key(d.gen*1000+d.fileSel), d.diff).Fill()
 	default:
-		ui.Column(c).Fill().Center().Children(func() { ui.Text(c, "没有差异").TextColor(t.TextMuted) })
+		ui.Column(c).Fill().Center().Children(func() { ui.Text(c, loc.NoDiff()).TextColor(t.TextMuted) })
 	}
 }
 
@@ -453,11 +472,11 @@ func refLabel(ref string) (string, bool) {
 
 // lineButtons act on the lines selected in the diff of a change.
 func (a *app) lineButtons(c *ui.Context) {
-	if ui.Button(c, "在编辑器中打开").Clicked() {
+	if ui.Button(c, loc.OpenInEditor()).Clicked() {
 		a.openChangeInEditor()
 	}
 	if a.detail.whole {
-		if ui.PrimaryButton(c, "保存").Disabled(!a.unsaved()).Tooltip("⌘S").Clicked() {
+		if ui.PrimaryButton(c, loc.Save()).Disabled(!a.unsaved()).Tooltip(shortcut("S")).Clicked() {
 			a.saveFile()
 		}
 		c.OnShortcut(ui.Cmd, ui.KeyS, a.saveFile)
@@ -468,15 +487,15 @@ func (a *app) lineButtons(c *ui.Context) {
 	chosen := a.selectedLines()
 	none := chosen == nil || a.busy != "" || a.unsaved()
 	if a.detail.staged {
-		if ui.Button(c, "取消暂存选中行").Disabled(none).Clicked() {
+		if ui.Button(c, loc.UnstageLines()).Disabled(none).Clicked() {
 			a.applyLines(chosen, lineUnstage)
 		}
 		return
 	}
-	if ui.Button(c, "丢弃选中行").Disabled(none).Clicked() {
+	if ui.Button(c, loc.DiscardLines()).Disabled(none).Clicked() {
 		a.applyLines(chosen, lineDiscard)
 	}
-	if ui.Button(c, "暂存选中行").Disabled(none).Tooltip("点击或拖动行号选中行").Clicked() {
+	if ui.Button(c, loc.StageLines()).Disabled(none).Tooltip(loc.StageLinesTooltip()).Clicked() {
 		a.applyLines(chosen, lineStage)
 	}
 }

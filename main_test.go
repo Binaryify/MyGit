@@ -10,10 +10,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
 	"mygit/internal/git"
+	loc "mygit/locales"
 )
 
 // testRepo makes a repository with a merged branch and a change in its
@@ -658,5 +660,33 @@ func TestBranchesPopoverAndKeys(t *testing.T) {
 	tt.settle()
 	if len(tt.a.staged) != 1 || tt.a.staged[0].Path != "notes.txt" {
 		t.Fatalf("staged %+v", tt.a.staged)
+	}
+}
+
+// The tests read the window in Chinese, as it was written.
+func TestMain(m *testing.M) {
+	i18n.SetLocaleFunc(func() string { return "zh-Hans" })
+	os.Exit(m.Run())
+}
+
+// In English the window says everything in English.
+func TestEnglish(t *testing.T) {
+	i18n.SetLocaleFunc(func() string { return "en" })
+	defer i18n.SetLocaleFunc(func() string { return "zh-Hans" })
+	tt := newTester(t)
+	for _, s := range []string{"Staged Changes", "Changes", "Commit message", "Amend last commit", "History", "4 commits", "All Branches ▾"} {
+		if !tt.HasText(s) {
+			t.Fatalf("no %q in %q", s, tt.Texts())
+		}
+	}
+	for _, s := range tt.Texts() {
+		for _, r := range s {
+			if r >= 0x4e00 && r <= 0x9fff {
+				t.Fatalf("Chinese in the English window: %q", s)
+			}
+		}
+	}
+	if loc.In("en").CommitCount(1) != "1 commit" || loc.In("zh-Hans").CommitCount(3) != "3 个提交" {
+		t.Fatal("plurals", loc.In("en").CommitCount(1), loc.In("zh-Hans").CommitCount(3))
 	}
 }
