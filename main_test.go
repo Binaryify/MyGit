@@ -439,3 +439,19 @@ func TestPushDialog(t *testing.T) {
 		t.Fatalf("error %q, upstream %q", tt.a.errMsg, tt.a.status.Upstream)
 	}
 }
+
+func TestWelcome(t *testing.T) {
+	dir := t.TempDir()
+	w := &welcome{recent: []string{filepath.Join(dir, "project")}}
+	tt := ui.NewTester(w.view, 520, 600)
+	for _, s := range []string{"MyGit", "把仓库文件夹拖到这里", "或点击选择文件夹", "最近打开", "project"} {
+		if !tt.HasText(s) {
+			t.Fatalf("no %q in %q", s, tt.Texts())
+		}
+	}
+	w.open(dir) // not a repository
+	tt.Frame()
+	if w.errMsg == "" || !tt.HasText(w.errMsg) {
+		t.Fatalf("error %q, texts %q", w.errMsg, tt.Texts())
+	}
+}

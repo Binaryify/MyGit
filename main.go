@@ -30,7 +30,7 @@ func main() {
 	mygo.App.OnOpenFile(func(path string) { openDir(path) }) // Open Recent, the Dock menu
 	mygo.App.OnActivate(func(visible bool) {
 		if !visible {
-			go pickAndOpen()
+			showWelcome() // the Dock icon clicked with no window open
 		}
 	})
 	mygo.App.WhenReady(func() {
@@ -44,7 +44,7 @@ func main() {
 }
 
 // openArg opens the repository named by a command line's arguments, its
-// working folder's when none is, or asks for one when that isn't a
+// working folder's when none is, or the welcome window when that isn't a
 // repository either, as when the app starts from Finder or the Start menu.
 func openArg(args []string, cwd string) {
 	dir := cwd
@@ -58,7 +58,7 @@ func openArg(args []string, cwd string) {
 		open(repo)
 		return
 	}
-	go pickAndOpen()
+	showWelcome()
 }
 
 func openDir(dir string) {
@@ -91,20 +91,15 @@ func open(repo *git.Repo) {
 	windows[repo.Dir] = a.win
 	a.win.OnClosed(func() { delete(windows, repo.Dir) })
 	a.start()
+	closeWelcome()
 }
 
-// pickAndOpen asks for a repository's folder and opens it, and quits
-// when none is chosen and no window is open. The dialogs wait for their
-// answer: call it on a goroutine.
+// pickAndOpen asks for a repository's folder and opens it. The dialogs
+// wait for their answer: call it on a goroutine.
 func pickAndOpen() {
 	for {
 		paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Title: "打开 git 仓库", Directory: true})
 		if err != nil || len(paths) == 0 {
-			mygo.RunOnMain(func() {
-				if len(windows) == 0 {
-					mygo.App.Quit()
-				}
-			})
 			return
 		}
 		repo, err := git.Open(paths[0])
