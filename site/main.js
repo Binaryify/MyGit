@@ -27,7 +27,7 @@ const zh = {
   "why.s4": "完成每一个改动，表现和终端里完全一致",
   "vs.eyebrow": "对比",
   "vs.title": "为什么不用 Sourcetree？",
-  "vs.lede": "Sourcetree 免费、成熟，但和 MyGit 想做的不是一回事。",
+  "vs.lede": "Sourcetree 免费、成熟，但它只是一个 git 客户端。MyGit 是为 AI 写代码的时代做的：改动交给 AI，你不用打开 IDE，就能看清它改了什么，审阅、顺手修一行、暂存、提交。",
   "vs.linux.a": "支持",
   "vs.linux.b": "不支持，只有 macOS 和 Windows",
   "vs.same": "各平台同一个应用",

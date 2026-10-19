@@ -49,7 +49,7 @@ MyGit 读取靠解析 `git` 的输出，所有改动都交给 `git` 命令本身
 
 ## 为什么不用 Sourcetree？
 
-Sourcetree 免费、成熟，但和 MyGit 想做的不是一回事：
+Sourcetree 免费、成熟，但它只是一个 git 客户端。MyGit 是为 AI 写代码的时代做的：改动交给 AI，你不用打开 IDE，就能看清它改了什么，审阅、顺手修一行、暂存、提交。除此之外：
 
 | | MyGit | Sourcetree |
 |---|---|---|

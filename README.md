@@ -49,7 +49,7 @@ MyGit reads what `git` prints and lets `git` itself make every change, so a repo
 
 ## Why not Sourcetree?
 
-Sourcetree is free and mature, but it isn't what MyGit is after:
+Sourcetree is free and mature, but it's a git client and nothing more. MyGit is made for coding with AI: let an agent make the changes, then see what it changed — review it, fix a line, stage and commit — without opening an IDE. Beside that:
 
 | | MyGit | Sourcetree |
 |---|---|---|
