@@ -5,8 +5,9 @@
 <h1 align="center">MyGit</h1>
 
 <p align="center">
-  A light, fast git client with a native UI.<br>
-  JetBrains' commit graph and history tools, VS Code's way of staging, in a fraction of the memory.
+  <b>See what your agent changed.</b><br>
+  Every change in your working tree, side by side, as it lands; stage what's right and commit, without opening an IDE.<br>
+  A light, fast, modern git client: JetBrains' commit graph and history tools, VS Code's way of staging, in a fraction of the memory.
 </p>
 
 <p align="center">
@@ -31,9 +32,23 @@
 
 ## Why MyGit
 
-Standalone git clients built on an IDE platform carry the IDE with them. MyGit is a single native binary drawn on the GPU by [MyGo](https://github.com/egoist/mygo): no webview, no JVM.
+With an agent writing the code, most of your time in git goes to looking at what changed. MyGit is made for that:
 
-Memory once a repository of 20,000 commits is open, every process of the app counted (Apple M4):
+1. **See** every change as it lands: the window refreshes while the agent works, each file side by side with syntax highlighting. Lockfiles, minified and generated files fold away, and changed pictures show before and after.
+2. **Keep** what's right: fix a line right in the diff, stage the files, changes or lines you want, and commit.
+3. **Send back** what isn't: comment on the lines to redo, copy the comments as Markdown, each with its file, lines and code, and paste them to Claude Code, Codex or a colleague.
+
+MyGit reads the repository, not an agent's session, so it works the same with any agent, with several at once, and with your own edits.
+
+| How you look at an agent's changes today | What MyGit does instead |
+|---|---|
+| The agent's own diff view | Works with every agent, and lets you stage single lines and fix the code before you commit |
+| Opening an IDE | Opens in a moment, in a fraction of the memory |
+| `git diff` in a terminal | Side by side, generated files folded, refreshed as the agent works |
+
+### Light, fast and modern
+
+MyGit feels like the IDE you know: JetBrains' commit graph and history tools, VS Code's list of changes and way of staging, ⌘K for commands and ⌘P to go to a file, light and dark. Without the IDE: it's a single native binary drawn on the GPU by [MyGo](https://github.com/egoist/mygo), no webview, no JVM. Memory once a repository of 20,000 commits is open, every process of the app counted (Apple M4):
 
 | App | Memory |
 |---|---|
@@ -45,18 +60,7 @@ Memory once a repository of 20,000 commits is open, every process of the app cou
 
 On the same repository, MyGit reads the whole history and lays out its graph in **0.13 s**, opens a commit with a 20 MB patch (5,677 files) in **0.24 s**, and uses **0 %** CPU while idle.
 
-MyGit reads what `git` prints and lets `git` itself make every change, so a repository behaves in MyGit exactly as it does in a terminal.
-
-## Why not Sourcetree?
-
-Sourcetree is free and mature, but it's a git client and nothing more. MyGit is made for coding with AI: let an agent make the changes, then see what it changed — review it, fix a line, stage and commit — without opening an IDE. Beside that:
-
-| | MyGit | Sourcetree |
-|---|---|---|
-| Linux | **Yes** | No — macOS and Windows only |
-| One app on every platform | **Yes**, the same code and features | Separate macOS and Windows apps that differ |
-| Resolving a conflict | **Built in**: ours, result and theirs side by side, a conflict at a time | Take a whole side, or hand off to an external merge tool |
-| Fixing a line in the diff before staging it | **Yes** | No |
+MyGit reads what `git` prints and lets `git` itself make every change, so a repository behaves in MyGit exactly as it does in a terminal. The same app, with the same features, runs on macOS, Windows and Linux.
 
 ## Features
 
@@ -79,11 +83,11 @@ Sourcetree is free and mature, but it's a git client and nothing more. MyGit is 
   </tr>
 </table>
 
-- **History** — every branch, tag and remote with its graph, streamed as it loads; search by message, author or hash; filter by branch or path (file history)
-- **Commits** — whole messages, changed files and side-by-side diffs with syntax highlighting; a merge against any parent; compare two commits (⌘-click), a branch or the working tree
+- **Reading changes** — generated files (lockfiles, minified, `linguist-generated`) fold away; mark files viewed; changed pictures show before and after; comment on lines and copy the comments as Markdown for an agent or a colleague
 - **Staging** — stage, unstage or discard files, changes or selected lines; edit and save the working tree in the diff
+- **Commits** — whole messages, changed files and side-by-side diffs with syntax highlighting; a merge against any parent; compare two commits (⌘-click), a branch or the working tree
+- **History** — every branch, tag and remote with its graph, streamed as it loads; search by message, author or hash; filter by branch or path (file history)
 - **History tools** — branch, tag, check out, cherry-pick, revert, reset (soft / mixed / hard) and interactive rebase (reorder, reword, edit, squash, fixup, drop)
-- **Reviewing** — generated files (lockfiles, minified, `linguist-generated`) fold away; mark files viewed; changed pictures show before and after; comment on lines and copy the comments as Markdown for an agent or a colleague
 - **Pull requests** — open a GitHub pull request, read and reply to its threads under their lines, resolve them, and submit a review: comment, approve or request changes
 - **Conflicts** — a three-pane merge view, and continue, skip or abort a merge, rebase, cherry-pick or revert
 - **Stash, blame and remotes** — stash with untracked files, blame a file line by line, manage remotes, pull (fast-forward, rebase or merge), preview a push, force with lease
