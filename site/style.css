@@ -468,6 +468,26 @@ kbd {
   .hero-shot { transform: none; }
 }
 
+/* ---------- Why: the three steps ---------- */
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 980px;
+  margin: 56px auto 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+.steps li { padding: 28px 28px 30px; }
+.step-tag { font: 500 13px var(--mono); color: var(--green-hi); }
+.steps h3 { margin: 10px 0 8px; font-size: 22px; font-weight: 600; letter-spacing: -.02em; }
+.steps p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.6; }
+
+.compare-2 .compare-row { grid-template-columns: 1fr 1.6fr; }
+.compare-2 .compare-head b:nth-child(2) { color: var(--green-hi); }
+
 /* ---------- Narrow screens ---------- */
 
 @media (max-width: 900px) {
@@ -482,6 +502,7 @@ kbd {
   .stats div:nth-child(3) { border-left: 0; }
   .stats div:nth-child(n + 3) { border-top: 1px solid var(--border); }
   .chips { grid-template-columns: 1fr 1fr; }
+  .steps { grid-template-columns: 1fr; max-width: 560px; }
   .install-grid { grid-template-columns: 1fr; }
 }
 
@@ -499,6 +520,8 @@ kbd {
   .compare-row { grid-template-columns: 1fr 1fr; gap: 6px 16px; padding: 16px 18px; }
   .compare-row > span:first-child { grid-column: 1 / -1; color: var(--text); font-weight: 500; }
   .compare-head > span:first-child { display: none; }
+  .compare-2 .compare-row { grid-template-columns: 1fr; }
+  .compare-2 .compare-head { display: none; }
   .more { grid-template-columns: 1fr; }
   .chips { grid-template-columns: 1fr; }
   .footer-inner { flex-direction: column; align-items: flex-start; }

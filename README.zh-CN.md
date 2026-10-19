@@ -27,7 +27,7 @@
 </p>
 
 <p align="center">
-  <a href="site/assets/mygit-demo-zh.mp4"><b>▶ 观看 40 秒演示视频</b></a>
+  <a href="site/assets/mygit-demo-zh.mp4"><b>▶ 观看演示视频</b></a>
 </p>
 
 ## 为什么是 MyGit

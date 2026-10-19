@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MyGit — a light, native git client</title>
-  <meta name="description" content="MyGit is a light, fast git client with a native UI: JetBrains' commit graph and history tools, VS Code's way of staging, in a fraction of the memory.">
-  <meta property="og:title" content="MyGit — a light, native git client">
-  <meta property="og:description" content="The commit graph, without the IDE. macOS, Windows and Linux.">
+  <title>MyGit — see what your agent changed</title>
+  <meta name="description" content="See what your agent changed: every change in your working tree, side by side, as it lands. A light, fast, modern git client with JetBrains' commit graph and history tools and VS Code's way of staging, in a fraction of the memory.">
+  <meta property="og:title" content="MyGit — see what your agent changed">
+  <meta property="og:description" content="Every change, side by side, as it lands. A light, native git client for macOS, Windows and Linux.">
   <meta property="og:image" content="assets/main-en.webp">
   <meta name="theme-color" content="#07090F">
   <link rel="icon" href="assets/favicon.png">
@@ -48,11 +48,11 @@
     <section class="hero">
       <a class="pill" href="#demo">
         <span class="pill-dot"></span>
-        <span data-i18n="hero.pill">Native · GPU-drawn · Very low memory</span>
+        <span data-i18n="hero.pill">Made for coding with agents · Native · Light</span>
         <span class="pill-arrow" aria-hidden="true">→</span>
       </a>
-      <h1 data-i18n-html="hero.title">The commit graph,<br><span class="grad">without the IDE.</span></h1>
-      <p class="lede" data-i18n="hero.lede">A modern, light git client with a native UI that opens right away — JetBrains' history tools and VS Code's way of staging, in a fraction of the memory.</p>
+      <h1 data-i18n-html="hero.title">See what your agent<br><span class="grad">changed</span></h1>
+      <p class="lede" data-i18n="hero.lede">Every change in your working tree, side by side, as it lands. Stage what's right and commit, without opening an IDE — in a light, fast, modern git client with JetBrains' history tools and VS Code's way of staging.</p>
       <div class="cta">
         <a class="btn btn-primary" href="#install" data-i18n="hero.get">Get MyGit</a>
         <a class="btn btn-ghost" href="#demo"><span aria-hidden="true">▶</span> <span data-i18n="hero.watch">Watch the demo</span></a>
@@ -71,7 +71,7 @@
     <!-- Demo -->
     <section id="demo" class="section reveal">
       <p class="eyebrow" data-i18n="demo.eyebrow">Demo</p>
-      <h2 data-i18n="demo.title">See it in 40 seconds.</h2>
+      <h2 data-i18n="demo.title">See it in under a minute.</h2>
       <div class="video-frame card">
         <video data-video="mygit-demo" src="assets/mygit-demo-en.mp4" poster="assets/mygit-demo-en.webp"
                width="1920" height="1080" playsinline preload="none"></video>
@@ -83,9 +83,58 @@
 
     <!-- Why -->
     <section id="why" class="section">
-      <p class="eyebrow" data-i18n="why.eyebrow">Performance</p>
-      <h2 data-i18n="why.title">A fraction of the memory.</h2>
-      <p class="section-lede" data-i18n="why.lede">Git clients built on an IDE platform carry the IDE with them. MyGit is one native binary, drawn on the GPU by MyGo: no webview, no JVM — so it opens right away, with no platform to boot and nothing to warm up.</p>
+      <p class="eyebrow" data-i18n="flow.eyebrow">Made for coding with agents</p>
+      <h2 data-i18n="flow.title">Most of your time in git is spent looking at what changed.</h2>
+      <p class="section-lede" data-i18n="flow.lede">MyGit is made for that. It reads the repository, not an agent's session, so it works the same with any agent, with several at once, and with your own edits.</p>
+
+      <ol class="steps reveal">
+        <li class="card">
+          <span class="step-tag">01</span>
+          <h3 data-i18n="flow.s1.title">See</h3>
+          <p data-i18n="flow.s1.body">Every change as it lands: the window refreshes while the agent works, each file side by side with syntax highlighting. Lockfiles and generated files fold away; pictures show before and after.</p>
+        </li>
+        <li class="card">
+          <span class="step-tag">02</span>
+          <h3 data-i18n="flow.s2.title">Keep</h3>
+          <p data-i18n="flow.s2.body">Fix a line right in the diff, stage the files, changes or lines that are right, and commit.</p>
+        </li>
+        <li class="card">
+          <span class="step-tag">03</span>
+          <h3 data-i18n="flow.s3.title">Send back</h3>
+          <p data-i18n="flow.s3.body">Comment on the lines to redo and copy the comments as Markdown, each with its file, lines and code, for Claude Code, Codex or a colleague.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Compared -->
+    <section id="compare" class="section">
+      <p class="eyebrow" data-i18n="vs.eyebrow">Compared</p>
+      <h2 data-i18n="vs.title">How do you look at an agent's changes today?</h2>
+
+      <div class="compare compare-2 card reveal">
+        <div class="compare-row compare-head">
+          <span data-i18n="vs.today">Today</span><b>MyGit</b>
+        </div>
+        <div class="compare-row">
+          <span data-i18n="vs.agent">The agent's own diff view</span>
+          <span class="yes" data-i18n="vs.agent.a">Works with every agent, stages single lines, and lets you fix the code before you commit</span>
+        </div>
+        <div class="compare-row">
+          <span data-i18n="vs.ide">Opening an IDE</span>
+          <span class="yes" data-i18n="vs.ide.a">Opens right away, in a fraction of the memory</span>
+        </div>
+        <div class="compare-row">
+          <span data-i18n-html="vs.term"><code>git diff</code> in a terminal</span>
+          <span class="yes" data-i18n="vs.term.a">Side by side, generated files folded, refreshed as the agent works</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Speed -->
+    <section id="speed" class="section">
+      <p class="eyebrow" data-i18n="why.eyebrow">Light, fast and modern</p>
+      <h2 data-i18n="why.title">The IDE you know, in a fraction of the memory.</h2>
+      <p class="section-lede" data-i18n="why.lede">JetBrains' commit graph and history tools, VS Code's list of changes and way of staging, ⌘K for commands and ⌘P to go to a file, light and dark. Without the IDE: MyGit is one native binary, drawn on the GPU by MyGo — no webview, no JVM — so it opens right away.</p>
 
       <div class="memory card reveal">
         <div class="bar-row">
@@ -122,39 +171,6 @@
         <div><dt>0<small>%</small></dt><dd data-i18n="why.s3">CPU while idle</dd></div>
         <div><dt>git</dt><dd data-i18n="why.s4">makes every change, so nothing behaves differently from your terminal</dd></div>
       </dl>
-    </section>
-
-    <!-- Compared -->
-    <section id="compare" class="section">
-      <p class="eyebrow" data-i18n="vs.eyebrow">Compared</p>
-      <h2 data-i18n="vs.title">Why not Sourcetree?</h2>
-      <p class="section-lede" data-i18n="vs.lede">Sourcetree is free and mature, but it's a git client and nothing more. MyGit is made for coding with AI: let an agent make the changes, then see what it changed — review it, fix a line, stage and commit — without opening an IDE.</p>
-
-      <div class="compare card reveal">
-        <div class="compare-row compare-head">
-          <span></span><b>MyGit</b><b>Sourcetree</b>
-        </div>
-        <div class="compare-row">
-          <span>Linux</span>
-          <span class="yes" data-i18n="vs.linux.a">Yes</span>
-          <span class="no" data-i18n="vs.linux.b">No — macOS and Windows only</span>
-        </div>
-        <div class="compare-row">
-          <span data-i18n="vs.same">One app on every platform</span>
-          <span class="yes" data-i18n="vs.same.a">The same code and features</span>
-          <span class="no" data-i18n="vs.same.b">Separate macOS and Windows apps that differ</span>
-        </div>
-        <div class="compare-row">
-          <span data-i18n="vs.merge">Resolving a conflict</span>
-          <span class="yes" data-i18n="vs.merge.a">Built in: three panes, a conflict at a time</span>
-          <span class="no" data-i18n="vs.merge.b">Take a whole side, or an external merge tool</span>
-        </div>
-        <div class="compare-row">
-          <span data-i18n="vs.edit">Fixing a line in the diff before staging it</span>
-          <span class="yes" data-i18n="vs.edit.a">Yes</span>
-          <span class="no" data-i18n="vs.edit.b">No</span>
-        </div>
-      </div>
     </section>
 
     <!-- Features -->
@@ -203,7 +219,7 @@
             <li><code>stash</code><span data-i18n="m4">Stash with untracked files; apply, pop or branch from a stash</span></li>
             <li><code>blame</code><span data-i18n="m5">Who changed each line, and a double-click to their commit</span></li>
             <li><code>push</code><span data-i18n="m6">Preview what a push sends; force with lease; sign-ins asked in the window</span></li>
-            <li><code>review</code><span data-i18n="m7">Generated files fold away, files marked viewed, pictures before and after, comments copied as Markdown</span></li>
+            <li><code>viewed</code><span data-i18n="m7">Generated files fold away, files marked viewed, pictures before and after, comments copied as Markdown</span></li>
             <li><code>gh pr</code><span data-i18n="m8">Review GitHub pull requests: threads under their lines, replies, and approvals</span></li>
           </ul>
         </article>
