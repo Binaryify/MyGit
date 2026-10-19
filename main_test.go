@@ -690,3 +690,29 @@ func TestEnglish(t *testing.T) {
 		t.Fatal("plurals", loc.In("en").CommitCount(1), loc.In("zh-Hans").CommitCount(3))
 	}
 }
+
+// TestSaveWithKeys saves the file typed in, in the diff, with ⌘S (Ctrl+S
+// elsewhere), the editor holding the keys' focus.
+func TestSaveWithKeys(t *testing.T) {
+	tt := newTester(t)
+	dir := tt.a.repo.Dir
+	if err := os.WriteFile(filepath.Join(dir, "main.go"), []byte("package main\n\nfunc main() { println(1) }\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	tt.a.refresh()
+	tt.settle()
+	tt.click(t, "main.go")
+	tt.ClickAt(1100, 520) // in the file, on the diff's right
+	tt.Frame()
+	tt.Type("X")
+	tt.Frame()
+	if !tt.a.unsaved() {
+		t.Fatal("typing in the diff didn't edit the file")
+	}
+	tt.Key(ui.Cmd, ui.KeyS)
+	tt.settle()
+	b, _ := os.ReadFile(filepath.Join(dir, "main.go"))
+	if tt.a.unsaved() || string(b) != tt.a.detail.diff.New.String() {
+		t.Fatalf("⌘S didn't save: unsaved %v, file %q", tt.a.unsaved(), b)
+	}
+}
