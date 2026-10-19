@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
+	"image"
+	"image/draw"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -714,5 +717,53 @@ func TestSaveWithKeys(t *testing.T) {
 	b, _ := os.ReadFile(filepath.Join(dir, "main.go"))
 	if tt.a.unsaved() || string(b) != tt.a.detail.diff.New.String() {
 		t.Fatalf("⌘S didn't save: unsaved %v, file %q", tt.a.unsaved(), b)
+	}
+}
+
+// TestEditKeepsItsPlace edits a file in the diff back to how it was: the
+// diff shows the whole file as it's edited, opened at the first change,
+// so that a change typed away moves nothing.
+func TestEditKeepsItsPlace(t *testing.T) {
+	tt := newTester(t)
+	dir := tt.a.repo.Dir
+	var lines []string
+	for i := 1; i <= 80; i++ {
+		lines = append(lines, fmt.Sprintf("line %d", i))
+	}
+	os.WriteFile(filepath.Join(dir, "long.txt"), []byte(strings.Join(lines, "\n")+"\n"), 0o644)
+	tt.commitFiles(t, "Long", nil)
+	lines[39] = "line 40 changed"
+	os.WriteFile(filepath.Join(dir, "long.txt"), []byte(strings.Join(lines, "\n")+"\n"), 0o644)
+	tt.a.refresh()
+	tt.settle()
+	ch, _ := find(tt.a.unstaged, "long.txt")
+	tt.a.showChange(ch, false)
+	tt.settle()
+	d := tt.a.detail.diff
+	if !d.ExpandUnchanged || d.CursorPos().Line != 39 {
+		t.Fatalf("expanded %v, caret on line %d", d.ExpandUnchanged, d.CursorPos().Line)
+	}
+	tt.Frame()
+	// The lines above the change, as they show.
+	above := image.Rect(760, 450, 1180, 610)
+	before := image.NewRGBA(above)
+	draw.Draw(before, above, tt.Image(), above.Min, draw.Src)
+	// Type the change away, from the end of its line, the caret's.
+	tt.ClickAt(1000, 624)
+	tt.Frame()
+	for range " changed" {
+		tt.Key(0, ui.KeyBackspace)
+		tt.Frame()
+	}
+	if got := strings.Split(d.New.String(), "\n")[39]; got != "line 40" || len(d.Hunks()) != 0 {
+		t.Fatalf("line 40 %q, %d changes", got, len(d.Hunks()))
+	}
+	after := tt.Image()
+	for y := above.Min.Y; y < above.Max.Y; y++ {
+		for x := above.Min.X; x < above.Max.X; x++ {
+			if before.RGBAAt(x, y) != after.RGBAAt(x, y) {
+				t.Fatalf("the lines above moved: (%d, %d) differs", x, y)
+			}
+		}
 	}
 }

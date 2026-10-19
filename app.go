@@ -533,6 +533,9 @@ func (a *app) showChange(c git.Change, staged bool) {
 			}
 			r.diff = textDiff(c.Path, r.old, r.new)
 			r.diff.Editable = true
+			// The whole file, as it is edited: folding the lines around the
+			// changes would move everything once a change is typed away.
+			r.diff.ExpandUnchanged = true
 		} else {
 			r.diff = patchDiff(files[0])
 		}
@@ -565,6 +568,9 @@ func (a *app) showChange(c git.Change, staged bool) {
 		a.detail.change = &c
 		if r.patch != nil && patch.Partial(*r.patch) && !ignoreSpace {
 			a.reviewLines(r.diff)
+		}
+		if a.detail.whole && len(r.diff.Hunks()) > 0 {
+			r.diff.GoToHunk(0) // the file opens at its first change
 		}
 	})
 }
