@@ -76,8 +76,12 @@
 
       /* ---------- Scene 7: the memory ---------- */
       #s7 { padding: 0 0 0 132px; display: flex; flex-direction: column; justify-content: center; }
-      #s7 .headline { font-size: 100px; margin: 18px 0 60px; }
-      #root.zh #s7 .headline { font-size: 92px; }
+      #s7 .headline { font-size: 84px; margin: 18px 0 44px; }
+      .stats { display: flex; gap: 90px; margin-bottom: 48px; }
+      .stat { display: flex; flex-direction: column; gap: 10px; max-width: 560px; }
+      .stat b { font: 600 76px/1 var(--mono); color: var(--green); }
+      .stat > span { font-size: 28px; color: var(--muted); }
+      #root.zh #s7 .headline { font-size: 80px; }
       .bar-row { display: grid; grid-template-columns: 360px 1060px 220px; align-items: center; gap: 36px; margin-bottom: 30px; }
       .bar-label { font-size: 36px; color: var(--muted); }
       .bar-label.me { color: #E6ECF7; font-weight: 600; }
@@ -112,8 +116,12 @@
       #s1 .tag { margin-top: 10px; font-size: 50px; }
       #app { left: 40px; top: 510px; width: 1000px; height: 740px; }
       #s7 { padding: 0 70px 260px; }
-      #s7 .headline { font-size: 96px; margin: 18px 0 70px; }
-      #root.zh #s7 .headline { font-size: 92px; }
+      #s7 .headline { font-size: 84px; margin: 18px 0 50px; }
+      .stats { gap: 40px; margin-bottom: 56px; }
+      .stat { max-width: 440px; }
+      .stat b { font-size: 80px; }
+      .stat > span { font-size: 30px; }
+      #root.zh #s7 .headline { font-size: 80px; }
       .bar-row { grid-template-columns: 1fr 240px; gap: 16px 24px; margin-bottom: 44px; }
       .bar-label { grid-column: 1 / -1; font-size: 40px; }
       .bar-value { font-size: 44px; }
@@ -159,7 +167,7 @@
         </svg>
         <div data-hf-id="hf-trrc" class="word">
           <div data-hf-id="hf-plil" class="name">MyGit</div>
-          <div data-hf-id="hf-9ojz" class="tag" data-t="tagline">See what your agent changed</div>
+          <div data-hf-id="hf-9ojz" class="tag" data-t="tagline">Check your agent's changes, fast</div>
         </div>
       </section>
 
@@ -206,7 +214,7 @@
       </div>
 
       <section data-hf-id="hf-x1hi" id="s2" class="clip" data-start="3.5" data-duration="7.5" data-track-index="3">
-        <div data-hf-id="hf-8hv4" class="cap high" id="cap2"><p data-hf-id="hf-s4jw" class="eyebrow"><b data-hf-id="hf-wxem">$</b>git status</p><h2 data-hf-id="hf-2g5c" class="headline" data-t="s2">Changes show up as the agent works</h2></div>
+        <div data-hf-id="hf-8hv4" class="cap high" id="cap2"><p data-hf-id="hf-s4jw" class="eyebrow"><b data-hf-id="hf-wxem">$</b>git status</p><h2 data-hf-id="hf-2g5c" class="headline" data-t="s2">It edits, you see it. No refresh</h2></div>
       </section>
       <section data-hf-id="hf-jt35" id="s3" class="clip" data-start="11" data-duration="6" data-track-index="3">
         <div data-hf-id="hf-xclk" class="cap" id="cap3"><p data-hf-id="hf-gu14" class="eyebrow"><b data-hf-id="hf-l9t1">01</b>git diff</p><h2 data-hf-id="hf-hxqy" class="headline" data-t="s3">Every change, side by side</h2></div>
@@ -218,13 +226,18 @@
         <div data-hf-id="hf-wjzi" class="cap high" id="cap5"><p data-hf-id="hf-wfn4" class="eyebrow"><b data-hf-id="hf-q3a8">03</b>comments → agent</p><h2 data-hf-id="hf-uhgs" class="headline" data-t="s5">Hand the rest back to the agent</h2></div>
       </section>
       <section data-hf-id="hf-a050" id="s6" class="clip" data-start="30" data-duration="4" data-track-index="3">
-        <div data-hf-id="hf-a051" class="cap" id="cap6"><p data-hf-id="hf-a052" class="eyebrow"><b data-hf-id="hf-a053">$</b>git log --graph</p><h2 data-hf-id="hf-a054" class="headline" data-t="s6">The IDE you know, without the IDE</h2><p data-hf-id="hf-a055" class="sub" data-t="s6sub">JetBrains' graph and history, VS Code's staging</p></div>
+        <div data-hf-id="hf-a051" class="cap" id="cap6"><p data-hf-id="hf-a052" class="eyebrow"><b data-hf-id="hf-a053">$</b>mygit .</p><h2 data-hf-id="hf-a054" class="headline" data-t="s6">Opens at once.
+No IDE needed</h2><p data-hf-id="hf-a055" class="sub" data-t="s6sub">JetBrains' graph and history, VS Code's staging</p></div>
       </section>
 
       <!-- 7 · The memory it saves -->
       <section data-hf-id="hf-o8jn" id="s7" class="clip" data-start="34" data-duration="4" data-track-index="1">
-        <p data-hf-id="hf-d5fg" class="eyebrow"><b data-hf-id="hf-vqav">$</b>ps -o rss</p>
-        <h2 data-hf-id="hf-hsvb" class="headline" data-t="s7">A fraction of the memory</h2>
+        <p data-hf-id="hf-d5fg" class="eyebrow"><b data-hf-id="hf-vqav">$</b>go test -bench .</p>
+        <h2 data-hf-id="hf-hsvb" class="headline" data-t="s7">Fast, in a fraction of the memory</h2>
+        <div data-hf-id="hf-a080" class="stats">
+          <div data-hf-id="hf-a081" class="stat"><b data-hf-id="hf-a082"><span data-hf-id="hf-a083" id="v-read">0.00</span> s</b><span data-hf-id="hf-a084" data-t="read">to read 20,000 commits and lay out the graph</span></div>
+          <div data-hf-id="hf-a085" class="stat"><b data-hf-id="hf-a086"><span data-hf-id="hf-a087" id="v-open">0.00</span> s</b><span data-hf-id="hf-a088" data-t="open">to open a commit with a 20 MB patch</span></div>
+        </div>
         <div data-hf-id="hf-vxho" class="bar-row">
           <div data-hf-id="hf-argy" class="bar-label me">MyGit</div>
           <div data-hf-id="hf-ufsv" class="bar"><div data-hf-id="hf-1jw9" id="fill-me" class="fill"></div></div>
@@ -247,7 +260,7 @@
       <section data-hf-id="hf-8ref" id="s8" class="clip" data-start="38" data-duration="4" data-track-index="1">
         <img data-hf-id="hf-n4tg" id="end-mark" src="assets/logo.svg" alt="" />
         <div data-hf-id="hf-tof5" class="name">MyGit</div>
-        <div data-hf-id="hf-a070" class="tag" data-t="tagline">See what your agent changed</div>
+        <div data-hf-id="hf-a070" class="tag" data-t="tagline">Check your agent's changes, fast</div>
         <div data-hf-id="hf-exrd" class="chips">
           <div data-hf-id="hf-u5aj" class="chip">macOS</div>
           <div data-hf-id="hf-776b" class="chip">Windows</div>

@@ -315,7 +315,7 @@ html[lang="zh-CN"] .hero h1 { line-height: 1.18; letter-spacing: 0; font-size: c
 .tile-6 .tile-copy { flex: 0 0 34%; padding: 36px; }
 .tile h3 { font-size: 22px; letter-spacing: -.02em; }
 .tile p { margin: 10px 0 0; color: var(--muted); font-size: 15px; }
-.tile p code { color: var(--green-hi); }
+.tile p code, .lede code { color: var(--green-hi); }
 .tile-shot {
   margin: 26px 0 0 30px;
   border-radius: 12px 0 0 0;

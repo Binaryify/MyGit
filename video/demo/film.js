@@ -5,27 +5,31 @@
 
 const TEXT = {
   en: {
-    tagline: "See what your agent changed",
-    s2: "Changes show up as the agent works",
-    s3: "Every change, side by side",
-    s4: "Stage what's right",
-    s5: "Hand the rest back to the agent",
-    s6: "The IDE you know, without the IDE",
+    tagline: "Check your agent's changes, fast",
+    s2: "It edits,\nyou see it.\nNo refresh",
+    s3: "One click,\nside by side",
+    s4: "Stage what's right,\nin one click",
+    s5: "Copy the rest\nback to the agent",
+    s6: "Opens at once.\nNo IDE needed",
     s6sub: "JetBrains' graph and history, VS Code's staging",
-    s7: "A fraction of the memory",
+    s7: "Fast, in a fraction of the memory",
+    read: "to read 20,000 commits and lay out the graph",
+    open: "to open a commit with a 20 MB patch",
     note: "Memory with a repository of 20,000 commits open",
     ask: "add retries to fetchAll, with a test",
     reply: "After the third try this gives up without a word…",
   },
   zh: {
-    tagline: "看清 agent 改了什么",
-    s2: "agent 改着，\n改动就出现",
-    s3: "看：每处改动，\n并排看清",
-    s4: "留：没问题的，\n先暂存",
-    s5: "退：其余的，\n交回给 agent",
-    s6: "熟悉的 IDE 体验，\n不用打开 IDE",
+    tagline: "快速查看 agent 的改动",
+    s2: "不用刷新，\n它改到哪你看到哪",
+    s3: "看：点一下，\n就是并排 diff",
+    s4: "留：没问题的，\n一键暂存",
+    s5: "退：其余的，\n一键交回 agent",
+    s6: "终端一句命令，\n秒开，不用等 IDE",
     s6sub: "JetBrains 的分支图和历史，VS Code 的暂存方式",
-    s7: "内存只要零头",
+    s7: "快，内存还只要零头",
+    read: "读完 2 万个提交并布局分支图",
+    open: "打开一个 20 MB 补丁的提交",
     note: "打开 2 万个提交的仓库后的内存占用",
     ask: "给 fetchAll 加上重试，再补个测试",
     reply: "试满三次就悄悄放弃了…",
@@ -185,6 +189,14 @@ function film(cam, register) {
     // 7 · dataviz-countup with stat-bars-and-fills: the bars grow and their
     // numbers count up.
     tl.fromTo("#s7 > *", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out", stagger: 0.08 }, 34.1);
+    const speed = { read: 0, open: 0 };
+    tl.fromTo(speed, { read: 0, open: 0 }, {
+      read: 0.13, open: 0.24, duration: 1.2, ease: "power2.out",
+      onUpdate: () => {
+        document.getElementById("v-read").textContent = speed.read.toFixed(2);
+        document.getElementById("v-open").textContent = speed.open.toFixed(2);
+      },
+    }, 34.4);
     const bars = [["#fill-me", "#v-me", 109], ["#fill-code", "#v-code", 1000], ["#fill-idea", "#v-idea", 2300]];
     const count = { me: 0, code: 0, idea: 0 };
     bars.forEach(([fill, , mb]) => tl.fromTo(fill, { scaleX: 0 }, { scaleX: mb / 2300, duration: 1.5, ease: "power2.out" }, 34.5));

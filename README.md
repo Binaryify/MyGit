@@ -5,8 +5,8 @@
 <h1 align="center">MyGit</h1>
 
 <p align="center">
-  <b>See what your agent changed.</b><br>
-  Every change in your working tree, side by side, as it lands; stage what's right and commit, without opening an IDE.<br>
+  <b>Check your agent's changes, fast</b><br>
+  <code>mygit .</code> in a terminal opens it in a moment, and it refreshes as the agent works; stage what's right and commit, without waiting for an IDE.<br>
   A light, fast, modern git client: JetBrains' commit graph and history tools, VS Code's way of staging, in a fraction of the memory.
 </p>
 
@@ -32,7 +32,7 @@
 
 ## Why MyGit
 
-With an agent writing the code, most of your time in git goes to looking at what changed. MyGit is made for that:
+With an agent writing the code, most of your time in git goes to looking at what changed. MyGit makes that quick:
 
 1. **See** every change as it lands: the window refreshes while the agent works, each file side by side with syntax highlighting. Lockfiles, minified and generated files fold away, and changed pictures show before and after.
 2. **Keep** what's right: fix a line right in the diff, stage the files, changes or lines you want, and commit.
