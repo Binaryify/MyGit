@@ -388,5 +388,14 @@
   "saveFirstTitle": "先保存“{file}”吗？",
   "saveFirstMessage": "你在 diff 里编辑了这个文件，还没有保存。不保存的话，git 用的是磁盘上的版本，你的修改会留在 diff 里。",
   "saveAndGoOn": "保存并继续",
-  "goOnUnsaved": "不保存，继续"
+  "goOnUnsaved": "不保存，继续",
+  "shortcuts": "快捷键",
+  "shortcutCommands": "命令栏",
+  "shortcutSave": "保存在 diff 里编辑的文件",
+  "shortcutStage": "暂存或取消暂存选中的改动；把提交里的文件标记为已看",
+  "shortcutDiscard": "丢弃选中的改动",
+  "shortcutCompare": "比较两个提交",
+  "shortcutSpace": "空格",
+  "shortcutDelete": "Delete",
+  "shortcutClick": "点击"
 }

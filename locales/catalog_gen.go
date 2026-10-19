@@ -3941,3 +3941,93 @@ func GoOnUnsaved() string { return In(i18n.Locale()).GoOnUnsaved() }
 func (msgs Messages) GoOnUnsaved() string {
 	return Catalog.Format(msgs.locale, "goOnUnsaved", nil)
 }
+
+// Shortcuts says "Keyboard Shortcuts"
+// in the language the app shows.
+func Shortcuts() string { return In(i18n.Locale()).Shortcuts() }
+
+// Shortcuts says "Keyboard Shortcuts"
+// in the language of msgs.
+func (msgs Messages) Shortcuts() string {
+	return Catalog.Format(msgs.locale, "shortcuts", nil)
+}
+
+// ShortcutCommands says "Commands"
+// in the language the app shows.
+func ShortcutCommands() string { return In(i18n.Locale()).ShortcutCommands() }
+
+// ShortcutCommands says "Commands"
+// in the language of msgs.
+func (msgs Messages) ShortcutCommands() string {
+	return Catalog.Format(msgs.locale, "shortcutCommands", nil)
+}
+
+// ShortcutSave says "Save the file edited in the diff"
+// in the language the app shows.
+func ShortcutSave() string { return In(i18n.Locale()).ShortcutSave() }
+
+// ShortcutSave says "Save the file edited in the diff"
+// in the language of msgs.
+func (msgs Messages) ShortcutSave() string {
+	return Catalog.Format(msgs.locale, "shortcutSave", nil)
+}
+
+// ShortcutStage says "Stage or unstage the change chosen; mark a commit's file viewed"
+// in the language the app shows.
+func ShortcutStage() string { return In(i18n.Locale()).ShortcutStage() }
+
+// ShortcutStage says "Stage or unstage the change chosen; mark a commit's file viewed"
+// in the language of msgs.
+func (msgs Messages) ShortcutStage() string {
+	return Catalog.Format(msgs.locale, "shortcutStage", nil)
+}
+
+// ShortcutDiscard says "Discard the change chosen"
+// in the language the app shows.
+func ShortcutDiscard() string { return In(i18n.Locale()).ShortcutDiscard() }
+
+// ShortcutDiscard says "Discard the change chosen"
+// in the language of msgs.
+func (msgs Messages) ShortcutDiscard() string {
+	return Catalog.Format(msgs.locale, "shortcutDiscard", nil)
+}
+
+// ShortcutCompare says "Compare two commits"
+// in the language the app shows.
+func ShortcutCompare() string { return In(i18n.Locale()).ShortcutCompare() }
+
+// ShortcutCompare says "Compare two commits"
+// in the language of msgs.
+func (msgs Messages) ShortcutCompare() string {
+	return Catalog.Format(msgs.locale, "shortcutCompare", nil)
+}
+
+// ShortcutSpace says "Space"
+// in the language the app shows.
+func ShortcutSpace() string { return In(i18n.Locale()).ShortcutSpace() }
+
+// ShortcutSpace says "Space"
+// in the language of msgs.
+func (msgs Messages) ShortcutSpace() string {
+	return Catalog.Format(msgs.locale, "shortcutSpace", nil)
+}
+
+// ShortcutDelete says "Delete"
+// in the language the app shows.
+func ShortcutDelete() string { return In(i18n.Locale()).ShortcutDelete() }
+
+// ShortcutDelete says "Delete"
+// in the language of msgs.
+func (msgs Messages) ShortcutDelete() string {
+	return Catalog.Format(msgs.locale, "shortcutDelete", nil)
+}
+
+// ShortcutClick says "click"
+// in the language the app shows.
+func ShortcutClick() string { return In(i18n.Locale()).ShortcutClick() }
+
+// ShortcutClick says "click"
+// in the language of msgs.
+func (msgs Messages) ShortcutClick() string {
+	return Catalog.Format(msgs.locale, "shortcutClick", nil)
+}

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/i18n"
@@ -103,6 +104,15 @@ func (a *app) settingsView(c *ui.Context) {
 			ui.Text(c, loc.DiffSection()).Bold().TextColor(t.TextMuted)
 			ui.Checkbox(c, &prefs.Unified, loc.DiffUnified())
 			ui.Checkbox(c, &prefs.IgnoreWhitespace, loc.IgnoreWhitespace())
+			ui.Text(c, loc.Shortcuts()).Bold().TextColor(t.TextMuted)
+			ui.Column(c).Gap(6).Children(func() {
+				for _, k := range shortcuts() {
+					ui.Row(c.Key(k.keys)).Gap(12).Children(func() {
+						ui.Text(c, k.keys).Font("monospace").FontSize(12).Width(96)
+						ui.Text(c, k.does).FontSize(12).TextColor(t.TextMuted).Grow(1).Basis(0)
+					})
+				}
+			})
 			ui.Row(c).Justify(ui.End).Children(func() {
 				if ui.PrimaryButton(c, loc.Done()).Clicked() {
 					a.settingsOpen = false
@@ -112,6 +122,26 @@ func (a *app) settingsView(c *ui.Context) {
 	}).Dismissed() || !a.settingsOpen {
 		prefs.save()
 		a.reloadDiff()
+	}
+}
+
+// keyBinding is a shortcut the window answers to, and what it does.
+type keyBinding struct{ keys, does string }
+
+// shortcuts are the keys the window answers to, as the settings list them,
+// in the language shown.
+func shortcuts() []keyBinding {
+	return []keyBinding{
+		{shortcut("K"), loc.ShortcutCommands()},
+		{shortcut("P"), strings.TrimSuffix(loc.GoToFile(), "…")},
+		{shortcut("F"), loc.SearchHistory()},
+		{shortcut("↩"), loc.Commit()},
+		{shortcut("S"), loc.ShortcutSave()},
+		{shortcut("R"), loc.Refresh()},
+		{shortcut("O"), strings.TrimSuffix(loc.MenuOpenRepo(), "…")},
+		{loc.ShortcutSpace(), loc.ShortcutStage()},
+		{loc.ShortcutDelete(), loc.ShortcutDiscard()},
+		{shortcut(loc.ShortcutClick()), loc.ShortcutCompare()},
 	}
 }
 

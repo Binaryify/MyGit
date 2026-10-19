@@ -1075,5 +1075,14 @@
   },
   "saveFirstMessage": "The file was edited in the diff and not saved: without saving, git takes it as it is on disk, and your edits stay in the diff.",
   "saveAndGoOn": "Save and Go On",
-  "goOnUnsaved": "Go On Without Saving"
+  "goOnUnsaved": "Go On Without Saving",
+  "shortcuts": "Keyboard Shortcuts",
+  "shortcutCommands": "Commands",
+  "shortcutSave": "Save the file edited in the diff",
+  "shortcutStage": "Stage or unstage the change chosen; mark a commit's file viewed",
+  "shortcutDiscard": "Discard the change chosen",
+  "shortcutCompare": "Compare two commits",
+  "shortcutSpace": "Space",
+  "shortcutDelete": "Delete",
+  "shortcutClick": "click"
 }
