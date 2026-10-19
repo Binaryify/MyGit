@@ -7,3 +7,4 @@ mygo_windows_*.syso
 .idea/
 .vscode/
 .claude/launch.json
+.wrangler/

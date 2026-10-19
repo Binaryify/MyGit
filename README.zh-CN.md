@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> · <b>简体中文</b>
+  <a href="https://binaryify.com/mygit/">官网</a> · <a href="README.md">English</a> · <b>简体中文</b>
 </p>
 
 <p align="center">
