@@ -185,17 +185,99 @@ type confirmation struct {
 	open                   bool
 	title, message, button string
 	yes                    func()
+	// A third button, between Cancel and the default one, and what
+	// Cancel (or Escape) does, when given.
+	other   string
+	otherFn func()
+	cancel  func()
 }
 
 func (a *app) ask(title, message, button string, yes func()) {
-	a.confirm = confirmation{true, title, message, button, yes}
+	a.confirm = confirmation{open: true, title: title, message: message, button: button, yes: yes}
 }
 
 func (a *app) confirmView(c *ui.Context) {
 	q := &a.confirm
-	if ui.AlertDialog(c, &q.open, q.title, q.message, loc.Cancel(), q.button) == 1 && q.yes != nil {
-		q.yes()
+	buttons := []string{loc.Cancel(), q.button}
+	if q.other != "" {
+		buttons = []string{loc.Cancel(), q.other, q.button}
 	}
+	switch i := ui.AlertDialog(c, &q.open, q.title, q.message, buttons...); {
+	case i == len(buttons)-1 && q.yes != nil:
+		q.yes()
+	case i == 1 && q.other != "" && q.otherFn != nil:
+		q.otherFn()
+	case (i == 0 || i == ui.AlertDismissed) && q.cancel != nil:
+		q.cancel()
+	}
+}
+
+// leaving asks, while the file shown is edited and not saved, whether to
+// save it before go shows something else, and says it asked: go runs once
+// the edit is saved or given up, and Cancel stays with the file, its row
+// chosen again. A caller returns when it asked, as go calls it again.
+func (a *app) leaving(next func()) bool {
+	if !a.unsaved() {
+		return false
+	}
+	path := a.detail.change.Path
+	a.confirm = confirmation{open: true, title: loc.UnsavedTitle(path), message: loc.UnsavedMessage(),
+		button: loc.Save(), other: loc.DontSave(),
+		yes: func() {
+			a.saveFile()
+			if !a.unsaved() { // saved
+				next()
+			}
+		},
+		otherFn: func() {
+			a.detail.diff.New.MarkSaved() // given up, as the file is left
+			a.detail.whole = false
+			next()
+		},
+		cancel: a.chooseShown,
+	}
+	return true
+}
+
+// savingFirst asks, while the file shown is edited and not saved, whether
+// to save it before next, which reads the files on disk (staging,
+// committing, stashing), and says it asked, as VS Code asks before a
+// commit. Not saving goes on with the file as saved, the edits kept.
+func (a *app) savingFirst(next func()) bool {
+	if !a.unsaved() || a.goingOn {
+		return false
+	}
+	path := a.detail.change.Path
+	a.confirm = confirmation{open: true, title: loc.SaveFirstTitle(path), message: loc.SaveFirstMessage(),
+		button: loc.SaveAndGoOn(), other: loc.GoOnUnsaved(),
+		yes: func() {
+			a.saveFile()
+			if !a.unsaved() {
+				next()
+			}
+		},
+		otherFn: func() {
+			a.goingOn = true // next asks no more
+			defer func() { a.goingOn = false }()
+			next()
+		},
+	}
+	return true
+}
+
+// chooseShown chooses the row of the change shown again, as a choice of
+// another was given up.
+func (a *app) chooseShown() {
+	ch := a.detail.change
+	if ch == nil {
+		return
+	}
+	if a.detail.staged {
+		a.stagedSel, a.unstagedSel = indexOf(a.staged, ch.Path), -1
+	} else {
+		a.unstagedSel, a.stagedSel = indexOf(a.unstaged, ch.Path), -1
+	}
+	a.logSel, a.stashSel = -1, -1
 }
 
 // unsaved tells whether the file edited in the diff has changes not saved.

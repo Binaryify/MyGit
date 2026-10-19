@@ -20,6 +20,9 @@ type blame struct {
 
 // showBlame shows who changed each line of a file at rev, last.
 func (a *app) showBlame(rev, file string) {
+	if a.leaving(func() { a.showBlame(rev, file) }) {
+		return
+	}
 	keep := a.detail
 	a.detail.gen++
 	gen := a.detail.gen

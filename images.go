@@ -14,6 +14,12 @@ import (
 	loc "mygit/locales"
 )
 
+// isBinary tells whether a file's text is binary, as git tells it: a NUL
+// among its first 8000 bytes.
+func isBinary(text string) bool {
+	return strings.IndexByte(text[:min(len(text), 8000)], 0) >= 0
+}
+
 // isImage tells whether a file is a picture the diff can show as one.
 func isImage(name string) bool {
 	switch strings.ToLower(path.Ext(name)) {

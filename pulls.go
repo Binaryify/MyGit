@@ -173,7 +173,7 @@ func (a *app) pullsView(c *ui.Context) {
 // comparison of the commit it branched off with its head, keeping a
 // review begun before.
 func (a *app) openPull(n int) {
-	if a.busy != "" {
+	if a.leaving(func() { a.openPull(n) }) || a.busy != "" {
 		return
 	}
 	a.busy, a.errMsg = loc.OpOpenPull(n), ""

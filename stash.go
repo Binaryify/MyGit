@@ -59,6 +59,9 @@ func (a *app) stashPanel(c *ui.Context) {
 
 // stashChanges asks for a stash's message, then stashes the changes.
 func (a *app) stashChanges() {
+	if a.savingFirst(a.stashChanges) {
+		return
+	}
 	a.prompt = prompt{open: true, title: loc.StashTitle(), button: loc.OpStash(), check: loc.StashUntracked(), checked: true,
 		ok: func(msg, _ string) {
 			untracked := a.prompt.checked

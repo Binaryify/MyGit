@@ -83,6 +83,7 @@ type app struct {
 	palette      palette   // ⌘P's files and ⌘K's commands
 	comments     []comment // the review's, to copy as Markdown
 	composer     composer
+	goingOn      bool // asked whether to save first, the user said no
 	pulls        pullsPlan
 	submit       submitPlan
 	pullReviews  map[int]*pullReview // the pull requests opened, with their reviews
@@ -107,6 +108,8 @@ type detail struct {
 	fileSel   int
 	generated []bool      // of files, those people don't write
 	folded    bool        // the file shown is generated, its diff folded until asked
+	binary    bool        // the change shown is of a binary file, without lines
+	disk      string      // the file edited as it was on disk when its edits began, to save over it knowingly
 	images    *images     // the file shown is a picture: its sides, in place of a diff
 	pr        *pullReview // the pull request whose changes the commit is
 	diff      *editor.DiffState
@@ -138,7 +141,13 @@ func (a *app) start() {
 	if a.win != nil {
 		a.update = a.win.Update
 		a.win.OnFocus(a.refresh) // the repository may have changed in a terminal
-		a.win.OnClosed(func() {  // the next window opens as this one was laid out
+		// A window closed with a file edited and not saved asks first.
+		a.win.OnClose(func(e *mygo.CloseEvent) {
+			if a.unsaved() && a.leaving(a.win.Close) {
+				e.PreventDefault()
+			}
+		})
+		a.win.OnClosed(func() { // the next window opens as this one was laid out
 			prefs.SidebarW, prefs.LogH, prefs.FilesW = a.sidebarW, a.logH, a.filesW
 			prefs.save()
 		})
@@ -277,7 +286,7 @@ func (a *app) setStatus(st git.Status) {
 	if ch := a.detail.change; ch != nil {
 		if c, ok := find(a.changes(a.detail.staged), ch.Path); ok {
 			a.showChange(c, a.detail.staged)
-		} else {
+		} else if !a.unsaved() { // edits not saved stay, to save or give up
 			a.detail = detail{}
 		}
 	}
@@ -364,6 +373,9 @@ func (a *app) loadLog() {
 
 // showCommit loads the files a commit changed.
 func (a *app) showCommit(i int) {
+	if a.leaving(func() { a.showCommit(i) }) {
+		return
+	}
 	c := a.commits[i]
 	a.showPatch(c, func(ctx context.Context) (string, error) { return a.repo.Show(ctx, c.Hash, prefs.IgnoreWhitespace) })
 }
@@ -371,6 +383,9 @@ func (a *app) showCommit(i int) {
 // showCompare shows the change from one revision to another, the working
 // tree when to is empty, as a commit's.
 func (a *app) showCompare(label, from, to string) {
+	if a.leaving(func() { a.showCompare(label, from, to) }) {
+		return
+	}
 	c := git.Commit{Hash: from + ".." + to, Subject: label}
 	ignore := prefs.IgnoreWhitespace
 	a.showPatch(c, func(ctx context.Context) (string, error) {
@@ -386,6 +401,9 @@ func comparing(c *git.Commit) bool { return strings.Contains(c.Hash, "..") }
 
 // showStash shows a stash's files as a commit's.
 func (a *app) showStash(s git.Stash) {
+	if a.leaving(func() { a.showStash(s) }) {
+		return
+	}
 	c := git.Commit{Hash: s.Hash, Time: s.Time, Subject: s.Subject, Refs: []string{s.Ref}}
 	a.showPatch(c, func(ctx context.Context) (string, error) { return a.repo.StashShow(ctx, s.Ref) })
 }
@@ -522,12 +540,16 @@ func (a *app) showChange(c git.Change, staged bool) {
 		old, new string // the whole texts
 		diff     *editor.DiffState
 		folded   bool
+		binary   bool
 	}
 	work(a, func(ctx context.Context) (result, error) {
 		if c.Work == '?' && !staged { // untracked: all of it is new
 			text, err := a.repo.ReadFile(c.Path)
 			if err != nil {
 				return result{}, err
+			}
+			if isBinary(text) { // shown as git shows it: no lines
+				return result{raw: text, binary: true}, nil
 			}
 			if !unfolded && (byName || isGenerated(c.Path, nil, nil, firstLines(text, 5))) {
 				return result{raw: text, folded: true}, nil
@@ -543,6 +565,10 @@ func (a *app) showChange(c git.Change, staged bool) {
 			return result{raw: out}, err
 		}
 		r := result{raw: out, patch: &files[0]}
+		if files[0].Binary { // no lines to show, and none to edit
+			r.binary = true
+			return r, nil
+		}
 		if !unfolded && (byName || isGenerated(c.Path, nil, &files[0], nil)) {
 			r.folded = true
 			return r, nil
@@ -580,12 +606,15 @@ func (a *app) showChange(c git.Change, staged bool) {
 				if d.Old.String() != r.old {
 					d.Old.Set(r.old)
 				}
+				if !d.New.Modified() {
+					a.detail.disk = r.new
+				}
 				a.detail.raw, a.detail.patch = r.raw, r.patch
 				return
 			}
 		}
 		a.detail.raw, a.detail.patch, a.detail.diff, a.detail.whole = r.raw, r.patch, r.diff, whole && r.diff != nil
-		a.detail.folded = r.folded
+		a.detail.folded, a.detail.binary, a.detail.disk = r.folded, r.binary, r.new
 		a.detail.change = &c
 		if r.patch != nil && patch.Partial(*r.patch) && !ignoreSpace {
 			a.reviewLines(r.diff)
@@ -597,16 +626,30 @@ func (a *app) showChange(c git.Change, staged bool) {
 }
 
 // saveFile writes the working tree's file edited in the diff.
-func (a *app) saveFile() {
+func (a *app) saveFile() { a.save(false) }
+
+// editing tells whether the file at path is the one edited and not saved.
+func (a *app) editing(path string) bool {
+	return a.unsaved() && a.detail.change.Path == path
+}
+
+// save writes the file edited; changed on disk since its edits began, as
+// by another editor or git, it asks before writing over that, unless over.
+func (a *app) save(over bool) {
 	d := a.detail
 	if !d.whole || d.diff == nil || !d.diff.New.Modified() {
 		return
 	}
 	text, path := d.diff.New.String(), d.change.Path
+	if now, err := a.repo.ReadFile(path); !over && err == nil && now != d.disk && now != text {
+		a.ask(loc.SaveConflictTitle(path), loc.SaveConflictMessage(), loc.SaveOver(), func() { a.save(true) })
+		return
+	}
 	if err := a.repo.WriteFile(path, text); err != nil {
 		a.errMsg = loc.ErrSave(err.Error())
 		return
 	}
+	a.detail.disk = text
 	d.diff.New.MarkSaved()
 	a.refresh()
 }
@@ -638,6 +681,9 @@ func fileName(p editor.FilePatch) string {
 }
 
 func (a *app) stage(c git.Change) {
+	if a.editing(c.Path) && a.savingFirst(func() { a.stage(c) }) {
+		return
+	}
 	a.run(loc.OpStage(), func(ctx context.Context) error { return a.repo.Stage(ctx, c.Path) }, nil)
 }
 
@@ -668,6 +714,9 @@ func (a *app) discard(c git.Change) {
 }
 
 func (a *app) stageAll() {
+	if a.savingFirst(a.stageAll) {
+		return
+	}
 	a.run(loc.OpStage(), func(ctx context.Context) error { return a.repo.Stage(ctx, ".") }, nil)
 }
 
@@ -680,6 +729,9 @@ func (a *app) canCommit() bool {
 }
 
 func (a *app) commit() {
+	if a.canCommit() && a.savingFirst(a.commit) {
+		return
+	}
 	if !a.canCommit() {
 		return
 	}

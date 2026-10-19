@@ -62,6 +62,18 @@ func main() {
 			git.Env = func(dir string) []string { return s.Env(dir) }
 			mygo.App.OnQuit(func() { s.Close() })
 		}
+		// Quitting with a file edited and not saved asks, in its window,
+		// a window at a time; quitting goes on once each is saved or given up.
+		mygo.App.OnBeforeQuit(func(e *mygo.QuitEvent) {
+			for _, a := range apps {
+				if a.unsaved() {
+					e.PreventDefault()
+					a.win.Focus()
+					a.leaving(mygo.App.Quit)
+					return
+				}
+			}
+		})
 		ready = true
 		if prefs.Language != "" { // the language chosen in Settings
 			mygo.App.SetLocale(prefs.Language)

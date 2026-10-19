@@ -378,5 +378,15 @@
   "launcherUninstalled": "已卸载命令行工具",
   "launcherUninstallFailed": "卸载失败",
   "launcherNotFound": "PATH 里没有 MyGit 安装的 mygit 命令。",
-  "launcherRemoved": "已删除：\n{paths}"
+  "launcherRemoved": "已删除：\n{paths}",
+  "unsavedTitle": "要保存对“{file}”的修改吗？",
+  "unsavedMessage": "你在 diff 里编辑了这个文件，还没有保存。如果不保存，这些修改会丢失。",
+  "dontSave": "不保存",
+  "saveConflictTitle": "“{file}”已在磁盘上被修改",
+  "saveConflictMessage": "开始编辑之后，有别的程序修改了这个文件。保存会用你的版本覆盖掉那次修改。",
+  "saveOver": "仍然保存",
+  "saveFirstTitle": "先保存“{file}”吗？",
+  "saveFirstMessage": "你在 diff 里编辑了这个文件，还没有保存。不保存的话，git 用的是磁盘上的版本，你的修改会留在 diff 里。",
+  "saveAndGoOn": "保存并继续",
+  "goOnUnsaved": "不保存，继续"
 }

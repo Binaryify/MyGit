@@ -174,10 +174,18 @@ func (a *app) openFiles() {
 	a.openPalette(loc.PaletteFiles(), items)
 }
 
-// chooseChange chooses a change of a list and shows it.
+// chooseChange chooses a change of a list and shows it, asking first
+// when the file shown is edited and not saved; the change asked for is
+// found again by its path, as saving moves the lists' rows.
 func (a *app) chooseChange(i int, staged bool) {
 	changes := a.changes(staged)
-	if i >= len(changes) {
+	if i < 0 || i >= len(changes) {
+		return
+	}
+	ch := changes[i]
+	shown := a.detail.change
+	again := shown != nil && shown.Path == ch.Path && a.detail.staged == staged
+	if !again && a.leaving(func() { a.chooseChange(indexOf(a.changes(staged), ch.Path), staged) }) {
 		return
 	}
 	a.leftTab = 0
@@ -186,7 +194,7 @@ func (a *app) chooseChange(i int, staged bool) {
 	} else {
 		a.unstagedSel, a.stagedSel = i, -1
 	}
-	a.showChange(changes[i], staged)
+	a.showChange(ch, staged)
 }
 
 // openCommands is ⌘K: what the toolbar, the menus and the lists do, and

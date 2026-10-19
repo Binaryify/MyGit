@@ -1044,5 +1044,36 @@
         "type": "String"
       }
     }
-  }
+  },
+  "unsavedTitle": "Save the changes to “{file}”?",
+  "@unsavedTitle": {
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "unsavedMessage": "The file was edited in the diff and not saved: if you don't save, the edits are lost.",
+  "dontSave": "Don't Save",
+  "saveConflictTitle": "“{file}” changed on disk",
+  "@saveConflictTitle": {
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "saveConflictMessage": "Another program changed the file since you began editing it. Saving writes your version over that change.",
+  "saveOver": "Save Anyway",
+  "saveFirstTitle": "Save “{file}” first?",
+  "@saveFirstTitle": {
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "saveFirstMessage": "The file was edited in the diff and not saved: without saving, git takes it as it is on disk, and your edits stay in the diff.",
+  "saveAndGoOn": "Save and Go On",
+  "goOnUnsaved": "Go On Without Saving"
 }

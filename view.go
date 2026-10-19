@@ -252,13 +252,8 @@ func (a *app) changeSection(c *ui.Context, title string, staged bool) {
 		})
 	}).Grow(1).Basis(0)
 	if l.Changed() && *sel >= 0 && *sel < len(changes) {
-		a.showChange(changes[*sel], staged)
 		// One change is chosen at a time, of both lists.
-		if staged {
-			a.unstagedSel = -1
-		} else {
-			a.stagedSel = -1
-		}
+		a.chooseChange(*sel, staged)
 	}
 	if l.Submitted() && *sel >= 0 && *sel < len(changes) {
 		a.toggleStage(changes[*sel], staged)
@@ -527,7 +522,7 @@ func (a *app) diffView(c *ui.Context) {
 			p = d.patch
 		}
 		a.foldedView(c, p, a.unfold)
-	case d.commit != nil && d.fileSel >= 0 && d.fileSel < len(d.files) && d.files[d.fileSel].Binary:
+	case d.binary, d.commit != nil && d.fileSel >= 0 && d.fileSel < len(d.files) && d.files[d.fileSel].Binary:
 		ui.Column(c).Fill().Center().Children(func() { ui.Text(c, loc.BinaryFile()).TextColor(t.TextMuted) })
 	case d.diff != nil:
 		a.reviewDiff(c, d.diff)

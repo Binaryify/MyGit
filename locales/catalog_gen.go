@@ -3841,3 +3841,103 @@ func LauncherRemoved(paths string) string { return In(i18n.Locale()).LauncherRem
 func (msgs Messages) LauncherRemoved(paths string) string {
 	return Catalog.Format(msgs.locale, "launcherRemoved", map[string]any{"paths": paths})
 }
+
+// UnsavedTitle says "Save the changes to “{file}”?"
+// in the language the app shows.
+func UnsavedTitle(file string) string { return In(i18n.Locale()).UnsavedTitle(file) }
+
+// UnsavedTitle says "Save the changes to “{file}”?"
+// in the language of msgs.
+func (msgs Messages) UnsavedTitle(file string) string {
+	return Catalog.Format(msgs.locale, "unsavedTitle", map[string]any{"file": file})
+}
+
+// UnsavedMessage says "The file was edited in the diff and not saved: if you don't save, the edits are lost."
+// in the language the app shows.
+func UnsavedMessage() string { return In(i18n.Locale()).UnsavedMessage() }
+
+// UnsavedMessage says "The file was edited in the diff and not saved: if you don't save, the edits are lost."
+// in the language of msgs.
+func (msgs Messages) UnsavedMessage() string {
+	return Catalog.Format(msgs.locale, "unsavedMessage", nil)
+}
+
+// DontSave says "Don't Save"
+// in the language the app shows.
+func DontSave() string { return In(i18n.Locale()).DontSave() }
+
+// DontSave says "Don't Save"
+// in the language of msgs.
+func (msgs Messages) DontSave() string {
+	return Catalog.Format(msgs.locale, "dontSave", nil)
+}
+
+// SaveConflictTitle says "“{file}” changed on disk"
+// in the language the app shows.
+func SaveConflictTitle(file string) string { return In(i18n.Locale()).SaveConflictTitle(file) }
+
+// SaveConflictTitle says "“{file}” changed on disk"
+// in the language of msgs.
+func (msgs Messages) SaveConflictTitle(file string) string {
+	return Catalog.Format(msgs.locale, "saveConflictTitle", map[string]any{"file": file})
+}
+
+// SaveConflictMessage says "Another program changed the file since you began editing it. Saving writes your version over that change."
+// in the language the app shows.
+func SaveConflictMessage() string { return In(i18n.Locale()).SaveConflictMessage() }
+
+// SaveConflictMessage says "Another program changed the file since you began editing it. Saving writes your version over that change."
+// in the language of msgs.
+func (msgs Messages) SaveConflictMessage() string {
+	return Catalog.Format(msgs.locale, "saveConflictMessage", nil)
+}
+
+// SaveOver says "Save Anyway"
+// in the language the app shows.
+func SaveOver() string { return In(i18n.Locale()).SaveOver() }
+
+// SaveOver says "Save Anyway"
+// in the language of msgs.
+func (msgs Messages) SaveOver() string {
+	return Catalog.Format(msgs.locale, "saveOver", nil)
+}
+
+// SaveFirstTitle says "Save “{file}” first?"
+// in the language the app shows.
+func SaveFirstTitle(file string) string { return In(i18n.Locale()).SaveFirstTitle(file) }
+
+// SaveFirstTitle says "Save “{file}” first?"
+// in the language of msgs.
+func (msgs Messages) SaveFirstTitle(file string) string {
+	return Catalog.Format(msgs.locale, "saveFirstTitle", map[string]any{"file": file})
+}
+
+// SaveFirstMessage says "The file was edited in the diff and not saved: without saving, git takes it as it is on disk, and your edits stay in …"
+// in the language the app shows.
+func SaveFirstMessage() string { return In(i18n.Locale()).SaveFirstMessage() }
+
+// SaveFirstMessage says "The file was edited in the diff and not saved: without saving, git takes it as it is on disk, and your edits stay in …"
+// in the language of msgs.
+func (msgs Messages) SaveFirstMessage() string {
+	return Catalog.Format(msgs.locale, "saveFirstMessage", nil)
+}
+
+// SaveAndGoOn says "Save and Go On"
+// in the language the app shows.
+func SaveAndGoOn() string { return In(i18n.Locale()).SaveAndGoOn() }
+
+// SaveAndGoOn says "Save and Go On"
+// in the language of msgs.
+func (msgs Messages) SaveAndGoOn() string {
+	return Catalog.Format(msgs.locale, "saveAndGoOn", nil)
+}
+
+// GoOnUnsaved says "Go On Without Saving"
+// in the language the app shows.
+func GoOnUnsaved() string { return In(i18n.Locale()).GoOnUnsaved() }
+
+// GoOnUnsaved says "Go On Without Saving"
+// in the language of msgs.
+func (msgs Messages) GoOnUnsaved() string {
+	return Catalog.Format(msgs.locale, "goOnUnsaved", nil)
+}
