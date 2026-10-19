@@ -116,6 +116,8 @@ MyGit 暂未经过 Apple 公证。如果 macOS 提示无法打开，先把它拖
 xattr -dr com.apple.quarantine /Applications/MyGit.app
 ```
 
+Windows 安装程序暂时也没有代码签名。如果 Windows 提示「已保护你的电脑」，点「更多信息」，再点「仍要运行」。
+
 MyGit 需要 `PATH` 里有 `git`，安装后会自动更新。不支持 Intel Mac。所有版本见 [Releases 页面](https://github.com/Binaryify/MyGit/releases)。
 
 想从源码构建，见[开发](#开发)。

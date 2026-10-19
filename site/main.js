@@ -77,6 +77,7 @@ const zh = {
   "install.exe": "安装程序",
   "install.linux": "x64 · 或用下面的脚本",
   "install.notarize": "暂未经过 Apple 公证。如果 macOS 无法打开，运行",
+  "install.smartscreen": "Windows 安装程序暂时也没有代码签名。如果 Windows 提示「已保护你的电脑」，点「更多信息」，再点「仍要运行」。",
   "install.script": "# 装到 ~/.local，不需要 root",
   "install.all": "所有版本 →",
   "install.copy": "复制",

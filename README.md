@@ -116,6 +116,8 @@ MyGit isn't notarized by Apple yet. If macOS says it can't be opened, move it to
 xattr -dr com.apple.quarantine /Applications/MyGit.app
 ```
 
+The Windows installer isn't code-signed yet either. If Windows says it protected your PC, choose **More info**, then **Run anyway**.
+
 MyGit needs `git` on the `PATH`, and updates itself once installed. Intel Macs aren't supported. All releases are on the [releases page](https://github.com/Binaryify/MyGit/releases).
 
 To build it from source instead, see [Development](#development).
