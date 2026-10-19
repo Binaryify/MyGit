@@ -4,3 +4,4 @@ mygo_windows_*.syso
 .DS_Store
 .idea/
 .vscode/
+.claude/launch.json
