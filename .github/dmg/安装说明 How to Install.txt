@@ -1,0 +1,19 @@
+安装 MyGit
+
+1. 把 MyGit 拖进「应用程序」（Applications）文件夹。
+2. MyGit 暂未经过 Apple 公证，第一次打开前，在「终端」里执行：
+
+   xattr -dr com.apple.quarantine /Applications/MyGit.app
+
+3. 打开 MyGit。之后它会自己更新，不用再执行这一步。
+
+
+How to install MyGit
+
+1. Drag MyGit into the Applications folder.
+2. MyGit isn't notarized by Apple yet. Before opening it the first time, run
+   this in Terminal:
+
+   xattr -dr com.apple.quarantine /Applications/MyGit.app
+
+3. Open MyGit. It updates itself from then on, without this step again.

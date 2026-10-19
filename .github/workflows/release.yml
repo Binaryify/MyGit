@@ -28,6 +28,11 @@ jobs:
           MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
           GH_TOKEN: ${{ github.token }}
         run: go tool mygo build -platform darwin/arm64,linux/amd64
+      - name: Add the install instructions to the disk image
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet ds-store
+          PATH="$RUNNER_TEMP/venv/bin:$PATH" .github/dmg/add-readme.sh build/darwin-arm64/*.dmg
       - name: Package
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
