@@ -1,0 +1,5 @@
+renders/
+node_modules/
+.hyperframes/
+.media/audio/
+.thumbnails/

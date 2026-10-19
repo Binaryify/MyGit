@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en" data-composition-variables='[{"id":"lang","type":"enum","label":"Language","default":"en","options":[{"value":"en","label":"English"},{"value":"zh","label":"简体中文"}]}]'>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>MyGit demo, portrait</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,600;1,6..72,500&family=Noto+Serif+SC:wght@700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500&display=block" rel="stylesheet" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: #0A1022; }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        color: #E6ECF7;
+        font-family: "IBM Plex Sans", "Noto Sans SC", sans-serif;
+        --serif: "Newsreader", "Noto Serif SC", serif;
+        --mono: "IBM Plex Mono", "Noto Sans SC", monospace;
+        --blue: #5B9BFF;
+        --green: #3DDC97;
+        --muted: #93A0C0;
+      }
+      #root.zh { --serif: "Noto Serif SC", "Newsreader", serif; }
+      .clip { position: absolute; inset: 0; }
+
+      /* ---------- Background: one field the whole film plays on ---------- */
+      #bg { background: #0A1022; }
+      .glow { position: absolute; border-radius: 50%; filter: blur(60px); }
+      #glow-a { width: 1100px; height: 800px; left: 980px; top: -260px; background: radial-gradient(closest-side, rgba(61, 123, 255, .34), transparent); }
+      #glow-b { width: 900px; height: 700px; left: -260px; top: 520px; background: radial-gradient(closest-side, rgba(31, 191, 122, .16), transparent); }
+      #grid { position: absolute; inset: 0; background: linear-gradient(rgba(147, 160, 192, .07) 2px, transparent 2px) 0 0 / 100% 72px; }
+
+      /* ---------- Captions: the left column ---------- */
+      .cap { position: absolute; left: 120px; top: 0; bottom: 0; width: 460px; display: flex; flex-direction: column; justify-content: center; gap: 22px; }
+      .cap.high { top: 150px; bottom: auto; }
+      .eyebrow { font: 500 26px/1 var(--mono); color: var(--green); }
+      .eyebrow b { color: #F5C451; font-weight: 500; margin-right: 14px; }
+      .headline { font: 600 64px/1.08 var(--serif); letter-spacing: -.01em; white-space: pre-line; }
+      #root.zh .headline { font-size: 58px; line-height: 1.3; letter-spacing: .02em; white-space: pre; }
+      .sub { font-size: 28px; line-height: 1.4; color: var(--muted); }
+
+      /* ---------- The agent's terminal ---------- */
+      #term { position: absolute; left: 120px; top: 560px; width: 470px; height: 380px; border-radius: 18px; background: #0E1428; box-shadow: 0 0 0 2px rgba(147, 160, 192, .2), 0 40px 80px -30px rgba(0, 0, 0, .8); overflow: hidden; font: 400 21px/1.55 var(--mono); }
+      .term-bar { height: 44px; display: flex; align-items: center; gap: 9px; padding: 0 18px; background: rgba(255, 255, 255, .04); color: var(--muted); font-size: 17px; }
+      .term-bar i { width: 13px; height: 13px; border-radius: 50%; background: #3A4466; }
+      .term-bar span { margin-left: 10px; }
+      .term-body { position: relative; padding: 18px 22px; }
+      .term-body > p { position: absolute; left: 22px; right: 18px; }
+      .ask, .paste-ask { color: #E6ECF7; }
+      .ask::before, .paste-ask::before { content: "› "; color: var(--green); }
+      .work { color: var(--muted); }
+      .work b, .fix b { color: var(--blue); font-weight: 500; }
+      .work::before, .fix::before { content: "● "; color: var(--green); }
+      .paste { color: #C8D2EA; font-size: 19px; }
+      .paste.h { color: #F5C451; }
+      .fix { color: var(--muted); }
+
+      /* ---------- Scene 1: the brand ---------- */
+      #s1 { display: flex; align-items: center; justify-content: center; gap: 56px; }
+      #mark { width: 320px; height: 320px; }
+      .word { display: flex; flex-direction: column; gap: 18px; }
+      #s1 .name { font: 600 150px/1 "Newsreader", serif; letter-spacing: -.02em; }
+      #s1 .tag { margin-top: 26px; font: 500 44px/1.2 "IBM Plex Sans", "Noto Sans SC", sans-serif; color: var(--muted); }
+
+      /* ---------- The app's window, and the camera inside it ---------- */
+      .win { position: absolute; border-radius: 22px; overflow: hidden; box-shadow: 0 0 0 2px rgba(147, 160, 192, .2), 0 50px 100px -30px rgba(0, 0, 0, .85); background: #1C1C1E; }
+      #app { left: 660px; top: 157px; width: 1170px; height: 766px; opacity: 0; }
+      #shot { position: absolute; left: 0; top: 0; width: 1568px; height: 1045px; transform-origin: 0 0; }
+      .screen { position: absolute; left: 0; top: 0; width: 1568px; opacity: 0; }
+      #shot-clean { opacity: 1; }
+      #flash { position: absolute; left: 0; top: 0; height: 44px; border: 3px solid #3DDC97; border-radius: 8px; box-shadow: 0 0 24px rgba(61, 220, 151, .6); opacity: 0; }
+      .ripple { position: absolute; left: 0; top: 0; width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; border: 4px solid #5B9BFF; opacity: 0; }
+      .cursor { position: absolute; left: 0; top: 0; width: 34px; height: 40px; opacity: 0; }
+
+      /* ---------- Scene 7: the memory ---------- */
+      #s7 { padding: 0 0 0 132px; display: flex; flex-direction: column; justify-content: center; }
+      #s7 .headline { font-size: 100px; margin: 18px 0 60px; }
+      #root.zh #s7 .headline { font-size: 92px; }
+      .bar-row { display: grid; grid-template-columns: 360px 1060px 220px; align-items: center; gap: 36px; margin-bottom: 30px; }
+      .bar-label { font-size: 36px; color: var(--muted); }
+      .bar-label.me { color: #E6ECF7; font-weight: 600; }
+      .bar { height: 44px; border-radius: 22px; background: rgba(31, 42, 72, .8); overflow: hidden; }
+      .fill { width: 100%; height: 100%; border-radius: 22px; transform-origin: left; background: linear-gradient(90deg, #39466A, #5B678C); }
+      #fill-me { background: linear-gradient(90deg, #1FBF7A, #3DDC97); box-shadow: 0 0 30px rgba(61, 220, 151, .6); }
+      .bar-value { font: 600 42px/1 var(--mono); text-align: right; }
+      .note { font: 400 30px/1 "IBM Plex Sans", "Noto Sans SC", sans-serif; color: var(--muted); margin-top: 14px; }
+
+      /* ---------- Scene 8: the end card ---------- */
+      #s8 { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; }
+      #end-mark { width: 210px; height: 210px; }
+      #s8 .name { font: 600 116px/1 "Newsreader", serif; letter-spacing: -.02em; }
+      #s8 .tag { font: 500 40px/1.2 "IBM Plex Sans", "Noto Sans SC", sans-serif; color: var(--muted); }
+      .chips { display: flex; gap: 22px; margin-top: 8px; }
+      .chip { font: 500 30px/1 "IBM Plex Sans", "Noto Sans SC", sans-serif; padding: 18px 30px; border-radius: 40px; border: 2px solid rgba(147, 160, 192, .3); background: rgba(18, 27, 51, .8); }
+      .url { font: 500 34px/1 var(--mono); color: var(--blue); margin-top: 6px; }
+
+      /* ---------- The portrait cut: captions on top, the window under them,
+         the terminal at the bottom ---------- */
+      #glow-a { left: 200px; top: -200px; }
+      #glow-b { left: -300px; top: 1200px; }
+      .cap, .cap.high { left: 60px; width: 960px; top: 130px; bottom: auto; height: 370px; align-items: center; text-align: center; }
+      .eyebrow { font-size: 30px; }
+      .headline { font-size: 78px; }
+      #root.zh .headline { font-size: 72px; }
+      .sub { font-size: 32px; }
+      #term { left: 40px; top: 1270px; width: 1000px; height: 350px; font-size: 24px; }
+      .paste { font-size: 22px; }
+      #s1 { flex-direction: column; gap: 46px; padding-bottom: 260px; }
+      #s1 .word { align-items: center; }
+      #s1 .tag { margin-top: 10px; font-size: 50px; }
+      #app { left: 40px; top: 510px; width: 1000px; height: 740px; }
+      #s7 { padding: 0 70px 260px; }
+      #s7 .headline { font-size: 96px; margin: 18px 0 70px; }
+      #root.zh #s7 .headline { font-size: 92px; }
+      .bar-row { grid-template-columns: 1fr 240px; gap: 16px 24px; margin-bottom: 44px; }
+      .bar-label { grid-column: 1 / -1; font-size: 40px; }
+      .bar-value { font-size: 44px; }
+      .note { font-size: 32px; line-height: 1.4; }
+      #s8 .tag { font-size: 46px; }
+      .chips { flex-wrap: wrap; justify-content: center; max-width: 900px; }
+      #s8 { padding-bottom: 260px; }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-rigq" id="root" data-composition-id="main" data-start="0" data-duration="42" data-width="1080" data-height="1920">
+
+      <!-- A light bed under the whole film, easing in and out. -->
+      <audio data-hf-id="hf-5bsq" id="bgm" src=".media/audio/bgm/bgm_001.wav" data-start="0" data-duration="42" data-track-index="20" data-volume="0.55" data-fade-in="0.6" data-fade-out="2.5"></audio>
+      <div data-hf-id="hf-li7x" id="bg" class="clip" data-start="0" data-duration="42" data-track-index="0">
+        <div data-hf-id="hf-eg44" id="glow-a" class="glow"></div>
+        <div data-hf-id="hf-pblr" id="glow-b" class="glow"></div>
+        <div data-hf-id="hf-gs5t" id="grid"></div>
+      </div>
+
+      <!-- 1 · The brand: the logo's branches draw down and meet -->
+      <section data-hf-id="hf-ih0l" id="s1" class="clip" data-start="0" data-duration="3.6" data-track-index="1">
+        <svg data-hf-id="hf-118p" id="mark" viewBox="100 100 824 824" aria-hidden="true">
+          <defs data-hf-id="hf-mh0t">
+            <linearGradient data-hf-id="hf-8i0d" id="m-bg" x1="0" y1="0" x2="0" y2="1"><stop data-hf-id="hf-2ihx" offset="0" stop-color="#1F3166"/><stop data-hf-id="hf-0qb9" offset="1" stop-color="#0A1022"/></linearGradient>
+            <linearGradient data-hf-id="hf-2u5m" id="m-blue" gradientUnits="userSpaceOnUse" x1="0" y1="760" x2="0" y2="270"><stop data-hf-id="hf-zixy" offset="0" stop-color="#3D7BFF"/><stop data-hf-id="hf-jfwk" offset="1" stop-color="#7FB2FF"/></linearGradient>
+            <linearGradient data-hf-id="hf-haez" id="m-green" gradientUnits="userSpaceOnUse" x1="0" y1="760" x2="0" y2="270"><stop data-hf-id="hf-ahqd" offset="0" stop-color="#1FBF7A"/><stop data-hf-id="hf-u2nc" offset="1" stop-color="#6EF0B4"/></linearGradient>
+          </defs>
+          <rect data-hf-id="hf-pd0n" id="m-body" x="100" y="100" width="824" height="824" rx="186" fill="url(#m-bg)" stroke="rgba(255,255,255,.1)" stroke-width="4"/>
+          <g data-hf-id="hf-cam5" fill="none" stroke-width="62" stroke-linecap="round">
+            <path data-hf-id="hf-ewao" class="m-line" d="M330 716 V312" stroke="url(#m-blue)"/>
+            <path data-hf-id="hf-fxba" class="m-line" d="M330 312 C330 440 512 440 512 584" stroke="url(#m-blue)"/>
+            <path data-hf-id="hf-y1zm" class="m-line" d="M694 716 V312" stroke="url(#m-green)"/>
+            <path data-hf-id="hf-mfc9" class="m-line" d="M694 312 C694 440 512 440 512 584" stroke="url(#m-green)"/>
+          </g>
+          <g data-hf-id="hf-y19b" stroke-width="26">
+            <circle data-hf-id="hf-4nq1" class="m-dot" cx="330" cy="312" r="46" fill="#121B33" stroke="#8DBBFF"/>
+            <circle data-hf-id="hf-09rj" class="m-dot" cx="330" cy="716" r="46" fill="#121B33" stroke="#3D7BFF"/>
+            <circle data-hf-id="hf-dbyp" class="m-dot" cx="694" cy="312" r="46" fill="#121B33" stroke="#7CF2BC"/>
+            <circle data-hf-id="hf-6jkb" class="m-dot" cx="694" cy="716" r="46" fill="#121B33" stroke="#1FBF7A"/>
+          </g>
+          <circle data-hf-id="hf-71to" id="m-merge" cx="512" cy="584" r="64" fill="#FFFFFF"/>
+        </svg>
+        <div data-hf-id="hf-trrc" class="word">
+          <div data-hf-id="hf-plil" class="name">MyGit</div>
+          <div data-hf-id="hf-9ojz" class="tag" data-t="tagline">See what your agent changed</div>
+        </div>
+      </section>
+
+      <!-- 2–6 · The app's window, the camera moving over its screenshots -->
+      <div data-hf-id="hf-3dc8" id="app-host" class="clip" data-start="3.4" data-duration="30.9" data-track-index="2">
+        <div data-hf-id="hf-dl4x" id="app" class="win">
+          <div data-hf-id="hf-ftaq" id="shot">
+            <img data-hf-id="hf-a001" id="shot-clean" class="screen" data-shot="clean" src="assets/en/clean.png" alt="" />
+            <img data-hf-id="hf-a002" id="shot-one" class="screen" data-shot="one" src="assets/en/one.png" alt="" />
+            <img data-hf-id="hf-a003" id="shot-three" class="screen" data-shot="three" src="assets/en/three.png" alt="" />
+            <img data-hf-id="hf-a004" id="shot-diff" class="screen" data-shot="diff" src="assets/en/diff.png" alt="" />
+            <img data-hf-id="hf-a005" id="shot-folded" class="screen" data-shot="folded" src="assets/en/folded.png" alt="" />
+            <img data-hf-id="hf-a006" id="shot-staged" class="screen" data-shot="staged" src="assets/en/staged.png" alt="" />
+            <img data-hf-id="hf-a007" id="shot-comment" class="screen" data-shot="comment" src="assets/en/comment.png" alt="" />
+            <img data-hf-id="hf-a008" id="shot-menu" class="screen" data-shot="menu" src="assets/en/menu.png" alt="" />
+            <img data-hf-id="hf-a009" id="shot-copied" class="screen" data-shot="copied" src="assets/en/copied.png" alt="" />
+            <img data-hf-id="hf-a010" id="shot-main" class="screen" data-shot="main" src="assets/en/main.png" alt="" />
+            <img data-hf-id="hf-a011" id="shot-feat" class="screen" data-shot="branches-feat" src="assets/en/branches-feat.png" alt="" />
+            <img data-hf-id="hf-a012" id="shot-merged" class="screen" data-shot="merged" src="assets/en/merged.png" alt="" />
+            <div data-hf-id="hf-a013" id="flash"></div>
+            <div data-hf-id="hf-h5aq" id="ripple" class="ripple"></div>
+            <svg data-hf-id="hf-n5ti" id="cursor" class="cursor" viewBox="0 0 34 40" aria-hidden="true"><path data-hf-id="hf-tkor" d="M3 2 L3 32 L11 25 L17 38 L23 35 L17 23 L28 23 Z" fill="#fff" stroke="#0A1022" stroke-width="2.5" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- The agent's terminal: its work, then the comments pasted back -->
+      <div data-hf-id="hf-a020" id="term-host" class="clip" data-start="3.8" data-duration="26.3" data-track-index="4">
+        <div data-hf-id="hf-a021" id="term">
+          <div data-hf-id="hf-a022" class="term-bar"><i data-hf-id="hf-a023"></i><i data-hf-id="hf-a024"></i><i data-hf-id="hf-a025"></i><span data-hf-id="hf-a026">agent — orbit</span></div>
+          <div data-hf-id="hf-a027" class="term-body">
+            <p data-hf-id="hf-a028" class="ask" style="top: 18px" data-t="ask">add retries to fetchAll, with a test</p>
+            <p data-hf-id="hf-a029" class="work" style="top: 104px"><b data-hf-id="hf-a030">Edit</b> src/api.ts</p>
+            <p data-hf-id="hf-a031" class="work" style="top: 144px"><b data-hf-id="hf-a032">Bash</b> npm i -D vitest</p>
+            <p data-hf-id="hf-a033" class="work" style="top: 184px"><b data-hf-id="hf-a034">Write</b> src/api.test.ts</p>
+            <p data-hf-id="hf-a035" class="paste h" style="top: 18px"># Address these Review Comments</p>
+            <p data-hf-id="hf-a036" class="paste h" style="top: 54px">## 1. src/api.ts:10-11</p>
+            <p data-hf-id="hf-a037" class="paste" style="top: 90px">} catch {</p>
+            <p data-hf-id="hf-a038" class="paste" style="top: 120px">&nbsp;&nbsp;await sleep(i * 1_000)</p>
+            <p data-hf-id="hf-a039" class="paste" style="top: 160px" data-t="reply">After the third try this gives up without a word…</p>
+            <p data-hf-id="hf-a040" class="fix" style="top: 250px"><b data-hf-id="hf-a041">Edit</b> src/api.ts</p>
+          </div>
+        </div>
+      </div>
+
+      <section data-hf-id="hf-x1hi" id="s2" class="clip" data-start="3.5" data-duration="7.5" data-track-index="3">
+        <div data-hf-id="hf-8hv4" class="cap high" id="cap2"><p data-hf-id="hf-s4jw" class="eyebrow"><b data-hf-id="hf-wxem">$</b>git status</p><h2 data-hf-id="hf-2g5c" class="headline" data-t="s2">Changes show up as the agent works</h2></div>
+      </section>
+      <section data-hf-id="hf-jt35" id="s3" class="clip" data-start="11" data-duration="6" data-track-index="3">
+        <div data-hf-id="hf-xclk" class="cap" id="cap3"><p data-hf-id="hf-gu14" class="eyebrow"><b data-hf-id="hf-l9t1">01</b>git diff</p><h2 data-hf-id="hf-hxqy" class="headline" data-t="s3">Every change, side by side</h2></div>
+      </section>
+      <section data-hf-id="hf-kseq" id="s4" class="clip" data-start="17" data-duration="5" data-track-index="3">
+        <div data-hf-id="hf-w5oh" class="cap" id="cap4"><p data-hf-id="hf-utdk" class="eyebrow"><b data-hf-id="hf-v169">02</b>git add</p><h2 data-hf-id="hf-f6ew" class="headline" data-t="s4">Stage what's right</h2></div>
+      </section>
+      <section data-hf-id="hf-vt5r" id="s5" class="clip" data-start="22" data-duration="8" data-track-index="3">
+        <div data-hf-id="hf-wjzi" class="cap high" id="cap5"><p data-hf-id="hf-wfn4" class="eyebrow"><b data-hf-id="hf-q3a8">03</b>comments → agent</p><h2 data-hf-id="hf-uhgs" class="headline" data-t="s5">Hand the rest back to the agent</h2></div>
+      </section>
+      <section data-hf-id="hf-a050" id="s6" class="clip" data-start="30" data-duration="4" data-track-index="3">
+        <div data-hf-id="hf-a051" class="cap" id="cap6"><p data-hf-id="hf-a052" class="eyebrow"><b data-hf-id="hf-a053">$</b>git log --graph</p><h2 data-hf-id="hf-a054" class="headline" data-t="s6">The IDE you know, without the IDE</h2><p data-hf-id="hf-a055" class="sub" data-t="s6sub">JetBrains' graph and history, VS Code's staging</p></div>
+      </section>
+
+      <!-- 7 · The memory it saves -->
+      <section data-hf-id="hf-o8jn" id="s7" class="clip" data-start="34" data-duration="4" data-track-index="1">
+        <p data-hf-id="hf-d5fg" class="eyebrow"><b data-hf-id="hf-vqav">$</b>ps -o rss</p>
+        <h2 data-hf-id="hf-hsvb" class="headline" data-t="s7">A fraction of the memory</h2>
+        <div data-hf-id="hf-vxho" class="bar-row">
+          <div data-hf-id="hf-argy" class="bar-label me">MyGit</div>
+          <div data-hf-id="hf-ufsv" class="bar"><div data-hf-id="hf-1jw9" id="fill-me" class="fill"></div></div>
+          <div data-hf-id="hf-ejio" class="bar-value"><span data-hf-id="hf-mk71" id="v-me">0</span> MB</div>
+        </div>
+        <div data-hf-id="hf-x17o" class="bar-row">
+          <div data-hf-id="hf-tv7q" class="bar-label">VS Code</div>
+          <div data-hf-id="hf-c51b" class="bar"><div data-hf-id="hf-tulf" id="fill-code" class="fill"></div></div>
+          <div data-hf-id="hf-vprc" class="bar-value"><span data-hf-id="hf-vfz3" id="v-code">0</span> MB</div>
+        </div>
+        <div data-hf-id="hf-a060" class="bar-row">
+          <div data-hf-id="hf-a061" class="bar-label">IntelliJ IDEA</div>
+          <div data-hf-id="hf-a062" class="bar"><div data-hf-id="hf-a063" id="fill-idea" class="fill"></div></div>
+          <div data-hf-id="hf-a064" class="bar-value"><span data-hf-id="hf-a065" id="v-idea">0</span> MB</div>
+        </div>
+        <p data-hf-id="hf-xpnw" class="note" data-t="note">Memory with a repository of 20,000 commits open</p>
+      </section>
+
+      <!-- 8 · The end card -->
+      <section data-hf-id="hf-8ref" id="s8" class="clip" data-start="38" data-duration="4" data-track-index="1">
+        <img data-hf-id="hf-n4tg" id="end-mark" src="assets/logo.svg" alt="" />
+        <div data-hf-id="hf-tof5" class="name">MyGit</div>
+        <div data-hf-id="hf-a070" class="tag" data-t="tagline">See what your agent changed</div>
+        <div data-hf-id="hf-exrd" class="chips">
+          <div data-hf-id="hf-u5aj" class="chip">macOS</div>
+          <div data-hf-id="hf-776b" class="chip">Windows</div>
+          <div data-hf-id="hf-daw4" class="chip">Linux</div>
+          <div data-hf-id="hf-p1yk" class="chip">English · 简体中文</div>
+        </div>
+        <div data-hf-id="hf-uyxw" class="url">github.com/Binaryify/MyGit</div>
+      </section>
+    </div>
+
+    <script src="film.js"></script>
+    <script>
+      // The portrait cut: the window under the captions, nearer in, framing
+      // each beat as [x, y, zoom] of the screenshots.
+      film({
+        width: 1000, height: 740,
+        agent: [523, 560, 1.5],
+        diff: [1150, 600, 1.9],
+        folded: [984, 650, 1.9],
+        staged: [420, 560, 1.9],
+        comment: [1150, 650, 1.9],
+        menu: [1150, 330, 1.9],
+        copied: [540, 400, 1.5],
+        main: [784, 522, 1.38],
+        graph: [470, 340, 2.1],
+        feat: [520, 380, 1.9],
+        merged: [784, 522, 1.38],
+        mergedNear: [980, 670, 1.9],
+      }, (tl) => {
+        window.__timelines = window.__timelines || {};
+        window.__timelines["main"] = tl;
+      });
+    </script>
+  </body>
+</html>

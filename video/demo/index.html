@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=1920, height=1080" />
     <title>MyGit demo</title>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,600;1,6..72,500&family=Noto+Serif+SC:wght@700&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+SC:wght@400;500&display=block" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,600;1,6..72,500&family=Noto+Serif+SC:wght@700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500&display=block" rel="stylesheet" />
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A1022; }
@@ -17,7 +17,7 @@
         color: #E6ECF7;
         font-family: "IBM Plex Sans", "Noto Sans SC", sans-serif;
         --serif: "Newsreader", "Noto Serif SC", serif;
-        --mono: "JetBrains Mono", monospace;
+        --mono: "IBM Plex Mono", "Noto Sans SC", monospace;
         --blue: #5B9BFF;
         --green: #3DDC97;
         --muted: #93A0C0;
@@ -30,91 +30,86 @@
       .glow { position: absolute; border-radius: 50%; filter: blur(60px); }
       #glow-a { width: 1100px; height: 800px; left: 980px; top: -260px; background: radial-gradient(closest-side, rgba(61, 123, 255, .34), transparent); }
       #glow-b { width: 900px; height: 700px; left: -260px; top: 520px; background: radial-gradient(closest-side, rgba(31, 191, 122, .16), transparent); }
-      #grid {
-        position: absolute; inset: 0;
-        background: linear-gradient(rgba(147, 160, 192, .07) 2px, transparent 2px) 0 0 / 100% 72px;
-      }
-      /* the page's rail, as on the site: a branch line down the left */
-      #rail { position: absolute; left: 72px; top: 0; width: 4px; height: 1080px; background: linear-gradient(#5B9BFF, #3D7BFF); opacity: .5; transform-origin: top; }
+      #grid { position: absolute; inset: 0; background: linear-gradient(rgba(147, 160, 192, .07) 2px, transparent 2px) 0 0 / 100% 72px; }
 
-      /* ---------- Captions: the left column of the feature scenes ---------- */
-      .cap { position: absolute; left: 132px; top: 0; bottom: 0; width: 420px; display: flex; flex-direction: column; justify-content: center; gap: 22px; }
+      /* ---------- Captions: the left column ---------- */
+      .cap { position: absolute; left: 120px; top: 0; bottom: 0; width: 460px; display: flex; flex-direction: column; justify-content: center; gap: 22px; }
+      .cap.high { top: 150px; bottom: auto; }
       .eyebrow { font: 500 26px/1 var(--mono); color: var(--green); }
       .eyebrow b { color: #F5C451; font-weight: 500; margin-right: 14px; }
-      .headline { font: 600 68px/1.08 var(--serif); letter-spacing: -.01em; white-space: pre-line; }
-      #root.zh .headline { font-size: 60px; line-height: 1.28; letter-spacing: .02em; white-space: pre; }
+      .headline { font: 600 64px/1.08 var(--serif); letter-spacing: -.01em; white-space: pre-line; }
+      #root.zh .headline { font-size: 58px; line-height: 1.3; letter-spacing: .02em; white-space: pre; }
+      .sub { font-size: 28px; line-height: 1.4; color: var(--muted); }
+
+      /* ---------- The agent's terminal ---------- */
+      #term { position: absolute; left: 120px; top: 560px; width: 470px; height: 380px; border-radius: 18px; background: #0E1428; box-shadow: 0 0 0 2px rgba(147, 160, 192, .2), 0 40px 80px -30px rgba(0, 0, 0, .8); overflow: hidden; font: 400 21px/1.55 var(--mono); }
+      .term-bar { height: 44px; display: flex; align-items: center; gap: 9px; padding: 0 18px; background: rgba(255, 255, 255, .04); color: var(--muted); font-size: 17px; }
+      .term-bar i { width: 13px; height: 13px; border-radius: 50%; background: #3A4466; }
+      .term-bar span { margin-left: 10px; }
+      .term-body { position: relative; padding: 18px 22px; }
+      .term-body > p { position: absolute; left: 22px; right: 18px; }
+      .ask, .paste-ask { color: #E6ECF7; }
+      .ask::before, .paste-ask::before { content: "› "; color: var(--green); }
+      .work { color: var(--muted); }
+      .work b, .fix b { color: var(--blue); font-weight: 500; }
+      .work::before, .fix::before { content: "● "; color: var(--green); }
+      .paste { color: #C8D2EA; font-size: 19px; }
+      .paste.h { color: #F5C451; }
+      .fix { color: var(--muted); }
 
       /* ---------- Scene 1: the brand ---------- */
       #s1 { display: flex; align-items: center; justify-content: center; gap: 56px; }
-      #mark { width: 340px; height: 340px; }
+      #mark { width: 320px; height: 320px; }
       .word { display: flex; flex-direction: column; gap: 18px; }
       #s1 .name { font: 600 150px/1 "Newsreader", serif; letter-spacing: -.02em; }
-      #s1 .tag { margin-top: 30px; font: 500 38px/1.2 "IBM Plex Sans", "Noto Sans SC", sans-serif; color: var(--muted); }
+      #s1 .tag { margin-top: 26px; font: 500 44px/1.2 "IBM Plex Sans", "Noto Sans SC", sans-serif; color: var(--muted); }
 
-      /* ---------- Scene 2: the welcome window and a folder dropped on it ---------- */
+      /* ---------- The app's window, and the camera inside it ---------- */
       .win { position: absolute; border-radius: 22px; overflow: hidden; box-shadow: 0 0 0 2px rgba(147, 160, 192, .2), 0 50px 100px -30px rgba(0, 0, 0, .85); background: #1C1C1E; }
-      #welcome { left: 820px; top: 110px; width: 700px; height: 862px; }
-      #welcome img { width: 100%; height: 100%; display: block; }
-      #zone { position: absolute; left: 39px; top: 311px; width: 622px; height: 198px; border-radius: 14px; border: 4px solid #5B9BFF; background: rgba(91, 155, 255, .18); opacity: 0; }
-      #folder { position: absolute; left: 0; top: 0; width: 150px; height: 120px; }
-      .cursor { position: absolute; left: 0; top: 0; width: 34px; height: 40px; }
-
-      /* ---------- The app window: scenes 3 to 6 ---------- */
-      #app { left: 640px; top: 140px; width: 1170px; height: 780px; opacity: 0; }
-      #fit { position: absolute; left: 0; top: 0; width: 1568px; height: 1045px; transform-origin: 0 0; transform: scale(0.746173); } /* 1170 / 1568 */
-      #cam { position: absolute; inset: 0; transform-origin: 784px 522.5px; }
-      #pan { position: absolute; inset: 0; }
-      .screen { position: absolute; left: 0; top: 0; width: 1568px; height: 1045px; opacity: 0; }
-      #shot-main { opacity: 1; }
-      .over { position: absolute; opacity: 0; }
-      #diff-mask { left: 392px; top: 525px; width: 1176px; height: 520px; background: #1C1C1E; display: flex; align-items: center; justify-content: center; }
-      #diff-mask span { font-size: 22px; color: #8E8E93; }
-      #pick { left: 986px; top: 700px; width: 582px; height: 78px; background: rgba(91, 155, 255, .28); border-left: 4px solid #5B9BFF; transform-origin: top; }
-      #flash-row { left: 0; top: 282px; width: 392px; height: 30px; border: 3px solid #3DDC97; border-radius: 6px; box-shadow: 0 0 24px rgba(61, 220, 151, .6); }
-      #typed { left: 214px; top: 60px; width: 404px; height: 30px; background: #2C2C2E; display: flex; align-items: center; padding-left: 10px; font-size: 16px; color: #F2F2F7; }
-            #typed .t { opacity: 0; position: absolute; left: 10px; }
-      #typed i { display: inline-block; width: 2px; height: 18px; background: #5B9BFF; margin-left: 1px; }
-      #flash-block { left: 820px; top: 788px; width: 394px; height: 126px; border: 3px solid #3DDC97; border-radius: 6px; box-shadow: 0 0 30px rgba(61, 220, 151, .55); }
+      #app { left: 660px; top: 157px; width: 1170px; height: 766px; opacity: 0; }
+      #shot { position: absolute; left: 0; top: 0; width: 1568px; height: 1045px; transform-origin: 0 0; }
+      .screen { position: absolute; left: 0; top: 0; width: 1568px; opacity: 0; }
+      #shot-clean { opacity: 1; }
+      #flash { position: absolute; left: 0; top: 0; height: 44px; border: 3px solid #3DDC97; border-radius: 8px; box-shadow: 0 0 24px rgba(61, 220, 151, .6); opacity: 0; }
       .ripple { position: absolute; left: 0; top: 0; width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; border: 4px solid #5B9BFF; opacity: 0; }
+      .cursor { position: absolute; left: 0; top: 0; width: 34px; height: 40px; opacity: 0; }
 
       /* ---------- Scene 7: the memory ---------- */
       #s7 { padding: 0 0 0 132px; display: flex; flex-direction: column; justify-content: center; }
-      #s7 .headline { font-size: 104px; margin: 18px 0 70px; }
+      #s7 .headline { font-size: 100px; margin: 18px 0 60px; }
       #root.zh #s7 .headline { font-size: 92px; }
-      .bar-row { display: grid; grid-template-columns: 420px 1080px 200px; align-items: center; gap: 36px; margin-bottom: 34px; }
+      .bar-row { display: grid; grid-template-columns: 360px 1060px 220px; align-items: center; gap: 36px; margin-bottom: 30px; }
       .bar-label { font-size: 36px; color: var(--muted); }
       .bar-label.me { color: #E6ECF7; font-weight: 600; }
-      .bar { height: 46px; border-radius: 23px; background: rgba(31, 42, 72, .8); overflow: hidden; }
-      .fill { width: 100%; height: 100%; border-radius: 23px; transform-origin: left; }
+      .bar { height: 44px; border-radius: 22px; background: rgba(31, 42, 72, .8); overflow: hidden; }
+      .fill { width: 100%; height: 100%; border-radius: 22px; transform-origin: left; background: linear-gradient(90deg, #39466A, #5B678C); }
       #fill-me { background: linear-gradient(90deg, #1FBF7A, #3DDC97); box-shadow: 0 0 30px rgba(61, 220, 151, .6); }
-      #fill-other { background: linear-gradient(90deg, #39466A, #5B678C); }
-      .bar-value { font: 600 44px/1 var(--mono); text-align: right; }
+      .bar-value { font: 600 42px/1 var(--mono); text-align: right; }
       .note { font: 400 30px/1 "IBM Plex Sans", "Noto Sans SC", sans-serif; color: var(--muted); margin-top: 14px; }
 
       /* ---------- Scene 8: the end card ---------- */
-      #s8 { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; }
-      #end-mark { width: 230px; height: 230px; }
-      #s8 .name { font: 600 120px/1 "Newsreader", serif; letter-spacing: -.02em; }
-      .chips { display: flex; gap: 22px; }
-      .chip { font: 500 32px/1 "IBM Plex Sans", "Noto Sans SC", sans-serif; padding: 18px 30px; border-radius: 40px; border: 2px solid rgba(147, 160, 192, .3); background: rgba(18, 27, 51, .8); }
-      .url { font: 500 34px/1 var(--mono); color: var(--blue); margin-top: 8px; }
+      #s8 { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; }
+      #end-mark { width: 210px; height: 210px; }
+      #s8 .name { font: 600 116px/1 "Newsreader", serif; letter-spacing: -.02em; }
+      #s8 .tag { font: 500 40px/1.2 "IBM Plex Sans", "Noto Sans SC", sans-serif; color: var(--muted); }
+      .chips { display: flex; gap: 22px; margin-top: 8px; }
+      .chip { font: 500 30px/1 "IBM Plex Sans", "Noto Sans SC", sans-serif; padding: 18px 30px; border-radius: 40px; border: 2px solid rgba(147, 160, 192, .3); background: rgba(18, 27, 51, .8); }
+      .url { font: 500 34px/1 var(--mono); color: var(--blue); margin-top: 6px; }
     </style>
   </head>
   <body>
-    <div data-hf-id="hf-rigq" id="root" data-composition-id="main" data-start="0" data-duration="40" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-rigq" id="root" data-composition-id="main" data-start="0" data-duration="42" data-width="1920" data-height="1080">
 
-      <!-- The field every scene plays on -->
       <!-- A light bed under the whole film, easing in and out. -->
-      <audio data-hf-id="hf-5bsq" id="bgm" src=".media/audio/bgm/bgm_001.wav" data-start="0" data-duration="40" data-track-index="20" data-volume="0.55" data-fade-in="0.6" data-fade-out="2.5"></audio>
-      <div data-hf-id="hf-li7x" id="bg" class="clip" data-start="0" data-duration="40" data-track-index="0">
+      <audio data-hf-id="hf-5bsq" id="bgm" src=".media/audio/bgm/bgm_001.wav" data-start="0" data-duration="42" data-track-index="20" data-volume="0.55" data-fade-in="0.6" data-fade-out="2.5"></audio>
+      <div data-hf-id="hf-li7x" id="bg" class="clip" data-start="0" data-duration="42" data-track-index="0">
         <div data-hf-id="hf-eg44" id="glow-a" class="glow"></div>
         <div data-hf-id="hf-pblr" id="glow-b" class="glow"></div>
         <div data-hf-id="hf-gs5t" id="grid"></div>
-        <div data-hf-id="hf-gvf1" id="rail"></div>
       </div>
 
       <!-- 1 · The brand: the logo's branches draw down and meet -->
-      <section data-hf-id="hf-ih0l" id="s1" class="clip" data-start="0" data-duration="4" data-track-index="1">
+      <section data-hf-id="hf-ih0l" id="s1" class="clip" data-start="0" data-duration="3.6" data-track-index="1">
         <svg data-hf-id="hf-118p" id="mark" viewBox="100 100 824 824" aria-hidden="true">
           <defs data-hf-id="hf-mh0t">
             <linearGradient data-hf-id="hf-8i0d" id="m-bg" x1="0" y1="0" x2="0" y2="1"><stop data-hf-id="hf-2ihx" offset="0" stop-color="#1F3166"/><stop data-hf-id="hf-0qb9" offset="1" stop-color="#0A1022"/></linearGradient>
@@ -138,84 +133,95 @@
         </svg>
         <div data-hf-id="hf-trrc" class="word">
           <div data-hf-id="hf-plil" class="name">MyGit</div>
-          <div data-hf-id="hf-9ojz" class="tag" data-t="tagline">A light, native git client</div>
+          <div data-hf-id="hf-9ojz" class="tag" data-t="tagline">See what your agent changed</div>
         </div>
       </section>
 
-      <!-- 2 · A folder dropped on the welcome window -->
-      <section data-hf-id="hf-kx60" id="s2" class="clip" data-start="4" data-duration="4.4" data-track-index="1">
-        <div data-hf-id="hf-8hv4" class="cap" id="cap2"><p data-hf-id="hf-s4jw" class="eyebrow"><b data-hf-id="hf-wxem">a1c3f09</b>git open</p><h2 data-hf-id="hf-2g5c" class="headline" data-t="s2">Drop a folder to open it</h2></div>
-        <div data-hf-id="hf-y5s4" id="welcome" class="win">
-          <img data-hf-id="hf-00s7" id="img-welcome" data-shot="welcome" src="assets/en/welcome.png" alt="" />
-          <div data-hf-id="hf-tqwf" id="zone"></div>
-        </div>
-        <svg data-hf-id="hf-1tbv" id="folder" viewBox="0 0 150 120" aria-hidden="true">
-          <path data-hf-id="hf-1tst" d="M8 18 Q8 8 18 8 H58 L72 22 H132 Q142 22 142 32 V104 Q142 112 132 112 H18 Q8 112 8 104 Z" fill="#3D7BFF"/>
-          <path data-hf-id="hf-nfws" d="M8 38 H142 V104 Q142 112 132 112 H18 Q8 112 8 104 Z" fill="#5B9BFF"/>
-          <text data-hf-id="hf-xdzo" x="75" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" fill="#0A1022" font-weight="600">orbit</text>
-        </svg>
-        <svg data-hf-id="hf-u344" id="cursor2" class="cursor" viewBox="0 0 34 40" aria-hidden="true"><path data-hf-id="hf-v58b" d="M3 2 L3 32 L11 25 L17 38 L23 35 L17 23 L28 23 Z" fill="#fff" stroke="#0A1022" stroke-width="2.5" stroke-linejoin="round"/></svg>
-      </section>
-
-      <!-- 3–6 · The app's window, the camera moving inside it -->
-      <div data-hf-id="hf-3dc8" id="app-host" class="clip" data-start="7.9" data-duration="23.1" data-track-index="2">
-      <div data-hf-id="hf-dl4x" id="app" class="win">
-        <div data-hf-id="hf-olru" id="fit">
-          <div data-hf-id="hf-ftaq" id="cam">
-            <div data-hf-id="hf-8hbu" id="pan">
-              <img data-hf-id="hf-8ug0" id="shot-main" class="screen" data-shot="main" src="assets/en/main.png" alt="" />
-              <img data-hf-id="hf-ng24" id="shot-changes" class="screen" data-shot="changes" src="assets/en/changes.png" alt="" />
-              <img data-hf-id="hf-phm7" id="shot-staged" class="screen" data-shot="staged" src="assets/en/staged.png" alt="" />
-              <img data-hf-id="hf-qwtd" id="shot-branches" class="screen" data-shot="branches" src="assets/en/branches.png" alt="" />
-              <img data-hf-id="hf-ip6j" id="shot-feat" class="screen" data-shot="branches-feat" src="assets/en/branches-feat.png" alt="" />
-              <img data-hf-id="hf-2fjn" id="shot-merge" class="screen" data-shot="merge" src="assets/en/merge.png" alt="" />
-              <img data-hf-id="hf-ng6t" id="shot-merged" class="screen" data-shot="merged" src="assets/en/merged.png" alt="" />
-              <div data-hf-id="hf-7m8u" id="diff-mask" class="over"><span data-hf-id="hf-ymgh" data-t="pick">Choose a commit or a change to see its diff</span></div>
-              <div data-hf-id="hf-bnhz" id="pick" class="over"></div>
-              <div data-hf-id="hf-ndel" id="flash-row" class="over"></div>
-              <div data-hf-id="hf-leo0" id="typed" class="over"><span data-hf-id="hf-ijlm" class="t" id="t1">f</span><span data-hf-id="hf-9cni" class="t" id="t2">fe</span><span data-hf-id="hf-os3y" class="t" id="t3">fea</span><span data-hf-id="hf-fv0h" class="t" id="t4">feat</span><i data-hf-id="hf-wt6k"></i></div>
-              <div data-hf-id="hf-hd6a" id="flash-block" class="over"></div>
-              <div data-hf-id="hf-h5aq" id="ripple" class="ripple"></div>
-              <svg data-hf-id="hf-n5ti" id="cursor" class="cursor" viewBox="0 0 34 40" aria-hidden="true"><path data-hf-id="hf-tkor" d="M3 2 L3 32 L11 25 L17 38 L23 35 L17 23 L28 23 Z" fill="#fff" stroke="#0A1022" stroke-width="2.5" stroke-linejoin="round"/></svg>
-            </div>
+      <!-- 2–6 · The app's window, the camera moving over its screenshots -->
+      <div data-hf-id="hf-3dc8" id="app-host" class="clip" data-start="3.4" data-duration="30.9" data-track-index="2">
+        <div data-hf-id="hf-dl4x" id="app" class="win">
+          <div data-hf-id="hf-ftaq" id="shot">
+            <img data-hf-id="hf-a001" id="shot-clean" class="screen" data-shot="clean" src="assets/en/clean.png" alt="" />
+            <img data-hf-id="hf-a002" id="shot-one" class="screen" data-shot="one" src="assets/en/one.png" alt="" />
+            <img data-hf-id="hf-a003" id="shot-three" class="screen" data-shot="three" src="assets/en/three.png" alt="" />
+            <img data-hf-id="hf-a004" id="shot-diff" class="screen" data-shot="diff" src="assets/en/diff.png" alt="" />
+            <img data-hf-id="hf-a005" id="shot-folded" class="screen" data-shot="folded" src="assets/en/folded.png" alt="" />
+            <img data-hf-id="hf-a006" id="shot-staged" class="screen" data-shot="staged" src="assets/en/staged.png" alt="" />
+            <img data-hf-id="hf-a007" id="shot-comment" class="screen" data-shot="comment" src="assets/en/comment.png" alt="" />
+            <img data-hf-id="hf-a008" id="shot-menu" class="screen" data-shot="menu" src="assets/en/menu.png" alt="" />
+            <img data-hf-id="hf-a009" id="shot-copied" class="screen" data-shot="copied" src="assets/en/copied.png" alt="" />
+            <img data-hf-id="hf-a010" id="shot-main" class="screen" data-shot="main" src="assets/en/main.png" alt="" />
+            <img data-hf-id="hf-a011" id="shot-feat" class="screen" data-shot="branches-feat" src="assets/en/branches-feat.png" alt="" />
+            <img data-hf-id="hf-a012" id="shot-merged" class="screen" data-shot="merged" src="assets/en/merged.png" alt="" />
+            <div data-hf-id="hf-a013" id="flash"></div>
+            <div data-hf-id="hf-h5aq" id="ripple" class="ripple"></div>
+            <svg data-hf-id="hf-n5ti" id="cursor" class="cursor" viewBox="0 0 34 40" aria-hidden="true"><path data-hf-id="hf-tkor" d="M3 2 L3 32 L11 25 L17 38 L23 35 L17 23 L28 23 Z" fill="#fff" stroke="#0A1022" stroke-width="2.5" stroke-linejoin="round"/></svg>
           </div>
         </div>
       </div>
+
+      <!-- The agent's terminal: its work, then the comments pasted back -->
+      <div data-hf-id="hf-a020" id="term-host" class="clip" data-start="3.8" data-duration="26.3" data-track-index="4">
+        <div data-hf-id="hf-a021" id="term">
+          <div data-hf-id="hf-a022" class="term-bar"><i data-hf-id="hf-a023"></i><i data-hf-id="hf-a024"></i><i data-hf-id="hf-a025"></i><span data-hf-id="hf-a026">agent — orbit</span></div>
+          <div data-hf-id="hf-a027" class="term-body">
+            <p data-hf-id="hf-a028" class="ask" style="top: 18px" data-t="ask">add retries to fetchAll, with a test</p>
+            <p data-hf-id="hf-a029" class="work" style="top: 104px"><b data-hf-id="hf-a030">Edit</b> src/api.ts</p>
+            <p data-hf-id="hf-a031" class="work" style="top: 144px"><b data-hf-id="hf-a032">Bash</b> npm i -D vitest</p>
+            <p data-hf-id="hf-a033" class="work" style="top: 184px"><b data-hf-id="hf-a034">Write</b> src/api.test.ts</p>
+            <p data-hf-id="hf-a035" class="paste h" style="top: 18px"># Address these Review Comments</p>
+            <p data-hf-id="hf-a036" class="paste h" style="top: 54px">## 1. src/api.ts:10-11</p>
+            <p data-hf-id="hf-a037" class="paste" style="top: 90px">} catch {</p>
+            <p data-hf-id="hf-a038" class="paste" style="top: 120px">&nbsp;&nbsp;await sleep(i * 1_000)</p>
+            <p data-hf-id="hf-a039" class="paste" style="top: 160px" data-t="reply">After the third try this gives up without a word…</p>
+            <p data-hf-id="hf-a040" class="fix" style="top: 250px"><b data-hf-id="hf-a041">Edit</b> src/api.ts</p>
+          </div>
+        </div>
       </div>
-      <section data-hf-id="hf-x1hi" id="s3" class="clip" data-start="8.4" data-duration="5.6" data-track-index="3">
-        <div data-hf-id="hf-2mgg" class="cap"><p data-hf-id="hf-fbuk" class="eyebrow"><b data-hf-id="hf-dqy2">3f9c1e0</b>git log --graph</p><h2 data-hf-id="hf-lmvg" class="headline" data-t="s3">Every branch, with its graph</h2></div>
+
+      <section data-hf-id="hf-x1hi" id="s2" class="clip" data-start="3.5" data-duration="7.5" data-track-index="3">
+        <div data-hf-id="hf-8hv4" class="cap high" id="cap2"><p data-hf-id="hf-s4jw" class="eyebrow"><b data-hf-id="hf-wxem">$</b>git status</p><h2 data-hf-id="hf-2g5c" class="headline" data-t="s2">Changes show up as the agent works</h2></div>
       </section>
-      <section data-hf-id="hf-jt35" id="s4" class="clip" data-start="14" data-duration="6" data-track-index="3">
-        <div data-hf-id="hf-xclk" class="cap"><p data-hf-id="hf-gu14" class="eyebrow"><b data-hf-id="hf-l9t1">b81d2a4</b>git add -p</p><h2 data-hf-id="hf-hxqy" class="headline" data-t="s4">Stage files, changes, or single lines</h2></div>
+      <section data-hf-id="hf-jt35" id="s3" class="clip" data-start="11" data-duration="6" data-track-index="3">
+        <div data-hf-id="hf-xclk" class="cap" id="cap3"><p data-hf-id="hf-gu14" class="eyebrow"><b data-hf-id="hf-l9t1">01</b>git diff</p><h2 data-hf-id="hf-hxqy" class="headline" data-t="s3">Every change, side by side</h2></div>
       </section>
-      <section data-hf-id="hf-kseq" id="s5" class="clip" data-start="20" data-duration="5" data-track-index="3">
-        <div data-hf-id="hf-w5oh" class="cap"><p data-hf-id="hf-utdk" class="eyebrow"><b data-hf-id="hf-v169">5c70df3</b>git switch</p><h2 data-hf-id="hf-f6ew" class="headline" data-t="s5">Search, switch, merge or rebase</h2></div>
+      <section data-hf-id="hf-kseq" id="s4" class="clip" data-start="17" data-duration="5" data-track-index="3">
+        <div data-hf-id="hf-w5oh" class="cap" id="cap4"><p data-hf-id="hf-utdk" class="eyebrow"><b data-hf-id="hf-v169">02</b>git add</p><h2 data-hf-id="hf-f6ew" class="headline" data-t="s4">Stage what's right</h2></div>
       </section>
-      <section data-hf-id="hf-vt5r" id="s6" class="clip" data-start="25" data-duration="6" data-track-index="3">
-        <div data-hf-id="hf-wjzi" class="cap"><p data-hf-id="hf-wfn4" class="eyebrow"><b data-hf-id="hf-q3a8">88caafb</b>git merge</p><h2 data-hf-id="hf-uhgs" class="headline" data-t="s6">Resolve conflicts side by side</h2></div>
+      <section data-hf-id="hf-vt5r" id="s5" class="clip" data-start="22" data-duration="8" data-track-index="3">
+        <div data-hf-id="hf-wjzi" class="cap high" id="cap5"><p data-hf-id="hf-wfn4" class="eyebrow"><b data-hf-id="hf-q3a8">03</b>comments → agent</p><h2 data-hf-id="hf-uhgs" class="headline" data-t="s5">Hand the rest back to the agent</h2></div>
+      </section>
+      <section data-hf-id="hf-a050" id="s6" class="clip" data-start="30" data-duration="4" data-track-index="3">
+        <div data-hf-id="hf-a051" class="cap" id="cap6"><p data-hf-id="hf-a052" class="eyebrow"><b data-hf-id="hf-a053">$</b>git log --graph</p><h2 data-hf-id="hf-a054" class="headline" data-t="s6">The IDE you know, without the IDE</h2><p data-hf-id="hf-a055" class="sub" data-t="s6sub">JetBrains' graph and history, VS Code's staging</p></div>
       </section>
 
       <!-- 7 · The memory it saves -->
-      <section data-hf-id="hf-o8jn" id="s7" class="clip" data-start="31" data-duration="4" data-track-index="1">
-        <p data-hf-id="hf-d5fg" class="eyebrow"><b data-hf-id="hf-vqav">e4a17c9</b>perf: drop the JVM</p>
-        <h2 data-hf-id="hf-hsvb" class="headline" data-t="s7">A sixth of the memory</h2>
+      <section data-hf-id="hf-o8jn" id="s7" class="clip" data-start="34" data-duration="4" data-track-index="1">
+        <p data-hf-id="hf-d5fg" class="eyebrow"><b data-hf-id="hf-vqav">$</b>ps -o rss</p>
+        <h2 data-hf-id="hf-hsvb" class="headline" data-t="s7">A fraction of the memory</h2>
         <div data-hf-id="hf-vxho" class="bar-row">
           <div data-hf-id="hf-argy" class="bar-label me">MyGit</div>
           <div data-hf-id="hf-ufsv" class="bar"><div data-hf-id="hf-1jw9" id="fill-me" class="fill"></div></div>
           <div data-hf-id="hf-ejio" class="bar-value"><span data-hf-id="hf-mk71" id="v-me">0</span> MB</div>
         </div>
         <div data-hf-id="hf-x17o" class="bar-row">
-          <div data-hf-id="hf-tv7q" class="bar-label" data-t="other">IntelliJ-based client</div>
-          <div data-hf-id="hf-c51b" class="bar"><div data-hf-id="hf-tulf" id="fill-other" class="fill"></div></div>
-          <div data-hf-id="hf-vprc" class="bar-value"><span data-hf-id="hf-vfz3" id="v-other">0</span> MB</div>
+          <div data-hf-id="hf-tv7q" class="bar-label">VS Code</div>
+          <div data-hf-id="hf-c51b" class="bar"><div data-hf-id="hf-tulf" id="fill-code" class="fill"></div></div>
+          <div data-hf-id="hf-vprc" class="bar-value"><span data-hf-id="hf-vfz3" id="v-code">0</span> MB</div>
+        </div>
+        <div data-hf-id="hf-a060" class="bar-row">
+          <div data-hf-id="hf-a061" class="bar-label">IntelliJ IDEA</div>
+          <div data-hf-id="hf-a062" class="bar"><div data-hf-id="hf-a063" id="fill-idea" class="fill"></div></div>
+          <div data-hf-id="hf-a064" class="bar-value"><span data-hf-id="hf-a065" id="v-idea">0</span> MB</div>
         </div>
         <p data-hf-id="hf-xpnw" class="note" data-t="note">Memory with a repository of 20,000 commits open</p>
       </section>
 
       <!-- 8 · The end card -->
-      <section data-hf-id="hf-8ref" id="s8" class="clip" data-start="35" data-duration="5" data-track-index="1">
+      <section data-hf-id="hf-8ref" id="s8" class="clip" data-start="38" data-duration="4" data-track-index="1">
         <img data-hf-id="hf-n4tg" id="end-mark" src="assets/logo.svg" alt="" />
         <div data-hf-id="hf-tof5" class="name">MyGit</div>
+        <div data-hf-id="hf-a070" class="tag" data-t="tagline">See what your agent changed</div>
         <div data-hf-id="hf-exrd" class="chips">
           <div data-hf-id="hf-u5aj" class="chip">macOS</div>
           <div data-hf-id="hf-776b" class="chip">Windows</div>
@@ -226,206 +232,28 @@
       </section>
     </div>
 
+    <script src="film.js"></script>
     <script>
-      // The words of each language, the screenshots taken in it, and where
-      // its buttons sit in them (the Chinese labels are shorter).
-      const TEXT = {
-        en: {
-          tagline: "A light, native git client",
-          s2: "Drop a folder to open it",
-          s3: "Every branch, with its graph",
-          s4: "Stage files, changes, or single lines",
-          s5: "Search, switch, merge or rebase",
-          s6: "Resolve conflicts side by side",
-          s7: "A sixth of the memory",
-          other: "IntelliJ-based client",
-          note: "Memory with a repository of 20,000 commits open",
-          pick: "Choose a commit or a change to see its diff",
-        },
-        zh: {
-          tagline: "轻量的原生 git 客户端",
-          s2: "拖入文件夹，\n即可打开",
-          s3: "所有分支，\n一张图看清",
-          s4: "按文件、改动块，\n甚至按行暂存",
-          s5: "搜索、切换、\n合并、变基",
-          s6: "三栏对照，\n解决冲突",
-          s7: "内存只要六分之一",
-          other: "IntelliJ 平台的客户端",
-          note: "打开 2 万个提交的仓库后的内存占用",
-          pick: "选择一个提交或更改查看差异",
-        },
-      };
-      const STAGE_BUTTON = { en: [1452, 553], zh: [1493, 555] };
-
-      const vars = (window.__hyperframes && window.__hyperframes.getVariables()) || {};
-      const lang = vars.lang === "zh" ? "zh" : "en";
-      const root = document.getElementById("root");
-      if (lang === "zh") root.classList.add("zh");
-      document.querySelectorAll("[data-t]").forEach((el) => (el.textContent = TEXT[lang][el.dataset.t]));
-      // The screenshots taken in the language (the compiler rewrites src, so
-      // each names its shot).
-      document.querySelectorAll("img[data-shot]").forEach((img) => (img.src = `assets/${lang}/${img.dataset.shot}.png`));
-
-      // The window shows the 1568×1045 screenshots at its own width.
-
-      // The camera: the outer #cam scales around the screenshot's center, the
-      // inner #pan translates by the negated offset of the target from it
-      // (coordinate-target-zoom, nested wrappers: T = -offset).
-      const C = [784, 522.5];
-      function zoomTo(tl, x, y, s, at, dur) {
-        tl.to("#cam", { scale: s, duration: dur, ease: "power3.inOut" }, at);
-        tl.to("#pan", { x: C[0] - x, y: C[1] - y, duration: dur, ease: "power3.inOut" }, at);
-      }
-      function zoomOut(tl, at, dur) {
-        tl.to("#cam", { scale: 1, duration: dur, ease: "power3.inOut" }, at);
-        tl.to("#pan", { x: 0, y: 0, duration: dur, ease: "power3.inOut" }, at);
-      }
-      // cursor-click-ripple: the cursor's tip moves to a point, presses, rings out.
-      function clickAt(tl, x, y, at, moveDur = 0.6) {
-        tl.to("#cursor", { x: x - 3, y: y - 2, duration: moveDur, ease: "power2.inOut" }, at - moveDur);
-        tl.to("#cursor", { scale: 0.82, duration: 0.09, ease: "power2.in", yoyo: true, repeat: 1, transformOrigin: "3px 2px" }, at);
-        tl.set("#ripple", { x, y, scale: 0.2, opacity: 1 }, at);
-        tl.to("#ripple", { scale: 1.6, opacity: 0, duration: 0.5, ease: "power2.out" }, at);
-      }
-      function swap(tl, from, to, at, dur = 0.28) {
-        tl.to(to, { opacity: 1, duration: dur, ease: "none" }, at);
-        tl.set(from, { opacity: 0 }, at + dur);
-      }
-
-      function build() {
-        const tl = gsap.timeline({ paused: true });
-
-        // Background: the glows breathe and drift the whole film; the rail grows.
-        tl.fromTo("#glow-a", { scale: 1, x: 0 }, { scale: 1.12, x: -80, duration: 20, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0);
-        tl.fromTo("#glow-b", { scale: 1.05, y: 0 }, { scale: .92, y: -60, duration: 20, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0);
-        tl.fromTo("#rail", { scaleY: 0 }, { scaleY: 1, duration: 3, ease: "power2.out" }, 0.2);
-
-        // 1 · logo-assemble-lockup: the body blooms, the branches draw down
-        // and meet, the merge pops, the word slides in.
-        document.querySelectorAll(".m-line").forEach((p) => {
-          const len = p.getTotalLength();
-          tl.set(p, { strokeDasharray: len, strokeDashoffset: len }, 0);
-        });
-        tl.fromTo("#m-body", { opacity: 0, scale: .9, transformOrigin: "512px 512px" }, { opacity: 1, scale: 1, duration: .7, ease: "power3.out" }, 0.1);
-        tl.fromTo(".m-dot", { scale: 0, transformOrigin: "center" }, { scale: 1, duration: .45, ease: "back.out(2)", stagger: .06 }, 0.35);
-        tl.to(".m-line", { strokeDashoffset: 0, duration: .8, ease: "power2.inOut", stagger: .08 }, 0.55);
-        tl.fromTo("#m-merge", { scale: 0, transformOrigin: "512px 584px" }, { scale: 1, duration: .5, ease: "back.out(2.6)" }, 1.35);
-        tl.fromTo("#s1 .name", { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: .7, ease: "power3.out" }, 1.45);
-        tl.fromTo("#s1 .tag", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .6, ease: "power2.out" }, 1.75);
-        tl.to("#s1 .word, #mark", { opacity: 0, y: -24, duration: .4, ease: "power2.in" }, 3.6);
-
-        // 2 · cursor-drag: the folder rides the cursor onto the drop zone,
-        // which lights; on the drop the window grows into the app's.
-        tl.fromTo("#cap2 > *", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: .55, ease: "power3.out", stagger: .1 }, 4.1);
-        tl.fromTo("#welcome", { opacity: 0, y: 40, scale: .96 }, { opacity: 1, y: 0, scale: 1, duration: .6, ease: "power3.out" }, 4.05);
-        tl.fromTo("#folder", { x: 1760, y: 820, opacity: 0, rotation: 8 }, { opacity: 1, duration: .25 }, 4.6);
-        tl.set("#cursor2", { x: 1830, y: 900 }, 4.6);
-        tl.to("#folder", { x: 1100, y: 470, rotation: -4, duration: 1.3, ease: "power2.inOut" }, 4.9);
-        tl.to("#cursor2", { x: 1170, y: 550, duration: 1.3, ease: "power2.inOut" }, 4.9);
-        tl.to("#zone", { opacity: 1, duration: .2 }, 5.9);
-        tl.to("#folder", { scale: .7, opacity: 0, duration: .35, ease: "power2.in" }, 6.5);
-        tl.to("#cursor2", { scale: .82, duration: .09, yoyo: true, repeat: 1, transformOrigin: "3px 2px" }, 6.5);
-        tl.to("#zone", { opacity: 0, duration: .3 }, 6.9);
-        tl.to("#cap2", { opacity: 0, duration: .3 }, 7.7);
-        tl.to("#welcome", { opacity: 0, scale: 1.08, duration: .45, ease: "power2.in" }, 7.6);
-        tl.to("#cursor2", { opacity: 0, duration: .2 }, 7.6);
-
-        // 3 · device-surface-showcase: the app's window arrives with the diff
-        // waiting; a commit is chosen, its diff shows, the camera pushes in
-        // on the graph's branches and tags, then back.
-        tl.fromTo("#app", { opacity: 0, scale: .92 }, { opacity: 1, scale: 1, duration: .6, ease: "power3.out" }, 7.9);
-        tl.set("#diff-mask", { opacity: 1 }, 7.9);
-        tl.fromTo("#s3 .cap > *", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: .55, ease: "power3.out", stagger: .1 }, 8.5);
-        tl.fromTo("#cursor", { x: 980, y: 860, opacity: 0 }, { opacity: 1, duration: .2 }, 8.6);
-        clickAt(tl, 560, 462, 9.5, 0.8);
-        tl.to("#diff-mask", { opacity: 0, duration: .35 }, 9.6);
-        zoomTo(tl, 470, 300, 1.85, 10.4, 1.2);
-        tl.to("#cursor", { opacity: 0, duration: .2 }, 10.4);
-        zoomOut(tl, 12.7, 1.0);
-        tl.to("#s3 .cap", { opacity: 0, duration: .3 }, 13.65);
-
-        // 4 · cursor-ui-demo: on the diff of README.md the cursor drags over
-        // three line numbers, which tint, then stages them; the file moves up.
-        swap(tl, "#shot-main", "#shot-changes", 14.0);
-        tl.fromTo("#s4 .cap > *", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: .55, ease: "power3.out", stagger: .1 }, 14.1);
-        zoomTo(tl, 1150, 660, 1.5, 14.2, 0.9);
-        tl.set("#cursor", { x: 1300, y: 900 }, 14.2);
-        tl.to("#cursor", { opacity: 1, duration: .2 }, 14.6);
-        tl.to("#cursor", { x: 1041, y: 708, duration: .6, ease: "power2.inOut" }, 14.7);
-        tl.fromTo("#pick", { opacity: 0, scaleY: .3 }, { opacity: 1, scaleY: .33, duration: .1 }, 15.3);
-        tl.to("#pick", { scaleY: 1, duration: .55, ease: "power1.inOut" }, 15.4);
-        tl.to("#cursor", { y: 764, duration: .6, ease: "power1.inOut" }, 15.35);
-        const [bx, by] = STAGE_BUTTON[lang];
-        clickAt(tl, bx, by, 16.6, 0.7);
-        swap(tl, "#shot-changes", "#shot-staged", 16.75);
-        tl.to("#pick", { opacity: 0, duration: .25 }, 16.75);
-        zoomOut(tl, 17.0, 0.9);
-        tl.to("#cursor", { opacity: 0, duration: .2 }, 17.0);
-        tl.fromTo("#flash-row", { opacity: 0 }, { opacity: 1, duration: .25, yoyo: true, repeat: 3 }, 17.6);
-        tl.to("#s4 .cap", { opacity: 0, duration: .3 }, 19.65);
-
-        // 5 · cursor-ui-demo: the branch button opens its popover, "feat"
-        // types into the search, and the list narrows.
-        tl.fromTo("#s5 .cap > *", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: .55, ease: "power3.out", stagger: .1 }, 20.1);
-        tl.set("#cursor", { x: 700, y: 420 }, 20.0);
-        tl.to("#cursor", { opacity: 1, duration: .2 }, 20.1);
-        clickAt(tl, 255, 26, 20.8, 0.6);
-        swap(tl, "#shot-staged", "#shot-branches", 20.9, 0.18);
-        zoomTo(tl, 420, 200, 1.75, 21.0, 0.8);
-        tl.to("#cursor", { x: 560, y: 260, opacity: 0, duration: .4 }, 21.1);
-        // The search types a letter at a time: each step is its own state.
-        tl.set("#typed", { opacity: 1 }, 21.55);
-        ["#t1", "#t2", "#t3", "#t4"].forEach((id, i) => {
-          tl.set(id, { opacity: 1 }, 21.7 + i * 0.16);
-          if (i < 3) tl.set(id, { opacity: 0 }, 21.7 + (i + 1) * 0.16);
-        });
-        tl.to("#typed i", { x: 40, duration: 0.64, ease: "steps(4)" }, 21.7);
-        swap(tl, "#shot-branches", "#shot-feat", 22.5, 0.2);
-        tl.set("#typed", { opacity: 0 }, 22.7);
-        zoomOut(tl, 24.0, 0.9);
-        tl.to("#s5 .cap", { opacity: 0, duration: .3 }, 24.65);
-
-        // 6 · device-surface-showcase: the merge view; the camera settles on
-        // the three panes, and "Take Both" resolves the conflict.
-        swap(tl, "#shot-feat", "#shot-merge", 25.0, 0.3);
-        tl.fromTo("#s6 .cap > *", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: .55, ease: "power3.out", stagger: .1 }, 25.1);
-        zoomTo(tl, 980, 790, 1.55, 25.3, 1.0);
-        tl.fromTo("#flash-block", { opacity: 0 }, { opacity: 1, duration: .3, yoyo: true, repeat: 1 }, 26.2);
-        tl.set("#cursor", { x: 1300, y: 960 }, 26.0);
-        tl.to("#cursor", { opacity: 1, duration: .2 }, 26.3);
-        clickAt(tl, 1038, 604, 27.3, 0.8);
-        swap(tl, "#shot-merge", "#shot-merged", 27.45, 0.3);
-        tl.to("#cursor", { opacity: 0, duration: .25 }, 28.0);
-        zoomOut(tl, 29.4, 1.0);
-        tl.to("#s6 .cap", { opacity: 0, duration: .3 }, 30.4);
-        tl.to("#app", { opacity: 0, scale: .96, duration: .4, ease: "power2.in" }, 30.6);
-
-        // 7 · dataviz-countup with stat-bars-and-fills: the bars grow and
-        // their numbers count up.
-        tl.fromTo("#s7 > *", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .5, ease: "power3.out", stagger: .08 }, 31.05);
-        tl.fromTo("#fill-other", { scaleX: 0 }, { scaleX: 1, duration: 1.5, ease: "power2.out" }, 31.5);
-        tl.fromTo("#fill-me", { scaleX: 0 }, { scaleX: 109 / 806, duration: 1.5, ease: "power2.out" }, 31.5);
-        const count = { me: 0, other: 0 };
-        tl.fromTo(count, { me: 0, other: 0 }, {
-          me: 109, other: 806, duration: 1.5, ease: "power2.out",
-          onUpdate: () => {
-            document.getElementById("v-me").textContent = Math.round(count.me);
-            document.getElementById("v-other").textContent = Math.round(count.other);
-          },
-        }, 31.5);
-        tl.to("#s7", { opacity: 0, duration: .35 }, 34.65);
-
-        // 8 · the end card: the logo settles, the chips cascade, the address.
-        tl.fromTo("#end-mark", { opacity: 0, scale: .8 }, { opacity: 1, scale: 1, duration: .7, ease: "back.out(1.8)" }, 35.1);
-        tl.fromTo("#s8 .name", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: .6, ease: "power3.out" }, 35.4);
-        tl.fromTo(".chip", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .45, ease: "power2.out", stagger: .09 }, 35.8);
-        tl.fromTo(".url", { opacity: 0 }, { opacity: 1, duration: .6 }, 36.5);
-
+      // The landscape cut: the window right of the captions, framing each
+      // beat as [x, y, zoom] of the screenshots.
+      film({
+        width: 1170, height: 766,
+        agent: [784, 513, 1],
+        diff: [1078, 600, 1.6],
+        folded: [984, 660, 1.4],
+        staged: [523, 560, 1.5],
+        comment: [1107, 700, 1.7],
+        menu: [1078, 330, 1.6],
+        copied: [784, 513, 1],
+        main: [784, 522, 1],
+        graph: [470, 300, 1.85],
+        feat: [784, 522, 1],
+        merged: [784, 522, 1],
+        mergedNear: [980, 714, 1.55],
+      }, (tl) => {
+        window.__timelines = window.__timelines || {};
         window.__timelines["main"] = tl;
-      }
-
-      // Build once the screenshots of the language and the fonts are ready.
-      Promise.all([...document.images].map((img) => (img.decode ? img.decode().catch(() => {}) : null)).concat(document.fonts.ready)).then(build);
+      });
     </script>
   </body>
 </html>

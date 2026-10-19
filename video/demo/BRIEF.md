@@ -2,12 +2,12 @@
 workflow: general-video
 flow: automation
 storyboard: yes
-message: "MyGit: a light, native git client — the IDE's power in a sixth of the memory"
-destination: github-readme
-aspect: 1920x1080
+message: "MyGit: see what your agent changed — stage what's right, hand the rest back; the IDE you know, in a fraction of the memory"
+destination: github-readme, site, douyin
+aspect: 1920x1080 (video/demo), 1080x1920 (video/vertical)
 language: en, zh-Hans
 audience: developers who use git daily and find IDE-based git clients heavy
-length: 30-45s
+length: 42s
 angle: feature walkthrough
 ---
 
@@ -35,4 +35,6 @@ Chinese for README.zh-CN.md — with the app's UI and the captions in each langu
 - README videos play muted by default: the captions must carry the message without the music.
 - The README links a poster image to the MP4 in the repository, which GitHub's file view plays.
 - Keep to the app's own look: its dark UI, and the logo's blue and green.
-- Claims only what is measured: 109 MB vs 806 MB on a 20,000-commit repository.
+- Claims only what is measured: 109 MB for MyGit, 1,000 MB for VS Code and 2,300 MB for IntelliJ IDEA on a 20,000-commit repository.
+- The portrait cut keeps its words and the window above the bottom 340 px, where Douyin draws its own captions and buttons.
+- The screenshots are of the real app on the orbit demo repository, its working tree edited step by step as an agent would.
