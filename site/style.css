@@ -377,6 +377,7 @@ html[lang="zh-CN"] .hero h1 { line-height: 1.18; letter-spacing: 0; font-size: c
   border-bottom: 1px solid var(--border);
 }
 .dl-row b { display: block; font-weight: 600; font-size: 16px; }
+.dl-row b small { margin-left: 6px; font: 500 12px var(--mono); color: var(--green-hi); }
 .dl-row div span { color: var(--muted); font-size: 13px; }
 .dl-links { display: flex; gap: 8px; }
 .dl-note { margin: 16px 0 0; color: var(--faint); font-size: 13px; line-height: 1.6; }
