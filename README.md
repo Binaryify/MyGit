@@ -33,12 +33,17 @@
 
 Standalone git clients built on an IDE platform carry the IDE with them. MyGit is a single native binary drawn on the GPU by [MyGo](https://github.com/egoist/mygo): no webview, no JVM.
 
-| On a repository of 20,000 commits | MyGit | Rebased (IntelliJ platform) |
-|---|---|---|
-| Memory once open | **109 MB** | 806 MB |
-| Reading the whole history and laying out its graph | **0.13 s** | — |
-| Opening a commit with a 20 MB patch (5,677 files) | **0.24 s** | — |
-| CPU while idle | **0 %** | — |
+Memory once a repository of 20,000 commits is open, every process of the app counted (Apple M4):
+
+| App | Memory |
+|---|---|
+| **MyGit** | **109 MB** |
+| A trimmed IntelliJ-based client | 750 MB |
+| VS Code, no extensions | 1,000 MB |
+| VS Code, 167 extensions | 1,400 MB |
+| IntelliJ IDEA 2026.2 | 2,300 MB |
+
+On the same repository, MyGit reads the whole history and lays out its graph in **0.13 s**, opens a commit with a 20 MB patch (5,677 files) in **0.24 s**, and uses **0 %** CPU while idle.
 
 MyGit reads what `git` prints and lets `git` itself make every change, so a repository behaves in MyGit exactly as it does in a terminal.
 
