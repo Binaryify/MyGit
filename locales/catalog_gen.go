@@ -1548,36 +1548,6 @@ func (msgs Messages) LauncherTitle() string {
 	return Catalog.Format(msgs.locale, "launcherTitle", nil)
 }
 
-// LauncherWindows says "Add this folder to PATH to open repositories with mygit in a terminal:\n{dir}"
-// in the language the app shows.
-func LauncherWindows(dir string) string { return In(i18n.Locale()).LauncherWindows(dir) }
-
-// LauncherWindows says "Add this folder to PATH to open repositories with mygit in a terminal:\n{dir}"
-// in the language of msgs.
-func (msgs Messages) LauncherWindows(dir string) string {
-	return Catalog.Format(msgs.locale, "launcherWindows", map[string]any{"dir": dir})
-}
-
-// LauncherNoDir says "No folder on PATH can be written"
-// in the language the app shows.
-func LauncherNoDir() string { return In(i18n.Locale()).LauncherNoDir() }
-
-// LauncherNoDir says "No folder on PATH can be written"
-// in the language of msgs.
-func (msgs Messages) LauncherNoDir() string {
-	return Catalog.Format(msgs.locale, "launcherNoDir", nil)
-}
-
-// LauncherLink says "Link this executable into a folder on PATH:\n{exe}"
-// in the language the app shows.
-func LauncherLink(exe string) string { return In(i18n.Locale()).LauncherLink(exe) }
-
-// LauncherLink says "Link this executable into a folder on PATH:\n{exe}"
-// in the language of msgs.
-func (msgs Messages) LauncherLink(exe string) string {
-	return Catalog.Format(msgs.locale, "launcherLink", map[string]any{"exe": exe})
-}
-
 // LauncherFailed says "Couldn't install"
 // in the language the app shows.
 func LauncherFailed() string { return In(i18n.Locale()).LauncherFailed() }
@@ -1750,11 +1720,11 @@ func (msgs Messages) MenuRecent() string {
 	return Catalog.Format(msgs.locale, "menuRecent", nil)
 }
 
-// MenuInstallCLI says "Install Command Line Tool…"
+// MenuInstallCLI says "Install 'mygit' Command in PATH"
 // in the language the app shows.
 func MenuInstallCLI() string { return In(i18n.Locale()).MenuInstallCLI() }
 
-// MenuInstallCLI says "Install Command Line Tool…"
+// MenuInstallCLI says "Install 'mygit' Command in PATH"
 // in the language of msgs.
 func (msgs Messages) MenuInstallCLI() string {
 	return Catalog.Format(msgs.locale, "menuInstallCLI", nil)
@@ -3786,4 +3756,88 @@ func ReviewSubmitted(number int) string { return In(i18n.Locale()).ReviewSubmitt
 // in the language of msgs.
 func (msgs Messages) ReviewSubmitted(number int) string {
 	return Catalog.Format(msgs.locale, "reviewSubmitted", map[string]any{"number": number})
+}
+
+// MenuUninstallCLI says "Uninstall 'mygit' Command from PATH"
+// in the language the app shows.
+func MenuUninstallCLI() string { return In(i18n.Locale()).MenuUninstallCLI() }
+
+// MenuUninstallCLI says "Uninstall 'mygit' Command from PATH"
+// in the language of msgs.
+func (msgs Messages) MenuUninstallCLI() string {
+	return Catalog.Format(msgs.locale, "menuUninstallCLI", nil)
+}
+
+// LauncherDoneNewTerminal says "Open a new terminal, then run:\n  mygit .\n\nThe command is {path}"
+// in the language the app shows.
+func LauncherDoneNewTerminal(path string) string {
+	return In(i18n.Locale()).LauncherDoneNewTerminal(path)
+}
+
+// LauncherDoneNewTerminal says "Open a new terminal, then run:\n  mygit .\n\nThe command is {path}"
+// in the language of msgs.
+func (msgs Messages) LauncherDoneNewTerminal(path string) string {
+	return Catalog.Format(msgs.locale, "launcherDoneNewTerminal", map[string]any{"path": path})
+}
+
+// LauncherAddToPath says "Wrote {path}. Add {dir} to your PATH, then run in a terminal:\n  mygit ."
+// in the language the app shows.
+func LauncherAddToPath(path string, dir string) string {
+	return In(i18n.Locale()).LauncherAddToPath(path, dir)
+}
+
+// LauncherAddToPath says "Wrote {path}. Add {dir} to your PATH, then run in a terminal:\n  mygit ."
+// in the language of msgs.
+func (msgs Messages) LauncherAddToPath(path string, dir string) string {
+	return Catalog.Format(msgs.locale, "launcherAddToPath", map[string]any{"path": path, "dir": dir})
+}
+
+// LauncherTaken says "{path} is another program's: MyGit leaves it alone."
+// in the language the app shows.
+func LauncherTaken(path string) string { return In(i18n.Locale()).LauncherTaken(path) }
+
+// LauncherTaken says "{path} is another program's: MyGit leaves it alone."
+// in the language of msgs.
+func (msgs Messages) LauncherTaken(path string) string {
+	return Catalog.Format(msgs.locale, "launcherTaken", map[string]any{"path": path})
+}
+
+// LauncherUninstalled says "Command line tool uninstalled"
+// in the language the app shows.
+func LauncherUninstalled() string { return In(i18n.Locale()).LauncherUninstalled() }
+
+// LauncherUninstalled says "Command line tool uninstalled"
+// in the language of msgs.
+func (msgs Messages) LauncherUninstalled() string {
+	return Catalog.Format(msgs.locale, "launcherUninstalled", nil)
+}
+
+// LauncherUninstallFailed says "Couldn't uninstall"
+// in the language the app shows.
+func LauncherUninstallFailed() string { return In(i18n.Locale()).LauncherUninstallFailed() }
+
+// LauncherUninstallFailed says "Couldn't uninstall"
+// in the language of msgs.
+func (msgs Messages) LauncherUninstallFailed() string {
+	return Catalog.Format(msgs.locale, "launcherUninstallFailed", nil)
+}
+
+// LauncherNotFound says "No mygit command MyGit installed is on the PATH."
+// in the language the app shows.
+func LauncherNotFound() string { return In(i18n.Locale()).LauncherNotFound() }
+
+// LauncherNotFound says "No mygit command MyGit installed is on the PATH."
+// in the language of msgs.
+func (msgs Messages) LauncherNotFound() string {
+	return Catalog.Format(msgs.locale, "launcherNotFound", nil)
+}
+
+// LauncherRemoved says "Removed:\n{paths}"
+// in the language the app shows.
+func LauncherRemoved(paths string) string { return In(i18n.Locale()).LauncherRemoved(paths) }
+
+// LauncherRemoved says "Removed:\n{paths}"
+// in the language of msgs.
+func (msgs Messages) LauncherRemoved(paths string) string {
+	return Catalog.Format(msgs.locale, "launcherRemoved", map[string]any{"paths": paths})
 }

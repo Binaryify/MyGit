@@ -151,9 +151,6 @@
   "forcePushButton": "强制推送",
   "launcherNoExe": "找不到 MyGit 的可执行文件",
   "launcherTitle": "命令行工具",
-  "launcherWindows": "把这个文件夹加入 PATH 后，就能在终端里用 mygit 打开仓库：\n{dir}",
-  "launcherNoDir": "没有可写的 PATH 目录",
-  "launcherLink": "把这个可执行文件链接到 PATH 里的目录即可：\n{exe}",
   "launcherFailed": "安装失败",
   "launcherDone": "已安装命令行工具",
   "launcherDoneMessage": "现在可以在终端里运行：\n  mygit .\n\n命令写在 {path}",
@@ -171,7 +168,7 @@
   "menuFile": "文件",
   "menuOpenRepo": "打开仓库…",
   "menuRecent": "最近打开",
-  "menuInstallCLI": "安装命令行工具…",
+  "menuInstallCLI": "在 PATH 中安装 mygit 命令",
   "menuEdit": "编辑",
   "menuWindow": "窗口",
   "remotesMenu": "远程仓库…",
@@ -373,5 +370,13 @@
   "reviewComment": "评论",
   "reviewApprove": "批准",
   "reviewRequestChanges": "请求修改",
-  "reviewSubmitted": "已提交对 #{number} 的审阅。"
+  "reviewSubmitted": "已提交对 #{number} 的审阅。",
+  "menuUninstallCLI": "从 PATH 中卸载 mygit 命令",
+  "launcherDoneNewTerminal": "打开一个新的终端，然后运行：\n  mygit .\n\n命令写在 {path}",
+  "launcherAddToPath": "已写入 {path}。把 {dir} 加入 PATH 后，就能在终端里运行：\n  mygit .",
+  "launcherTaken": "{path} 属于别的程序，MyGit 不会覆盖它。",
+  "launcherUninstalled": "已卸载命令行工具",
+  "launcherUninstallFailed": "卸载失败",
+  "launcherNotFound": "PATH 里没有 MyGit 安装的 mygit 命令。",
+  "launcherRemoved": "已删除：\n{paths}"
 }

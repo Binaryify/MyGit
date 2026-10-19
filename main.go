@@ -163,6 +163,7 @@ func appMenu() *mygo.Menu {
 			{Role: mygo.RoleOpenRecent, Label: loc.MenuRecent()},
 			mygo.Separator(),
 			{Label: loc.MenuInstallCLI(), Click: func(*mygo.MenuItem, *mygo.Window) { go installLauncher() }},
+			{Label: loc.MenuUninstallCLI(), Click: func(*mygo.MenuItem, *mygo.Window) { go uninstallLauncher() }},
 			mygo.Separator(),
 			{Role: mygo.RoleClose},
 		}},

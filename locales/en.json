@@ -454,23 +454,6 @@
   "forcePushButton": "Force Push",
   "launcherNoExe": "Can't find MyGit's executable",
   "launcherTitle": "Command line tool",
-  "launcherWindows": "Add this folder to PATH to open repositories with mygit in a terminal:\n{dir}",
-  "@launcherWindows": {
-    "placeholders": {
-      "dir": {
-        "type": "String"
-      }
-    }
-  },
-  "launcherNoDir": "No folder on PATH can be written",
-  "launcherLink": "Link this executable into a folder on PATH:\n{exe}",
-  "@launcherLink": {
-    "placeholders": {
-      "exe": {
-        "type": "String"
-      }
-    }
-  },
   "launcherFailed": "Couldn't install",
   "launcherDone": "Command line tool installed",
   "launcherDoneMessage": "Now run, in a terminal:\n  mygit .\n\nThe command is {path}",
@@ -512,7 +495,7 @@
   "menuFile": "File",
   "menuOpenRepo": "Open Repository…",
   "menuRecent": "Open Recent",
-  "menuInstallCLI": "Install Command Line Tool…",
+  "menuInstallCLI": "Install 'mygit' Command in PATH",
   "menuEdit": "Edit",
   "menuWindow": "Window",
   "remotesMenu": "Remotes…",
@@ -1020,6 +1003,45 @@
     "placeholders": {
       "number": {
         "type": "int"
+      }
+    }
+  },
+  "menuUninstallCLI": "Uninstall 'mygit' Command from PATH",
+  "launcherDoneNewTerminal": "Open a new terminal, then run:\n  mygit .\n\nThe command is {path}",
+  "@launcherDoneNewTerminal": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "launcherAddToPath": "Wrote {path}. Add {dir} to your PATH, then run in a terminal:\n  mygit .",
+  "@launcherAddToPath": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      },
+      "dir": {
+        "type": "String"
+      }
+    }
+  },
+  "launcherTaken": "{path} is another program's: MyGit leaves it alone.",
+  "@launcherTaken": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "launcherUninstalled": "Command line tool uninstalled",
+  "launcherUninstallFailed": "Couldn't uninstall",
+  "launcherNotFound": "No mygit command MyGit installed is on the PATH.",
+  "launcherRemoved": "Removed:\n{paths}",
+  "@launcherRemoved": {
+    "placeholders": {
+      "paths": {
+        "type": "String"
       }
     }
   }

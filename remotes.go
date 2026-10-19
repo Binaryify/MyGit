@@ -136,6 +136,9 @@ func (a *app) repoMenu(m *ui.Menu) {
 	if m.Item(loc.MenuInstallCLI()).Chosen() {
 		go installLauncher()
 	}
+	if m.Item(loc.MenuUninstallCLI()).Chosen() {
+		go uninstallLauncher()
+	}
 	m.Separator()
 	if m.Item(loc.SettingsMenu()).Chosen() {
 		a.settingsOpen = true

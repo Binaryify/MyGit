@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/egoist/mygo"
@@ -12,59 +10,65 @@ import (
 	loc "mygit/locales"
 )
 
-// installLauncher writes a mygit command to a folder on the PATH, so that
-// `mygit .` in a terminal opens the repository there in the running app.
-// It shows dialogs, which wait: call it on a goroutine.
+// launcherMark is in every mygit command MyGit writes, so that it removes
+// its own and leaves another program's of the name alone.
+const launcherMark = "Installed by MyGit"
+
+// installLauncher puts a mygit command on the PATH, as VS Code's "Install
+// 'code' command in PATH": `mygit .` in a terminal then opens the
+// repository there in the running app. It shows dialogs, which wait:
+// call it on a goroutine.
 func installLauncher() {
-	exe, err := os.Executable()
-	if err == nil {
-		exe, err = filepath.EvalSymlinks(exe)
-	}
+	exe, err := appExecutable()
 	if err != nil {
 		launcherMessage(loc.LauncherNoExe(), err.Error())
 		return
 	}
-	if runtime.GOOS == "windows" {
-		launcherMessage(loc.LauncherTitle(), loc.LauncherWindows(filepath.Dir(exe)))
-		return
-	}
-	dir, err := launcherDir()
+	path, msg, err := writeLauncher(exe)
 	if err != nil {
-		launcherMessage(loc.LauncherNoDir(), loc.LauncherLink(exe))
-		return
-	}
-	path := filepath.Join(dir, "mygit")
-	// The repository's path is made absolute here, as the running app has
-	// another working folder.
-	script := fmt.Sprintf("#!/bin/sh\ndir=$(cd \"${1:-.}\" && pwd) || exit 1\n%s \"$dir\" >/dev/null 2>&1 &\n", shellWord(exe))
-	if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
 		launcherMessage(loc.LauncherFailed(), err.Error())
 		return
 	}
-	launcherMessage(loc.LauncherDone(), loc.LauncherDoneMessage(path))
-}
-
-// launcherDir is the first folder of the PATH the user can write to,
-// preferring their own over the system's.
-func launcherDir() (string, error) {
-	home, _ := os.UserHomeDir()
-	dirs := filepath.SplitList(os.Getenv("PATH"))
-	for _, own := range []bool{true, false} {
-		for _, d := range dirs {
-			if strings.HasPrefix(d, home+string(filepath.Separator)) != own {
-				continue
-			}
-			if f, err := os.CreateTemp(d, ".mygit-*"); err == nil {
-				f.Close()
-				os.Remove(f.Name())
-				return d, nil
-			}
-		}
+	if msg == "" {
+		msg = loc.LauncherDoneMessage(path)
 	}
-	return "", os.ErrPermission
+	launcherMessage(loc.LauncherDone(), msg)
 }
 
-func shellWord(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'" }
+// uninstallLauncher removes the mygit commands MyGit put on the PATH.
+func uninstallLauncher() {
+	removed, err := removeLaunchers()
+	switch {
+	case err != nil:
+		launcherMessage(loc.LauncherUninstallFailed(), err.Error())
+	case len(removed) == 0:
+		launcherMessage(loc.LauncherUninstalled(), loc.LauncherNotFound())
+	default:
+		launcherMessage(loc.LauncherUninstalled(), loc.LauncherRemoved(strings.Join(removed, "\n")))
+	}
+}
+
+// appExecutable is the app's executable, its links followed: what the
+// command runs.
+func appExecutable() (string, error) {
+	exe, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	return filepath.EvalSymlinks(exe)
+}
+
+// ours tells whether the file at path is a mygit command MyGit wrote:
+// marked, or one of before the mark, which ran MyGit's executable.
+func ours(path string) bool {
+	b, err := os.ReadFile(path)
+	if err != nil || len(b) > 4096 {
+		return false
+	}
+	s := string(b)
+	return strings.Contains(s, launcherMark) ||
+		strings.HasPrefix(s, "#!/bin/sh\n") && strings.Contains(s, "MyGit") && strings.Contains(s, `"$dir"`)
+}
 
 func launcherMessage(title, msg string) {
 	_, _ = mygo.Dialog.Message(mygo.MessageOptions{Title: title, Message: msg})
