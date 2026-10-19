@@ -91,12 +91,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         # The notes are the version's section of CHANGELOG.md. A pre-release
-        # (v0.2.0-rc.1) takes its version's section, and is marked one, so
-        # it never becomes the latest release that links and updates follow.
+        # (v0.2.0-rc.1) is marked one, so it never becomes the latest release
+        # that the download links and the updates follow.
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          awk -v v="## ${VERSION%%-*}" '$0 == v { on = 1; next } /^## / { on = 0 } on' CHANGELOG.md > notes.md
-          test -s notes.md || { echo "CHANGELOG.md has no section for ${VERSION%%-*}"; exit 1; }
+          awk -v v="## $VERSION" '$0 == v { on = 1; next } /^## / { on = 0 } on' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "CHANGELOG.md has no section for $VERSION"; exit 1; }
           PRE=""
           case "$VERSION" in *-*) PRE="--prerelease" ;; esac
           gh release create "$GITHUB_REF_NAME" dist/* $PRE \
