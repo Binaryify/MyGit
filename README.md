@@ -92,15 +92,29 @@ Sourcetree is free and mature, but it's a git client and nothing more. MyGit is 
 
 ## Install
 
-Releases are coming soon. Until then, build it from source with [Go](https://go.dev/dl/) 1.27 or later:
+Download the latest release:
+
+| Platform | Download |
+|---|---|
+| macOS (Apple silicon) | [MyGit-macos-arm64.dmg](https://github.com/Binaryify/MyGit/releases/latest/download/MyGit-macos-arm64.dmg) |
+| Windows (x64) | [Installer](https://github.com/Binaryify/MyGit/releases/latest/download/MyGit-windows-amd64-setup.exe) · [zip](https://github.com/Binaryify/MyGit/releases/latest/download/MyGit-windows-amd64.zip) |
+| Linux (x64) | [.deb](https://github.com/Binaryify/MyGit/releases/latest/download/MyGit-linux-amd64.deb), or the script below |
+
+On Linux, this installs MyGit for you in `~/.local`, without root:
 
 ```bash
-git clone https://github.com/Binaryify/MyGit.git
-cd MyGit
-go tool mygo build    # build/darwin-arm64/MyGit.app, and the disk image
+curl -fsSL https://github.com/Binaryify/MyGit/releases/latest/download/install.sh | sh
 ```
 
-MyGit needs `git` on the `PATH`. It runs on macOS (Apple silicon), Windows (x64) and Linux (x64); Intel Macs aren't supported.
+MyGit isn't notarized by Apple yet. If macOS says it can't be opened, move it to Applications and run:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/MyGit.app
+```
+
+MyGit needs `git` on the `PATH`, and updates itself once installed. Intel Macs aren't supported. All releases are on the [releases page](https://github.com/Binaryify/MyGit/releases).
+
+To build it from source instead, see [Development](#development).
 
 ## Shortcuts
 
@@ -119,6 +133,7 @@ MyGit needs `git` on the `PATH`. It runs on macOS (Apple silicon), Windows (x64)
 ## Development
 
 ```bash
+git clone https://github.com/Binaryify/MyGit.git && cd MyGit   # needs Go 1.27 or later
 go tool mygo dev      # run, reloading on changes
 go test ./...         # the tests, the UI's included, need no window
 go tool mygo build -platform darwin/arm64,windows/amd64,linux/amd64
@@ -126,6 +141,10 @@ go tool mygo build -platform darwin/arm64,windows/amd64,linux/amd64
 
 The texts live in [`locales/`](locales): `en.json` is the source and `zh-Hans.json` its Chinese. After changing them, run `go tool mygo generate`. Translations into other languages are welcome: add `locales/<tag>.json`.
 
-To release, describe the version in [`CHANGELOG.md`](CHANGELOG.md) and push a tag such as `v0.2.0`: CI signs the updates with the `MYGO_UPDATER_PRIVATE_KEY` secret, builds the macOS disk image, the Windows installer and zip, and the Linux package, and publishes them in a release.
+To release, describe the version in [`CHANGELOG.md`](CHANGELOG.md), whose section becomes the release notes, and push a tag such as `v0.2.0`: CI signs the updates with the `MYGO_UPDATER_PRIVATE_KEY` secret, builds the macOS disk image, the Windows installer and zip, and the Linux package, and publishes them in a release.
 
 Benchmarks: `MYGIT_BENCH_REPO=<repo> MYGIT_BENCH_COMMIT=<commit> go test -run '^$' -bench .`
+
+## License
+
+[MIT](LICENSE)

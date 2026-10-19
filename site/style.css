@@ -366,7 +366,25 @@ html[lang="zh-CN"] .hero h1 { line-height: 1.18; letter-spacing: 0; font-size: c
   margin-top: 48px;
   text-align: left;
 }
-.terminal { background: #0A0D16; align-self: start; }
+.install-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.downloads { padding: 8px 24px 20px; }
+.dl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.dl-row b { display: block; font-weight: 600; font-size: 16px; }
+.dl-row div span { color: var(--muted); font-size: 13px; }
+.dl-links { display: flex; gap: 8px; }
+.dl-note { margin: 16px 0 0; color: var(--faint); font-size: 13px; line-height: 1.6; }
+.dl-note code { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.dl-more { margin: 0; font-size: 14px; }
+.dl-more a { color: var(--muted); }
+.dl-more a:hover { color: var(--text); }
+.terminal { background: #0A0D16; }
 .terminal-bar {
   display: flex;
   align-items: center;

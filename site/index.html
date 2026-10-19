@@ -228,16 +228,37 @@
     <section id="install" class="section">
       <p class="eyebrow" data-i18n="install.eyebrow">Install</p>
       <h2 data-i18n="install.title">Get MyGit.</h2>
-      <p class="section-lede" data-i18n="install.lede">Releases are coming soon. Until then, build it with Go 1.27 or later — it needs git on your PATH.</p>
+      <p class="section-lede" data-i18n="install.lede">Free and open source. It needs git on your PATH, and updates itself once installed.</p>
 
       <div class="install-grid">
-        <div class="terminal card reveal">
-          <div class="terminal-bar"><i></i><i></i><i></i><span>zsh</span>
-            <button type="button" class="copy" data-i18n="install.copy">Copy</button></div>
-<pre><code><span class="prompt">$</span> git clone https://github.com/Binaryify/MyGit.git
-<span class="prompt">$</span> cd MyGit
-<span class="prompt">$</span> go tool mygo build
-<span class="comment"># → build/darwin-arm64/MyGit.app</span></code></pre>
+        <div class="install-main">
+          <div class="downloads card reveal">
+            <div class="dl-row">
+              <div><b>macOS</b><span data-i18n="install.mac">Apple silicon</span></div>
+              <a class="btn btn-primary btn-sm" href="https://github.com/Binaryify/MyGit/releases/latest/download/MyGit-macos-arm64.dmg" data-i18n="install.dmg">Download .dmg</a>
+            </div>
+            <div class="dl-row">
+              <div><b>Windows</b><span>x64</span></div>
+              <span class="dl-links">
+                <a class="btn btn-ghost btn-sm" href="https://github.com/Binaryify/MyGit/releases/latest/download/MyGit-windows-amd64.zip">.zip</a>
+                <a class="btn btn-primary btn-sm" href="https://github.com/Binaryify/MyGit/releases/latest/download/MyGit-windows-amd64-setup.exe" data-i18n="install.exe">Installer</a>
+              </span>
+            </div>
+            <div class="dl-row">
+              <div><b>Linux</b><span data-i18n="install.linux">x64 · or the script below</span></div>
+              <a class="btn btn-ghost btn-sm" href="https://github.com/Binaryify/MyGit/releases/latest/download/MyGit-linux-amd64.deb">.deb</a>
+            </div>
+            <p class="dl-note"><span data-i18n="install.notarize">Not notarized by Apple yet. If macOS won't open it, run</span> <code>xattr -dr com.apple.quarantine /Applications/MyGit.app</code></p>
+          </div>
+
+          <div class="terminal card reveal">
+            <div class="terminal-bar"><i></i><i></i><i></i><span>Linux</span>
+              <button type="button" class="copy" data-i18n="install.copy">Copy</button></div>
+<pre><code><span class="prompt">$</span> curl -fsSL https://github.com/Binaryify/MyGit/releases/latest/download/install.sh | sh
+<span class="comment" data-i18n="install.script"># installs in ~/.local, without root</span></code></pre>
+          </div>
+
+          <p class="dl-more"><a href="https://github.com/Binaryify/MyGit/releases" data-i18n="install.all">All releases →</a></p>
         </div>
 
         <div class="keys card reveal">

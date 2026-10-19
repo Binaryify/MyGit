@@ -92,15 +92,29 @@ Sourcetree 免费、成熟，但它只是一个 git 客户端。MyGit 是为 AI 
 
 ## 安装
 
-Release 即将发布。在那之前，可以用 [Go](https://go.dev/dl/) 1.27 或更新版本从源码构建：
+下载最新版本：
+
+| 平台 | 下载 |
+|---|---|
+| macOS（Apple 芯片） | [MyGit-macos-arm64.dmg](https://github.com/Binaryify/MyGit/releases/latest/download/MyGit-macos-arm64.dmg) |
+| Windows（x64） | [安装程序](https://github.com/Binaryify/MyGit/releases/latest/download/MyGit-windows-amd64-setup.exe) · [zip](https://github.com/Binaryify/MyGit/releases/latest/download/MyGit-windows-amd64.zip) |
+| Linux（x64） | [.deb](https://github.com/Binaryify/MyGit/releases/latest/download/MyGit-linux-amd64.deb)，或用下面的脚本 |
+
+Linux 上这条命令把 MyGit 装到 `~/.local`，不需要 root：
 
 ```bash
-git clone https://github.com/Binaryify/MyGit.git
-cd MyGit
-go tool mygo build    # 生成 build/darwin-arm64/MyGit.app 和磁盘镜像
+curl -fsSL https://github.com/Binaryify/MyGit/releases/latest/download/install.sh | sh
 ```
 
-MyGit 需要 `PATH` 里有 `git`。支持 macOS（Apple 芯片）、Windows（x64）和 Linux（x64），不支持 Intel Mac。
+MyGit 暂未经过 Apple 公证。如果 macOS 提示无法打开，先把它拖进「应用程序」，再运行：
+
+```bash
+xattr -dr com.apple.quarantine /Applications/MyGit.app
+```
+
+MyGit 需要 `PATH` 里有 `git`，安装后会自动更新。不支持 Intel Mac。所有版本见 [Releases 页面](https://github.com/Binaryify/MyGit/releases)。
+
+想从源码构建，见[开发](#开发)。
 
 ## 快捷键
 
@@ -119,6 +133,7 @@ MyGit 需要 `PATH` 里有 `git`。支持 macOS（Apple 芯片）、Windows（x6
 ## 开发
 
 ```bash
+git clone https://github.com/Binaryify/MyGit.git && cd MyGit   # 需要 Go 1.27 或更新版本
 go tool mygo dev      # 运行，改动后自动重新加载
 go test ./...         # 测试，界面测试也不需要窗口
 go tool mygo build -platform darwin/arm64,windows/amd64,linux/amd64
@@ -126,6 +141,10 @@ go tool mygo build -platform darwin/arm64,windows/amd64,linux/amd64
 
 界面文字在 [`locales/`](locales) 里：`en.json` 是源语言，`zh-Hans.json` 是简体中文，改完运行 `go tool mygo generate`。欢迎贡献其他语言的翻译：新增 `locales/<语言标签>.json` 即可。
 
-发布：在 [`CHANGELOG.md`](CHANGELOG.md) 写好这个版本的说明，再推送 `v0.2.0` 这样的标签。CI 会用仓库 Secret `MYGO_UPDATER_PRIVATE_KEY` 给更新包签名，打包 macOS 磁盘镜像、Windows 安装程序和 zip、Linux 安装包，并创建 Release。签名私钥在本机 `~/Library/Application Support/mygo/update-keys/mygit/`，丢失后已安装的应用就收不到更新了。仓库是私有的时候，已安装的应用下载不到 Release 里的更新包，测试自动更新前要先把仓库公开，或者把更新包放到公开地址。
+发布：在 [`CHANGELOG.md`](CHANGELOG.md) 写好这个版本的说明（会成为 Release 的说明，缺了发布会失败），再推送 `v0.2.0` 这样的标签。CI 会用仓库 Secret `MYGO_UPDATER_PRIVATE_KEY` 给更新包签名，打包 macOS 磁盘镜像、Windows 安装程序和 zip、Linux 安装包，并创建 Release。签名私钥在本机 `~/Library/Application Support/mygo/update-keys/mygit/`，丢失后已安装的应用就收不到更新了。仓库是私有的时候，已安装的应用下载不到 Release 里的更新包，测试自动更新前要先把仓库公开，或者把更新包放到公开地址。
 
 基准测试：`MYGIT_BENCH_REPO=<仓库> MYGIT_BENCH_COMMIT=<提交> go test -run '^$' -bench .`
+
+## 许可证
+
+[MIT](LICENSE)

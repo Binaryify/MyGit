@@ -67,7 +67,14 @@ const zh = {
   "every.update2": "一键完成",
   "install.eyebrow": "安装",
   "install.title": "获取 MyGit。",
-  "install.lede": "安装包即将发布。在那之前，可以用 Go 1.27 或更新版本从源码构建，需要 PATH 里有 git。",
+  "install.lede": "免费开源。需要 PATH 里有 git，安装后会自动更新。",
+  "install.mac": "Apple 芯片",
+  "install.dmg": "下载 .dmg",
+  "install.exe": "安装程序",
+  "install.linux": "x64 · 或用下面的脚本",
+  "install.notarize": "暂未经过 Apple 公证。如果 macOS 无法打开，运行",
+  "install.script": "# 装到 ~/.local，不需要 root",
+  "install.all": "所有版本 →",
   "install.copy": "复制",
   "install.copied": "已复制",
   "keys.title": "快捷键",
@@ -187,9 +194,9 @@ function countUp(el) {
   requestAnimationFrame(step);
 }
 
-// Copying the build commands, without the prompts and the comment.
+// Copying the install command, without the prompt and the comment.
 document.querySelector(".copy").addEventListener("click", async (e) => {
-  const text = "git clone https://github.com/Binaryify/MyGit.git\ncd MyGit\ngo tool mygo build\n";
+  const text = "curl -fsSL https://github.com/Binaryify/MyGit/releases/latest/download/install.sh | sh\n";
   try {
     await navigator.clipboard.writeText(text);
     e.target.textContent = (lang === "zh" ? zh : en)["install.copied"];

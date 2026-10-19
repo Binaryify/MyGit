@@ -32,8 +32,11 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           mkdir dist
-          cp "build/darwin-arm64/MyGit $VERSION arm64.dmg" "dist/MyGit-$VERSION-macos-arm64.dmg"
-          cp build/linux-amd64/*.deb build/linux-amd64/install.sh dist/
+          # The downloads keep one name in every release, so the site can link
+          # to releases/latest/download/<name>.
+          cp "build/darwin-arm64/MyGit $VERSION arm64.dmg" dist/MyGit-macos-arm64.dmg
+          cp build/linux-amd64/*.deb dist/MyGit-linux-amd64.deb
+          cp build/linux-amd64/install.sh dist/
           # The updates keep their names: the manifests point at them.
           cp build/*/mygit-*.tar.gz build/*/update-*.json dist/
           cp build/*/*.delta dist/ 2>/dev/null || true
@@ -65,8 +68,8 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           mkdir dist
-          cp build/windows-amd64/*Setup*.exe "dist/MyGit-$VERSION-windows-amd64-setup.exe"
-          (cd build/windows-amd64 && 7z a -bd "../../dist/MyGit-$VERSION-windows-amd64.zip" MyGit.exe icon.png > /dev/null)
+          cp build/windows-amd64/*Setup*.exe dist/MyGit-windows-amd64-setup.exe
+          (cd build/windows-amd64 && 7z a -bd ../../dist/MyGit-windows-amd64.zip MyGit.exe icon.png > /dev/null)
           cp build/windows-amd64/mygit-*.tar.gz build/windows-amd64/update-*.json dist/
           cp build/windows-amd64/*.delta dist/ 2>/dev/null || true
           ls -l dist
@@ -79,6 +82,7 @@ jobs:
     needs: [unix, windows]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v7
         with:
           path: dist
@@ -86,8 +90,11 @@ jobs:
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
+        # The notes are the version's section of CHANGELOG.md.
         run: |
+          awk -v v="## ${GITHUB_REF_NAME#v}" '$0 == v { on = 1; next } /^## / { on = 0 } on' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "CHANGELOG.md has no section for ${GITHUB_REF_NAME#v}"; exit 1; }
           gh release create "$GITHUB_REF_NAME" dist/* \
             --repo "$GITHUB_REPOSITORY" \
             --title "MyGit ${GITHUB_REF_NAME#v}" \
-            --generate-notes
+            --notes-file notes.md
