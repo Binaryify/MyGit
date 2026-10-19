@@ -259,6 +259,10 @@ func (a *app) refresh() {
 
 func (a *app) setStatus(st git.Status) {
 	a.status = st
+	// The changes chosen stay chosen by their paths, as rows come and go;
+	// one gone leaves its list without a choice, so that choosing a row
+	// shows it.
+	stagedPath, unstagedPath := chosenPath(a.staged, a.stagedSel), chosenPath(a.unstaged, a.unstagedSel)
 	a.staged, a.unstaged = a.staged[:0], a.unstaged[:0]
 	for _, c := range st.Changes {
 		if c.Staged != 0 {
@@ -268,8 +272,7 @@ func (a *app) setStatus(st git.Status) {
 			a.unstaged = append(a.unstaged, c)
 		}
 	}
-	a.stagedSel = min(a.stagedSel, len(a.staged)-1)
-	a.unstagedSel = min(a.unstagedSel, len(a.unstaged)-1)
+	a.stagedSel, a.unstagedSel = indexOf(a.staged, stagedPath), indexOf(a.unstaged, unstagedPath)
 	// The diff of a change shows it as it is now, or nothing once it's gone.
 	if ch := a.detail.change; ch != nil {
 		if c, ok := find(a.changes(a.detail.staged), ch.Path); ok {
@@ -285,6 +288,24 @@ func (a *app) changes(staged bool) []git.Change {
 		return a.staged
 	}
 	return a.unstaged
+}
+
+// chosenPath is the path of a list's change chosen, "" for none.
+func chosenPath(changes []git.Change, sel int) string {
+	if sel < 0 || sel >= len(changes) {
+		return ""
+	}
+	return changes[sel].Path
+}
+
+// indexOf is the row of a list's change at path, -1 for none.
+func indexOf(changes []git.Change, path string) int {
+	for i, c := range changes {
+		if path != "" && c.Path == path {
+			return i
+		}
+	}
+	return -1
 }
 
 func find(changes []git.Change, path string) (git.Change, bool) {

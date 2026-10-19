@@ -767,3 +767,30 @@ func TestEditKeepsItsPlace(t *testing.T) {
 		}
 	}
 }
+
+// TestChooseAfterAChangeIsGone saves the second of two changes back to how
+// it was: it leaves the list, and the first, chosen then, shows its diff.
+func TestChooseAfterAChangeIsGone(t *testing.T) {
+	tt := newTester(t)
+	dir := tt.a.repo.Dir
+	tt.commitFiles(t, "Two files", map[string]string{"a.txt": "a\n", "b.txt": "b\n"})
+	os.WriteFile(filepath.Join(dir, "a.txt"), []byte("a changed\n"), 0o644)
+	os.WriteFile(filepath.Join(dir, "b.txt"), []byte("b changed\n"), 0o644)
+	tt.a.refresh()
+	tt.settle()
+	tt.click(t, "b.txt")
+	d := tt.a.detail.diff
+	if !tt.a.detail.whole || d == nil {
+		t.Fatalf("b.txt not shown to edit: %+v", tt.a.detail)
+	}
+	d.New.Set("b\n")
+	tt.a.saveFile()
+	tt.settle()
+	if _, ok := find(tt.a.unstaged, "b.txt"); ok || tt.a.detail.change != nil {
+		t.Fatalf("b.txt still a change: %v, shown %v", tt.a.unstaged, tt.a.detail.change)
+	}
+	tt.click(t, "a.txt")
+	if ch := tt.a.detail.change; ch == nil || ch.Path != "a.txt" || tt.a.detail.diff == nil {
+		t.Fatalf("a.txt not shown: %+v", tt.a.detail)
+	}
+}
