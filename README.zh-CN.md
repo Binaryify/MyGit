@@ -6,7 +6,7 @@
 
 <p align="center">
   轻量、快速的原生界面 git 客户端。<br>
-  JetBrains 的分支图和历史操作，VS Code 的暂存方式，内存只要六分之一。
+  JetBrains 的分支图和历史操作，VS Code 的暂存方式，内存却只要它们的零头。
 </p>
 
 <p align="center">

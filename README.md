@@ -6,7 +6,7 @@
 
 <p align="center">
   A light, fast git client with a native UI.<br>
-  JetBrains' commit graph and history tools, VS Code's way of staging, in a sixth of the memory.
+  JetBrains' commit graph and history tools, VS Code's way of staging, in a fraction of the memory.
 </p>
 
 <p align="center">
