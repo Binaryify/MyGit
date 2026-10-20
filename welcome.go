@@ -177,8 +177,9 @@ func (w *welcome) recentRow(c *ui.Context, location string) {
 	name, where := filepath.Base(location), homeRelative(location)
 	host, dir, remote := "", "", false
 	if !exists(location) {
-		host, dir, remote = parseLocation(location)
-		name = path.Base(dir)
+		if host, dir, remote = parseLocation(location); remote {
+			name = path.Base(dir)
+		}
 	}
 	row := ui.ButtonBase(c.Key(location)).Padding(8, 10).Gap(10).Radius(8).AlignItems(ui.Center).
 		Cursor(ui.CursorPointer).Tooltip(location).Label(loc.OpenRepoNamed(name))
