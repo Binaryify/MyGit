@@ -1,8 +1,8 @@
 # Changelog
 
-## 未发布
+## 0.3.2
 
-- 标语改成「轻快的原生 Git 客户端，远程仓库也能用」（A light, fast, native git client, for remote repositories too），欢迎窗口、关于、README、官网和演示视频都已更新
+- 新标语：「轻快的原生 Git 客户端，远程仓库也能用」（A light, fast, native git client, for remote repositories too），欢迎窗口和「关于」里都换成了新的说法
 
 ## 0.3.1
 
