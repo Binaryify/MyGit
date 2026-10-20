@@ -1,5 +1,12 @@
 # Changelog
 
+## 未发布
+
+- 通过 SSH 打开另一台电脑上的仓库：欢迎页「通过 SSH 打开…」，输入主机或从 `~/.ssh/config` 里选，连上后浏览对方的目录选仓库；也可以在终端里 `mygit host:/path/to/repo`。用本机的 ssh 配置、密钥和 known_hosts；第一次连接时把对应平台的小 agent（约 1.4MB，签名校验）放到对方的 `~/.mygit`，Linux、macOS、Windows 远程都支持，对方只需要装 git
+- 远程仓库的窗口在仓库名旁显示「SSH · 主机」标识，标题栏也带主机名
+- 远程仓库的文件改动实时刷新；断线后窗口获得焦点时自动重连；git 在远程要密码或口令时同样在窗口里询问
+- 远程的文件用 VS Code、Cursor、VSCodium 或 Windsurf 的 Remote - SSH 打开；丢弃未跟踪文件会直接删除（远程没有废纸篓）
+
 ## 0.1.0
 
 第一个版本：快速查看 agent 的改动。在终端里敲 `mygit .` 就能打开，文件一改马上就能看到；没问题的暂存、提交，其余的写上评论交回给 agent，不用等 IDE 启动。

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"path"
-	"path/filepath"
 	"slices"
 	"strings"
 	"time"
@@ -26,7 +25,8 @@ const logBatch = 2000
 type app struct {
 	repo   *git.Repo
 	win    *mygo.Window
-	update func(func()) // runs a function on the main thread, the window's Update
+	update func(func())  // runs a function on the main thread, the window's Update
+	online chan struct{} // a refresh reached the repository, for a watch to start again
 
 	// The history and its graph, a row per commit.
 	commits   []git.Commit
@@ -125,7 +125,7 @@ type detail struct {
 }
 
 func newApp(repo *git.Repo) *app {
-	return &app{repo: repo, logSel: -1, stagedSel: -1, unstagedSel: -1, stashSel: -1,
+	return &app{repo: repo, online: make(chan struct{}, 1), logSel: -1, stagedSel: -1, unstagedSel: -1, stashSel: -1,
 		sidebarW: prefs.SidebarW, logH: prefs.LogH, filesW: prefs.FilesW,
 		unfolded: map[string]bool{}, viewed: map[string]bool{}, pullReviews: map[int]*pullReview{}}
 }
@@ -162,6 +162,10 @@ func (a *app) start() {
 func (a *app) watch() {
 	ctx, cancel := context.WithCancel(context.Background())
 	a.win.OnClosed(cancel)
+	if !a.local() {
+		go a.watchRemote(ctx)
+		return
+	}
 	go func() {
 		w, err := mygo.WatchFiles(ctx, a.repo.Dir, mygo.FileWatchOptions{
 			Recursive: true,
@@ -184,6 +188,24 @@ func (a *app) watch() {
 		}
 	}()
 }
+
+// watchRemote has the agent watch a tree on another computer. Once the
+// connection ends it waits for a refresh to reach the computer again, as
+// the window is focused, and watches again.
+func (a *app) watchRemote(ctx context.Context) {
+	h := remoteHost{a.repo.Host()}
+	for {
+		_ = h.Watch(ctx, a.repo.Dir, func() { a.update(a.refresh) })
+		select {
+		case <-ctx.Done():
+			return
+		case <-a.online:
+		}
+	}
+}
+
+// local tells whether the repository is on this computer.
+func (a *app) local() bool { return a.repo.Host() == "" }
 
 // work runs fn off the main thread, then done on it.
 func work[T any](a *app, fn func(ctx context.Context) (T, error), done func(T, error)) {
@@ -244,7 +266,7 @@ func (a *app) refresh() {
 		for i, c := range st.Changes {
 			paths[i] = c.Path
 		}
-		return snapshot{st, b, rb, a.repo.Refs(ctx), a.repo.Operation(), stashes, a.repo.Generated(ctx, paths)}, nil
+		return snapshot{st, b, rb, a.repo.Refs(ctx), a.repo.Operation(ctx), stashes, a.repo.Generated(ctx, paths)}, nil
 	}, func(s snapshot, err error) {
 		a.refreshing = false
 		if a.again {
@@ -254,6 +276,10 @@ func (a *app) refresh() {
 		if err != nil {
 			a.errMsg = err.Error()
 			return
+		}
+		select {
+		case a.online <- struct{}{}:
+		default:
 		}
 		a.genMarked = s.marked
 		a.setStatus(s.status)
@@ -544,7 +570,7 @@ func (a *app) showChange(c git.Change, staged bool) {
 	}
 	work(a, func(ctx context.Context) (result, error) {
 		if c.Work == '?' && !staged { // untracked: all of it is new
-			text, err := a.repo.ReadFile(c.Path)
+			text, err := a.repo.ReadFile(ctx, c.Path)
 			if err != nil {
 				return result{}, err
 			}
@@ -575,7 +601,7 @@ func (a *app) showChange(c git.Change, staged bool) {
 		}
 		if whole {
 			r.old = a.repo.ReadIndex(ctx, c.Path)
-			if r.new, err = a.repo.ReadFile(c.Path); err != nil {
+			if r.new, err = a.repo.ReadFile(ctx, c.Path); err != nil {
 				return result{}, err
 			}
 			r.diff = textDiff(c.Path, r.old, r.new)
@@ -641,11 +667,15 @@ func (a *app) save(over bool) {
 		return
 	}
 	text, path := d.diff.New.String(), d.change.Path
-	if now, err := a.repo.ReadFile(path); !over && err == nil && now != d.disk && now != text {
+	// Not for long on the main thread, though a computer reached over SSH
+	// is slow to answer.
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if now, err := a.repo.ReadFile(ctx, path); !over && err == nil && now != d.disk && now != text {
 		a.ask(loc.SaveConflictTitle(path), loc.SaveConflictMessage(), loc.SaveOver(), func() { a.save(true) })
 		return
 	}
-	if err := a.repo.WriteFile(path, text); err != nil {
+	if err := a.repo.WriteFile(ctx, path, text); err != nil {
 		a.errMsg = loc.ErrSave(err.Error())
 		return
 	}
@@ -700,10 +730,16 @@ var trash = func(path string) error { return mygo.Shell.TrashItem(path) }
 
 // discard throws a change of the working tree away, once the user says so.
 func (a *app) discard(c git.Change) {
+	if c.Work == '?' && !a.local() { // no trash to reach over SSH: deleted
+		a.ask(loc.DeleteTitle(), loc.DeleteMessage(c.Path, a.repo.Host()), loc.DeleteButton(), func() {
+			a.run(loc.OpDiscard(), func(ctx context.Context) error { return a.repo.Remove(ctx, c.Path) }, nil)
+		})
+		return
+	}
 	if c.Work == '?' { // a file git doesn't have: to the trash, where it can be found again
 		a.ask(loc.TrashTitle(), loc.TrashMessage(c.Path), loc.TrashButton(), func() {
 			a.run(loc.OpDiscard(), func(context.Context) error {
-				return trash(filepath.Join(a.repo.Dir, filepath.FromSlash(c.Path)))
+				return trash(a.repo.Path(c.Path))
 			}, nil)
 		})
 		return

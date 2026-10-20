@@ -2,30 +2,68 @@ package git
 
 import (
 	"context"
+	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+
+	"mygit/internal/agent"
 )
 
 // repo makes a repository in a temporary folder.
 func repo(t *testing.T) *Repo {
 	t.Helper()
 	dir := t.TempDir()
-	if _, err := run(context.Background(), dir, "init", "-q", "-b", "main"); err != nil {
+	if _, err := git(context.Background(), Local, dir, "", nil, "init", "-q", "-b", "main"); err != nil {
 		t.Skip("git: ", err)
 	}
 	for _, kv := range [][2]string{{"user.name", "Ada"}, {"user.email", "ada@example.com"}, {"commit.gpgsign", "false"}} {
-		if _, err := run(context.Background(), dir, "config", kv[0], kv[1]); err != nil {
+		if _, err := git(context.Background(), Local, dir, "", nil, "config", kv[0], kv[1]); err != nil {
 			t.Fatal(err)
 		}
 	}
-	r, err := Open(dir)
+	r, err := OpenOn(testRunner(t), dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return r
+}
+
+// testRunner is Local, or an agent over pipes when the tests run again
+// as another computer's would.
+func testRunner(t *testing.T) Runner {
+	if os.Getenv("MYGIT_TEST_AGENT") == "" {
+		return Local
+	}
+	toServer, fromClient := io.Pipe()
+	toClient, fromServer := io.Pipe()
+	go func() { _ = agent.Serve(toServer, fromServer) }()
+	c, err := agent.NewClient("box", toClient, fromClient, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { fromClient.Close() })
+	return c
+}
+
+// TestOverAgent runs the tests again with git run by an agent, as for a
+// repository on another computer.
+func TestOverAgent(t *testing.T) {
+	if os.Getenv("MYGIT_TEST_AGENT") != "" || testing.Short() {
+		t.Skip()
+	}
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command(exe, "-test.run", "^Test[^O]", "-test.count=1")
+	cmd.Env = append(os.Environ(), "MYGIT_TEST_AGENT=1")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("%v\n%s", err, out)
+	}
 }
 
 func write(t *testing.T, r *Repo, name, text string) {
@@ -250,7 +288,7 @@ func TestStashAndOperations(t *testing.T) {
 	if err := r.Merge(ctx, "other"); err == nil {
 		t.Fatal("merge with a conflict went through")
 	}
-	if op := r.Operation(); op != Merging {
+	if op := r.Operation(ctx); op != Merging {
 		t.Fatalf("operation %q", op)
 	}
 	st, _ := r.Status(ctx)
@@ -260,14 +298,14 @@ func TestStashAndOperations(t *testing.T) {
 	if err := r.Abort(ctx, Merging); err != nil {
 		t.Fatal(err)
 	}
-	if op := r.Operation(); op != NoOperation {
+	if op := r.Operation(ctx); op != NoOperation {
 		t.Fatalf("operation after abort %q", op)
 	}
 	// Resolved and staged, a rebase continues with git's message, no editor.
 	if err := r.Rebase(ctx, "other"); err == nil {
 		t.Fatal("rebase with a conflict went through")
 	}
-	if op := r.Operation(); op != Rebasing {
+	if op := r.Operation(ctx); op != Rebasing {
 		t.Fatalf("operation %q", op)
 	}
 	write(t, r, "a.txt", "both\n")
@@ -277,7 +315,7 @@ func TestStashAndOperations(t *testing.T) {
 	if err := r.Continue(ctx, Rebasing); err != nil {
 		t.Fatal(err)
 	}
-	if op := r.Operation(); op != NoOperation {
+	if op := r.Operation(ctx); op != NoOperation {
 		t.Fatalf("operation after continuing %q", op)
 	}
 }
@@ -323,7 +361,7 @@ func TestRebaseInteractive(t *testing.T) {
 	if out, _ := r.Git(ctx, "show", "--stat", "--format=", "HEAD"); !strings.Contains(out, "b.txt") || !strings.Contains(out, "c.txt") {
 		t.Fatalf("b's commit doesn't hold c's change: %s", out)
 	}
-	if r.Operation() != NoOperation {
+	if r.Operation(ctx) != NoOperation {
 		t.Fatal("rebase still under way")
 	}
 	if !r.IsAncestor(ctx, base) {
@@ -350,7 +388,7 @@ func TestBlameAndRemote(t *testing.T) {
 	}
 	// A bare clone as origin: nothing to push once pushed.
 	origin := t.TempDir()
-	if _, err := run(ctx, origin, "init", "-q", "--bare"); err != nil {
+	if _, err := git(ctx, Local, origin, "", nil, "init", "-q", "--bare"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := r.Git(ctx, "remote", "add", "origin", origin); err != nil {

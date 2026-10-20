@@ -28,6 +28,12 @@ jobs:
           MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
           GH_TOKEN: ${{ github.token }}
         run: go tool mygo build -platform darwin/arm64,linux/amd64
+      - name: Build the agents
+        # Those the app sends to computers it opens repositories on over SSH,
+        # downloaded from the release and checked with the same key.
+        env:
+          MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
+        run: go run ./internal/tools/agents -o build/agents
       - name: Add the install instructions to the disk image
         run: |
           python3 -m venv "$RUNNER_TEMP/venv"
@@ -45,6 +51,7 @@ jobs:
           # The updates keep their names: the manifests point at them.
           cp build/*/mygit-*.tar.gz build/*/update-*.json dist/
           cp build/*/*.delta dist/ 2>/dev/null || true
+          cp build/agents/* dist/
           ls -l dist
       - uses: actions/upload-artifact@v7
         with:

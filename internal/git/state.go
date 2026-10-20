@@ -2,8 +2,6 @@ package git
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 )
 
 // Operation is what the repository is in the middle of, which stopped for
@@ -20,11 +18,8 @@ const (
 
 // Operation reads which operation is under way from the files git keeps
 // for it.
-func (r *Repo) Operation() Operation {
-	exists := func(name string) bool {
-		_, err := os.Stat(filepath.Join(r.GitDir, name))
-		return err == nil
-	}
+func (r *Repo) Operation(ctx context.Context) Operation {
+	exists := func(name string) bool { return r.run.Exists(ctx, r.run.Join(r.GitDir, name)) }
 	switch {
 	case exists("rebase-merge"), exists("rebase-apply"):
 		return Rebasing

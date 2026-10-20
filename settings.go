@@ -18,13 +18,14 @@ import (
 // settings are the choices kept between launches, shared by the windows,
 // in a JSON file.
 type settings struct {
-	Editor           string  `json:"editor"`   // the command opening files, "" for the system's app
-	Language         string  `json:"language"` // the language chosen, "" for the system's
-	Unified          bool    `json:"unified"`
-	IgnoreWhitespace bool    `json:"ignoreWhitespace"`
-	SidebarW         float32 `json:"sidebarW"`
-	LogH             float32 `json:"logH"`
-	FilesW           float32 `json:"filesW"`
+	Editor           string   `json:"editor"`   // the command opening files, "" for the system's app
+	Language         string   `json:"language"` // the language chosen, "" for the system's
+	Unified          bool     `json:"unified"`
+	IgnoreWhitespace bool     `json:"ignoreWhitespace"`
+	SidebarW         float32  `json:"sidebarW"`
+	LogH             float32  `json:"logH"`
+	FilesW           float32  `json:"filesW"`
+	Remotes          []string `json:"remotes,omitempty"` // repositories on other computers opened lately, host:dir
 	path             string
 }
 

@@ -1,13 +1,16 @@
 package main
 
 import (
-	"os"
+	"context"
+	"errors"
+	"io/fs"
 	"path"
-	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/egoist/mygo/ui"
 
+	"mygit/internal/git"
 	loc "mygit/locales"
 )
 
@@ -29,27 +32,28 @@ func (a *app) ignoreItems(m *ui.Menu, file string) {
 
 // addIgnore appends a pattern to .gitignore, on a line of its own.
 func (a *app) addIgnore(pattern string) {
-	if err := appendIgnore(a.repo.Dir, pattern); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if err := appendIgnore(ctx, a.repo, pattern); err != nil {
 		a.errMsg = loc.ErrGitignore(err.Error())
 		return
 	}
 	a.refresh()
 }
 
-func appendIgnore(dir, pattern string) error {
-	file := filepath.Join(dir, ".gitignore")
-	old, err := os.ReadFile(file)
-	if err != nil && !os.IsNotExist(err) {
+func appendIgnore(ctx context.Context, repo *git.Repo, pattern string) error {
+	old, err := repo.ReadFile(ctx, ".gitignore")
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}
-	for _, l := range strings.Split(string(old), "\n") {
+	for _, l := range strings.Split(old, "\n") {
 		if strings.TrimSpace(l) == pattern {
 			return nil
 		}
 	}
-	text := string(old)
+	text := old
 	if text != "" && !strings.HasSuffix(text, "\n") {
 		text += "\n"
 	}
-	return os.WriteFile(file, []byte(text+pattern+"\n"), 0o644)
+	return repo.WriteFile(ctx, ".gitignore", text+pattern+"\n")
 }

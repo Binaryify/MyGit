@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"io"
 	"path"
 	"strings"
 )
@@ -67,15 +68,14 @@ func RepoName(url string) string {
 // Clone clones url into dir, a folder in parent, telling progress the
 // lines git reports as it goes.
 func Clone(ctx context.Context, parent, url, dir string, progress func(string)) error {
-	cmd := command(ctx, parent, "clone", "--progress", url, dir)
+	pipe, w := io.Pipe()
+	done := make(chan error, 1)
+	go func() {
+		err := stream(ctx, Local, parent, io.Discard, w, "clone", "--progress", url, dir)
+		w.Close()
+		done <- err
+	}()
 	var stderr bytes.Buffer
-	pipe, err := cmd.StderrPipe()
-	if err != nil {
-		return err
-	}
-	if err := cmd.Start(); err != nil {
-		return err
-	}
 	sc := bufio.NewScanner(pipe)
 	sc.Split(scanProgress)
 	for sc.Scan() {
@@ -85,7 +85,8 @@ func Clone(ctx context.Context, parent, url, dir string, progress func(string)) 
 			progress(line)
 		}
 	}
-	if err := cmd.Wait(); err != nil {
+	_, _ = io.Copy(io.Discard, pipe)
+	if err := <-done; err != nil {
 		return lastError(stderr.String(), err)
 	}
 	return nil
@@ -120,6 +121,6 @@ func (e textErr) Error() string { return string(e) }
 
 // Init makes a repository in dir, with main as its first branch.
 func Init(ctx context.Context, dir string) error {
-	_, err := run(ctx, dir, "init", "-b", "main")
+	_, err := git(ctx, Local, dir, "", nil, "init", "-b", "main")
 	return err
 }

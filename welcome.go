@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"errors"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -28,6 +29,17 @@ type welcome struct {
 	unsafe string // a repository another user owns, to trust
 	cred   credPrompt
 	clone  clonePlan
+	ssh    connectPlan
+	updFn  func(func()) // runs on the main thread: the window's Update, or the tests'
+}
+
+// update runs fn on the main thread.
+func (w *welcome) update(fn func()) {
+	if w.updFn != nil {
+		w.updFn(fn)
+		return
+	}
+	w.win.Update(fn)
 }
 
 var welcomeWin *welcome
@@ -73,6 +85,7 @@ func recentRepos() []string {
 
 func (w *welcome) view(c *ui.Context) {
 	defer w.cloneView(c)
+	defer w.connectView(c)
 	defer w.cred.view(c)
 	root := ui.Column(c).Fill()
 	root.Children(func() {
@@ -103,6 +116,9 @@ func (w *welcome) body(c *ui.Context) {
 			if ui.Button(c, loc.InitMenu()).Grow(1).Clicked() {
 				go w.initRepo()
 			}
+			if ui.Button(c, loc.SshMenu()).Grow(1).Clicked() {
+				w.ssh = newConnectPlan()
+			}
 		})
 		if w.errMsg != "" {
 			ui.Text(c, w.errMsg).TextColor(t.Danger).Wrap()
@@ -121,9 +137,12 @@ func (w *welcome) body(c *ui.Context) {
 				}
 			})
 		}
-		if len(w.recent) > 0 {
+		if len(w.recent) > 0 || len(prefs.Remotes) > 0 {
 			ui.Text(c, loc.Recent()).Bold().TextColor(t.TextMuted)
 			ui.Scroll(c).Grow(1).Basis(0).Gap(2).Children(func() {
+				for _, l := range prefs.Remotes {
+					w.recentRow(c, l)
+				}
 				for _, dir := range w.recent {
 					w.recentRow(c, dir)
 				}
@@ -151,21 +170,33 @@ func (w *welcome) dropZone(c *ui.Context) {
 	}
 }
 
-func (w *welcome) recentRow(c *ui.Context, dir string) {
+// recentRow is a repository opened lately: a folder, or host:dir on
+// another computer.
+func (w *welcome) recentRow(c *ui.Context, location string) {
 	t := c.Theme()
-	row := ui.ButtonBase(c.Key(dir)).Padding(8, 10).Gap(10).Radius(8).AlignItems(ui.Center).
-		Cursor(ui.CursorPointer).Tooltip(dir).Label(loc.OpenRepoNamed(filepath.Base(dir)))
+	name, where := filepath.Base(location), homeRelative(location)
+	host, dir, remote := "", "", false
+	if !exists(location) {
+		host, dir, remote = parseLocation(location)
+		name = path.Base(dir)
+	}
+	row := ui.ButtonBase(c.Key(location)).Padding(8, 10).Gap(10).Radius(8).AlignItems(ui.Center).
+		Cursor(ui.CursorPointer).Tooltip(location).Label(loc.OpenRepoNamed(name))
 	if row.Hovered() {
 		row.Background(t.SurfaceHover)
 	}
 	row.Children(func() {
 		ui.Column(c).Gap(2).Grow(1).Basis(0).Children(func() {
-			ui.Text(c, filepath.Base(dir)).Bold().SingleLine()
-			ui.Text(c, homeRelative(dir)).FontSize(11).TextColor(t.TextMuted).SingleLine()
+			ui.Text(c, name).Bold().SingleLine()
+			ui.Text(c, where).FontSize(11).TextColor(t.TextMuted).SingleLine()
 		})
 	})
 	if row.Clicked() {
-		w.open(dir)
+		if remote {
+			w.connect(host, dir)
+		} else {
+			w.open(location)
+		}
 	}
 }
 

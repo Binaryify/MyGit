@@ -59,9 +59,11 @@ func main() {
 		mygo.App.SetMenu(appMenu())
 		mygo.App.OnLocaleChanged(func(string) { mygo.App.SetMenu(appMenu()) }) // its labels, in the new language
 		if s, err := askpass.Listen(askUser); err == nil {
+			askServer = s
 			git.Env = func(dir string) []string { return s.Env(dir) }
 			mygo.App.OnQuit(func() { s.Close() })
 		}
+		mygo.App.OnQuit(closeHosts)
 		// Quitting with a file edited and not saved asks, in its window,
 		// a window at a time; quitting goes on once each is saved or given up.
 		mygo.App.OnBeforeQuit(func(e *mygo.QuitEvent) {
@@ -97,6 +99,13 @@ func main() {
 // working folder's when none is, or the welcome window when that isn't a
 // repository either, as when the app starts from Finder or the Start menu.
 func openArg(args []string, cwd string) {
+	if len(args) > 0 {
+		if host, dir, ok := parseLocation(args[0]); ok && !exists(filepath.Join(cwd, args[0])) {
+			showWelcome()
+			welcomeWin.connect(host, dir)
+			return
+		}
+	}
 	dir := cwd
 	if len(args) > 0 {
 		dir = args[0]
@@ -127,15 +136,22 @@ func openDir(dir string) {
 
 // open shows a repository's window, the one open already if there is one.
 func open(repo *git.Repo) {
-	if a := apps[repo.Dir]; a != nil {
+	key := repo.Location()
+	if a := apps[key]; a != nil {
 		a.win.Show()
 		a.win.Focus()
 		return
 	}
-	_ = mygo.App.AddRecentDocument(repo.Dir)
+	title := repo.Name() + " — MyGit"
+	if repo.Host() == "" {
+		_ = mygo.App.AddRecentDocument(repo.Dir)
+	} else {
+		addRemoteRecent(key)
+		title = repo.Name() + " — " + repo.Host()
+	}
 	a := newApp(repo)
 	a.win = mygo.NewWindow(customTitleBar(mygo.WindowOptions{
-		Title:     repo.Name() + " — MyGit",
+		Title:     title,
 		Width:     1200,
 		Height:    800,
 		MinWidth:  720,
@@ -144,8 +160,8 @@ func open(repo *git.Repo) {
 		Content:   ui.View(a.view),
 	}))
 	dropMenuBar(a.win)
-	apps[repo.Dir] = a
-	a.win.OnClosed(func() { delete(apps, repo.Dir) })
+	apps[key] = a
+	a.win.OnClosed(func() { delete(apps, key) })
 	a.start()
 	closeWelcome()
 }
@@ -184,8 +200,15 @@ func appMenu() *mygo.Menu {
 	})
 }
 
+// exists tells whether there is a file or a folder at p.
+func exists(p string) bool {
+	_, err := os.Stat(p)
+	return err == nil
+}
+
 // askUser asks a prompt of git's in the window of the repository it runs
-// in, or the welcome window, cloning, and waits for the answer.
+// in, host:dir on another computer, or the welcome window, cloning or
+// connecting, and waits for the answer.
 func askUser(dir, prompt string) (string, bool) {
 	done := make(chan credAnswer, 1)
 	mygo.RunOnMain(func() {

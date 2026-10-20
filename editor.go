@@ -19,6 +19,11 @@ import (
 // the editor set, or the system's app for it.
 func (a *app) openInEditor(path string, line int) {
 	cmd := strings.TrimSpace(prefs.Editor)
+	host := a.repo.Host()
+	if host != "" && !remoteEditor(cmd) {
+		a.errMsg = loc.ErrRemoteEditor()
+		return
+	}
 	if cmd == "" {
 		if err := mygo.Shell.OpenPath(path); err != nil {
 			a.errMsg = loc.ErrOpen(err.Error())
@@ -26,16 +31,28 @@ func (a *app) openInEditor(path string, line int) {
 		return
 	}
 	go func() {
-		err := runEditor(cmd, path, line)
+		err := runEditor(cmd, host, path, line)
 		if err != nil {
 			a.update(func() { a.errMsg = loc.ErrEditor(err.Error()) })
 		}
 	}()
 }
 
-// runEditor starts an editor's command with a file, saying the line the
-// way the editors that take one want it.
-func runEditor(cmd, path string, line int) error {
+// remoteEditor tells whether an editor's command opens files on another
+// computer, as VS Code and its forks do with Remote - SSH.
+func remoteEditor(cmd string) bool {
+	switch editorName(cmd) {
+	case "code", "cursor", "codium", "windsurf":
+		return true
+	}
+	return false
+}
+
+func editorName(cmd string) string { return strings.TrimSuffix(filepath.Base(cmd), ".exe") }
+
+// runEditor starts an editor's command with a file, on host when it isn't
+// "", saying the line the way the editors that take one want it.
+func runEditor(cmd, host, path string, line int) error {
 	exe, err := lookEditor(cmd)
 	if err != nil {
 		return err
@@ -43,7 +60,7 @@ func runEditor(cmd, path string, line int) error {
 	args := []string{path}
 	if line > 0 {
 		at := path + ":" + strconv.Itoa(line)
-		switch strings.TrimSuffix(filepath.Base(cmd), ".exe") {
+		switch editorName(cmd) {
 		case "code", "cursor", "codium", "windsurf":
 			args = []string{"-g", at}
 		case "zed", "subl":
@@ -51,6 +68,9 @@ func runEditor(cmd, path string, line int) error {
 		case "idea":
 			args = []string{"--line", strconv.Itoa(line), path}
 		}
+	}
+	if host != "" {
+		args = append([]string{"--remote", "ssh-remote+" + host}, args...)
 	}
 	c := exec.Command(exe, args...)
 	if err := c.Start(); err != nil {
@@ -104,5 +124,5 @@ func (a *app) openChangeInEditor() {
 	} else if d.patch != nil && len(d.patch.Hunks) > 0 {
 		line = d.patch.Hunks[0].NewStart
 	}
-	a.openInEditor(filepath.Join(a.repo.Dir, filepath.FromSlash(d.change.Path)), line)
+	a.openInEditor(a.repo.Path(d.change.Path), line)
 }

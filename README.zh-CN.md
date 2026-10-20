@@ -92,6 +92,7 @@ MyGit 读取靠解析 `git` 的输出，所有改动都交给 `git` 命令本身
 - **冲突**：三栏合并视图；合并、变基、cherry-pick、revert 中途可以继续、跳过或中止
 - **Stash、Blame 和远程**：stash（可包括未跟踪文件）、逐行追溯、远程管理、拉取（快进 / 变基 / 合并）、推送前预览、force-with-lease
 - **登录**：git 需要用户名、令牌或口令时，在窗口里询问
+- **SSH 远程**：打开另一台电脑上的仓库（`host:/path/to/repo`，Linux、macOS、Windows 都行），沿用本机的 ssh 配置和密钥；MyGit 会在对方的 `~/.mygit` 里放一个小 agent，对方只要有 git
 - **随处可用**：每个仓库一个窗口、拖入文件夹打开、终端里 `mygit .`、自定义标题栏、深浅色、English 和简体中文、签名的自动更新
 
 ## 安装
@@ -148,6 +149,8 @@ go tool mygo build -platform darwin/arm64,windows/amd64,linux/amd64
 界面文字在 [`locales/`](locales) 里：`en.json` 是源语言，`zh-Hans.json` 是简体中文，改完运行 `go tool mygo generate`。欢迎贡献其他语言的翻译：新增 `locales/<语言标签>.json` 即可。
 
 发布：在 [`CHANGELOG.md`](CHANGELOG.md) 写好这个版本的说明（会成为 Release 的说明，缺了发布会失败），再推送 `v0.2.0` 这样的标签。CI 会用仓库 Secret `MYGO_UPDATER_PRIVATE_KEY` 给更新包签名，打包 macOS 磁盘镜像、Windows 安装程序和 zip、Linux 安装包，并创建 Release。签名私钥在本机 `~/Library/Application Support/mygo/update-keys/mygit/`，丢失后已安装的应用就收不到更新了。仓库是私有的时候，已安装的应用下载不到 Release 里的更新包，测试自动更新前要先把仓库公开，或者把更新包放到公开地址。
+
+SSH 远程：发布时 CI 会同时编译、签名 6 个平台的 agent（`mygit-agent-<系统>-<架构>.gz`）放进 Release，应用第一次连某种系统时下载并验签。开发时用 `go run ./internal/tools/agents` 编到 `build/agents`，再用 `MYGIT_AGENT_DIR=$PWD/build/agents` 启动应用；`MYGIT_E2E_HOST=<主机> MYGIT_AGENT_DIR=$PWD/build/agents go test ./internal/remote -run E2E -v` 对真实主机跑端到端测试。
 
 基准测试：`MYGIT_BENCH_REPO=<仓库> MYGIT_BENCH_COMMIT=<提交> go test -run '^$' -bench .`
 

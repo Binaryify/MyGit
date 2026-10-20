@@ -43,7 +43,7 @@ func (w *welcome) cloneView(c *ui.Context) {
 	}
 	t := c.Theme()
 	if ui.Modal(c, &p.open, func() {
-		ui.Column(c).Gap(10).Width(460).Children(func() {
+		ui.Column(c).Gap(10).Width(dialogWidth(c, 460)).Children(func() {
 			ui.Text(c, loc.CloneTitle()).Bold().FontSize(15)
 			if ui.TextInput(c, &p.url).Placeholder(loc.CloneURLPlaceholder()).Label(loc.CloneURL()).AutoFocus().Changed() && !p.named {
 				p.name = git.RepoName(strings.TrimSpace(p.url))

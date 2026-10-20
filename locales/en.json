@@ -1084,5 +1084,70 @@
   "shortcutCompare": "Compare two commits",
   "shortcutSpace": "Space",
   "shortcutDelete": "Delete",
-  "shortcutClick": "click"
+  "shortcutClick": "click",
+  "sshMenu": "Open over SSH…",
+  "sshTitle": "Open a Repository over SSH",
+  "sshHint": "ssh connects as in a terminal, with your config and keys. MyGit runs a small agent there, kept in ~/.mygit, and then you choose the repository.",
+  "sshBadLocation": "Write the computer as user@host, or an alias of ~/.ssh/config.",
+  "connect": "Connect",
+  "connectionLost": "Lost the connection to {host}: {error}",
+  "@connectionLost": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteTitle": "Delete the file?",
+  "deleteMessage": "The untracked file “{path}” is deleted on {host} for good.",
+  "@deleteMessage": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      },
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteButton": "Delete",
+  "errRemoteEditor": "Files on another computer open in VS Code, Cursor, VSCodium or Windsurf, with Remote - SSH: choose one in Settings.",
+  "connectingTo": "Connecting to {host}…",
+  "@connectingTo": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "sshHosts": "SSH Hosts",
+  "sshHost": "Host",
+  "sshHostPlaceholder": "user@host, or a Host of ~/.ssh/config",
+  "sshChoose": "Choose a repository on {host}",
+  "sshFolder": "Folder",
+  "sshOpenFolder": "Open This Folder",
+  "sshChangeHost": "Change Host",
+  "sshNoFolders": "No folders here",
+  "sshOpen": "Open",
+  "@sshChoose": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteBadge": "{dir} on {host}, over SSH",
+  "@remoteBadge": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "dir": {
+        "type": "String"
+      }
+    }
+  }
 }

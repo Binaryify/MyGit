@@ -32,7 +32,7 @@ func (a *app) showConflict(c git.Change) {
 	a.detail = detail{change: &c, gen: a.detail.gen + 1, loading: true}
 	gen := a.detail.gen
 	work(a, func(ctx context.Context) (mergeTexts, error) {
-		result, err := a.repo.ReadFile(c.Path)
+		result, err := a.repo.ReadFile(ctx, c.Path)
 		return mergeTexts{a.repo.ShowStage(ctx, c.Path, git.OursStage), a.repo.ShowStage(ctx, c.Path, git.TheirsStage), result}, err
 	}, func(t mergeTexts, err error) {
 		if gen != a.detail.gen {

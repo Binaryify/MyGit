@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	loc "mygit/locales"
@@ -91,25 +89,22 @@ func (r *Repo) RebaseInteractive(ctx context.Context, base string, steps []Rebas
 		return err
 	}
 	// The files stay while the rebase may stop and go on.
-	dir := filepath.Join(r.GitDir, "mygit-rebase")
-	_ = os.RemoveAll(dir)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
-	}
+	dir := r.run.Join(r.GitDir, "mygit-rebase")
+	_ = r.run.RemoveAll(ctx, dir)
 	var todo strings.Builder
 	for i, s := range steps {
 		if s.Action != Reword {
 			fmt.Fprintf(&todo, "%s %s\n", s.Action, s.Hash)
 			continue
 		}
-		msg := filepath.Join(dir, fmt.Sprintf("message-%d", i))
-		if err := os.WriteFile(msg, []byte(s.Message), 0o644); err != nil {
+		msg := r.run.Join(dir, fmt.Sprintf("message-%d", i))
+		if err := r.run.WriteFile(ctx, msg, []byte(s.Message)); err != nil {
 			return err
 		}
 		fmt.Fprintf(&todo, "pick %s\nexec git commit --amend --only --allow-empty -F %s\n", s.Hash, shellQuote(msg))
 	}
-	todoFile := filepath.Join(dir, "todo")
-	if err := os.WriteFile(todoFile, []byte(todo.String()), 0o644); err != nil {
+	todoFile := r.run.Join(dir, "todo")
+	if err := r.run.WriteFile(ctx, todoFile, []byte(todo.String())); err != nil {
 		return err
 	}
 	args := []string{"rebase", "-i"}
@@ -118,14 +113,14 @@ func (r *Repo) RebaseInteractive(ctx context.Context, base string, steps []Rebas
 	} else {
 		args = append(args, base)
 	}
-	_, err := runInput(ctx, r.Dir, "", []string{"GIT_SEQUENCE_EDITOR=cp " + shellQuote(todoFile)}, args...)
+	_, err := git(ctx, r.run, r.Dir, "", []string{"GIT_SEQUENCE_EDITOR=cp " + shellQuote(todoFile)}, args...)
 	return err
 }
 
 // shellQuote quotes a path for the shell git runs editors and execs in,
 // with slashes, which Git for Windows' shell reads too.
 func shellQuote(path string) string {
-	return "'" + strings.ReplaceAll(filepath.ToSlash(path), "'", `'\''`) + "'"
+	return "'" + strings.ReplaceAll(strings.ReplaceAll(path, `\`, "/"), "'", `'\''`) + "'"
 }
 
 // IsAncestor tells whether a commit is in HEAD's history.

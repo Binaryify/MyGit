@@ -4031,3 +4031,217 @@ func ShortcutClick() string { return In(i18n.Locale()).ShortcutClick() }
 func (msgs Messages) ShortcutClick() string {
 	return Catalog.Format(msgs.locale, "shortcutClick", nil)
 }
+
+// SshMenu says "Open over SSH…"
+// in the language the app shows.
+func SshMenu() string { return In(i18n.Locale()).SshMenu() }
+
+// SshMenu says "Open over SSH…"
+// in the language of msgs.
+func (msgs Messages) SshMenu() string {
+	return Catalog.Format(msgs.locale, "sshMenu", nil)
+}
+
+// SshTitle says "Open a Repository over SSH"
+// in the language the app shows.
+func SshTitle() string { return In(i18n.Locale()).SshTitle() }
+
+// SshTitle says "Open a Repository over SSH"
+// in the language of msgs.
+func (msgs Messages) SshTitle() string {
+	return Catalog.Format(msgs.locale, "sshTitle", nil)
+}
+
+// SshHint says "ssh connects as in a terminal, with your config and keys. MyGit runs a small agent there, kept in ~/.mygit, and then …"
+// in the language the app shows.
+func SshHint() string { return In(i18n.Locale()).SshHint() }
+
+// SshHint says "ssh connects as in a terminal, with your config and keys. MyGit runs a small agent there, kept in ~/.mygit, and then …"
+// in the language of msgs.
+func (msgs Messages) SshHint() string {
+	return Catalog.Format(msgs.locale, "sshHint", nil)
+}
+
+// SshBadLocation says "Write the computer as user@host, or an alias of ~/.ssh/config."
+// in the language the app shows.
+func SshBadLocation() string { return In(i18n.Locale()).SshBadLocation() }
+
+// SshBadLocation says "Write the computer as user@host, or an alias of ~/.ssh/config."
+// in the language of msgs.
+func (msgs Messages) SshBadLocation() string {
+	return Catalog.Format(msgs.locale, "sshBadLocation", nil)
+}
+
+// Connect says "Connect"
+// in the language the app shows.
+func Connect() string { return In(i18n.Locale()).Connect() }
+
+// Connect says "Connect"
+// in the language of msgs.
+func (msgs Messages) Connect() string {
+	return Catalog.Format(msgs.locale, "connect", nil)
+}
+
+// ConnectionLost says "Lost the connection to {host}: {error}"
+// in the language the app shows.
+func ConnectionLost(host string, error string) string {
+	return In(i18n.Locale()).ConnectionLost(host, error)
+}
+
+// ConnectionLost says "Lost the connection to {host}: {error}"
+// in the language of msgs.
+func (msgs Messages) ConnectionLost(host string, error string) string {
+	return Catalog.Format(msgs.locale, "connectionLost", map[string]any{"host": host, "error": error})
+}
+
+// DeleteTitle says "Delete the file?"
+// in the language the app shows.
+func DeleteTitle() string { return In(i18n.Locale()).DeleteTitle() }
+
+// DeleteTitle says "Delete the file?"
+// in the language of msgs.
+func (msgs Messages) DeleteTitle() string {
+	return Catalog.Format(msgs.locale, "deleteTitle", nil)
+}
+
+// DeleteMessage says "The untracked file “{path}” is deleted on {host} for good."
+// in the language the app shows.
+func DeleteMessage(path string, host string) string {
+	return In(i18n.Locale()).DeleteMessage(path, host)
+}
+
+// DeleteMessage says "The untracked file “{path}” is deleted on {host} for good."
+// in the language of msgs.
+func (msgs Messages) DeleteMessage(path string, host string) string {
+	return Catalog.Format(msgs.locale, "deleteMessage", map[string]any{"path": path, "host": host})
+}
+
+// DeleteButton says "Delete"
+// in the language the app shows.
+func DeleteButton() string { return In(i18n.Locale()).DeleteButton() }
+
+// DeleteButton says "Delete"
+// in the language of msgs.
+func (msgs Messages) DeleteButton() string {
+	return Catalog.Format(msgs.locale, "deleteButton", nil)
+}
+
+// ErrRemoteEditor says "Files on another computer open in VS Code, Cursor, VSCodium or Windsurf, with Remote - SSH: choose one in Settings."
+// in the language the app shows.
+func ErrRemoteEditor() string { return In(i18n.Locale()).ErrRemoteEditor() }
+
+// ErrRemoteEditor says "Files on another computer open in VS Code, Cursor, VSCodium or Windsurf, with Remote - SSH: choose one in Settings."
+// in the language of msgs.
+func (msgs Messages) ErrRemoteEditor() string {
+	return Catalog.Format(msgs.locale, "errRemoteEditor", nil)
+}
+
+// ConnectingTo says "Connecting to {host}…"
+// in the language the app shows.
+func ConnectingTo(host string) string { return In(i18n.Locale()).ConnectingTo(host) }
+
+// ConnectingTo says "Connecting to {host}…"
+// in the language of msgs.
+func (msgs Messages) ConnectingTo(host string) string {
+	return Catalog.Format(msgs.locale, "connectingTo", map[string]any{"host": host})
+}
+
+// SshHosts says "SSH Hosts"
+// in the language the app shows.
+func SshHosts() string { return In(i18n.Locale()).SshHosts() }
+
+// SshHosts says "SSH Hosts"
+// in the language of msgs.
+func (msgs Messages) SshHosts() string {
+	return Catalog.Format(msgs.locale, "sshHosts", nil)
+}
+
+// SshHost says "Host"
+// in the language the app shows.
+func SshHost() string { return In(i18n.Locale()).SshHost() }
+
+// SshHost says "Host"
+// in the language of msgs.
+func (msgs Messages) SshHost() string {
+	return Catalog.Format(msgs.locale, "sshHost", nil)
+}
+
+// SshHostPlaceholder says "user@host, or a Host of ~/.ssh/config"
+// in the language the app shows.
+func SshHostPlaceholder() string { return In(i18n.Locale()).SshHostPlaceholder() }
+
+// SshHostPlaceholder says "user@host, or a Host of ~/.ssh/config"
+// in the language of msgs.
+func (msgs Messages) SshHostPlaceholder() string {
+	return Catalog.Format(msgs.locale, "sshHostPlaceholder", nil)
+}
+
+// SshChoose says "Choose a repository on {host}"
+// in the language the app shows.
+func SshChoose(host string) string { return In(i18n.Locale()).SshChoose(host) }
+
+// SshChoose says "Choose a repository on {host}"
+// in the language of msgs.
+func (msgs Messages) SshChoose(host string) string {
+	return Catalog.Format(msgs.locale, "sshChoose", map[string]any{"host": host})
+}
+
+// SshFolder says "Folder"
+// in the language the app shows.
+func SshFolder() string { return In(i18n.Locale()).SshFolder() }
+
+// SshFolder says "Folder"
+// in the language of msgs.
+func (msgs Messages) SshFolder() string {
+	return Catalog.Format(msgs.locale, "sshFolder", nil)
+}
+
+// SshOpenFolder says "Open This Folder"
+// in the language the app shows.
+func SshOpenFolder() string { return In(i18n.Locale()).SshOpenFolder() }
+
+// SshOpenFolder says "Open This Folder"
+// in the language of msgs.
+func (msgs Messages) SshOpenFolder() string {
+	return Catalog.Format(msgs.locale, "sshOpenFolder", nil)
+}
+
+// SshChangeHost says "Change Host"
+// in the language the app shows.
+func SshChangeHost() string { return In(i18n.Locale()).SshChangeHost() }
+
+// SshChangeHost says "Change Host"
+// in the language of msgs.
+func (msgs Messages) SshChangeHost() string {
+	return Catalog.Format(msgs.locale, "sshChangeHost", nil)
+}
+
+// SshNoFolders says "No folders here"
+// in the language the app shows.
+func SshNoFolders() string { return In(i18n.Locale()).SshNoFolders() }
+
+// SshNoFolders says "No folders here"
+// in the language of msgs.
+func (msgs Messages) SshNoFolders() string {
+	return Catalog.Format(msgs.locale, "sshNoFolders", nil)
+}
+
+// SshOpen says "Open"
+// in the language the app shows.
+func SshOpen() string { return In(i18n.Locale()).SshOpen() }
+
+// SshOpen says "Open"
+// in the language of msgs.
+func (msgs Messages) SshOpen() string {
+	return Catalog.Format(msgs.locale, "sshOpen", nil)
+}
+
+// RemoteBadge says "{dir} on {host}, over SSH"
+// in the language the app shows.
+func RemoteBadge(host string, dir string) string { return In(i18n.Locale()).RemoteBadge(host, dir) }
+
+// RemoteBadge says "{dir} on {host}, over SSH"
+// in the language of msgs.
+func (msgs Messages) RemoteBadge(host string, dir string) string {
+	return Catalog.Format(msgs.locale, "remoteBadge", map[string]any{"host": host, "dir": dir})
+}

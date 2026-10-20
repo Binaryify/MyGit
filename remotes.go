@@ -114,7 +114,7 @@ func (a *app) repoMenu(m *ui.Menu) {
 	if m.Item(loc.PullRequestsMenu()).Chosen() {
 		a.openPulls()
 	}
-	if m.Item(loc.ShowInFolder()).Chosen() {
+	if a.local() && m.Item(loc.ShowInFolder()).Chosen() {
 		mygo.Shell.ShowItemInFolder(a.repo.Dir)
 	}
 	if m.Item(loc.OpenRepoInEditor()).Chosen() {
@@ -124,8 +124,16 @@ func (a *app) repoMenu(m *ui.Menu) {
 	if m.Item(loc.MenuOpenRepo()).Chosen() {
 		showWelcome()
 	}
-	if recent := recentRepos(); len(recent) > 0 {
+	if recent := recentRepos(); len(recent) > 0 || len(prefs.Remotes) > 0 {
 		m.Submenu(loc.MenuRecent(), func(m *ui.Menu) {
+			for _, l := range prefs.Remotes {
+				if m.Item(l).Chosen() {
+					if host, dir, ok := parseLocation(l); ok {
+						showWelcome()
+						welcomeWin.connect(host, dir)
+					}
+				}
+			}
 			for _, dir := range recent {
 				if m.Item(homeRelative(dir)).Chosen() {
 					openDir(dir)

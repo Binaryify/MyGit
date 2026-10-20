@@ -229,7 +229,7 @@ func (a *app) openCommands() {
 	add(true, loc.PullRequestsMenu(), "", a.openPulls)
 	add(true, loc.RemotesMenu(), "", a.openRemotes)
 	add(true, loc.OpenRepoInEditor(), "", func() { a.openInEditor(a.repo.Dir, 0) })
-	add(true, loc.ShowInFolder(), "", func() { mygo.Shell.ShowItemInFolder(a.repo.Dir) })
+	add(a.local(), loc.ShowInFolder(), "", func() { mygo.Shell.ShowItemInFolder(a.repo.Dir) })
 	add(true, loc.MenuOpenRepo(), shortcut("O"), showWelcome)
 	add(true, loc.MenuInstallCLI(), "", func() { go installLauncher() })
 	add(true, loc.MenuUninstallCLI(), "", func() { go uninstallLauncher() })

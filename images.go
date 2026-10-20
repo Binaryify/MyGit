@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
@@ -56,7 +54,7 @@ func (s *side) read(ctx context.Context, repo *git.Repo) (*picture, error) {
 	var data []byte
 	var err error
 	if s.worktree {
-		data, err = os.ReadFile(filepath.Join(repo.Dir, filepath.FromSlash(s.path)))
+		data, err = repo.ReadBytes(ctx, s.path)
 	} else {
 		data, err = repo.Blob(ctx, s.rev, s.path)
 	}

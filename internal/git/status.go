@@ -2,8 +2,6 @@ package git
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -114,19 +112,24 @@ func (r *Repo) ReadIndex(ctx context.Context, path string) string {
 }
 
 // WriteFile writes a file of the working tree, keeping its mode.
-func (r *Repo) WriteFile(path, text string) error {
-	full := filepath.Join(r.Dir, filepath.FromSlash(path))
-	mode := os.FileMode(0o644)
-	if fi, err := os.Stat(full); err == nil {
-		mode = fi.Mode()
-	}
-	return os.WriteFile(full, []byte(text), mode)
+func (r *Repo) WriteFile(ctx context.Context, path, text string) error {
+	return r.run.WriteFile(ctx, r.Path(path), []byte(text))
 }
 
 // ReadFile reads a file of the working tree, as an untracked file shows.
-func (r *Repo) ReadFile(path string) (string, error) {
-	b, err := os.ReadFile(filepath.Join(r.Dir, filepath.FromSlash(path)))
+func (r *Repo) ReadFile(ctx context.Context, path string) (string, error) {
+	b, err := r.ReadBytes(ctx, path)
 	return string(b), err
+}
+
+// ReadBytes reads a file of the working tree as it is, as a picture.
+func (r *Repo) ReadBytes(ctx context.Context, path string) ([]byte, error) {
+	return r.run.ReadFile(ctx, r.Path(path))
+}
+
+// Remove deletes a file or a folder of the working tree.
+func (r *Repo) Remove(ctx context.Context, path string) error {
+	return r.run.RemoveAll(ctx, r.Path(path))
 }
 
 // Stage adds the files' changes to the index, deletions included.
@@ -172,7 +175,7 @@ func (r *Repo) Apply(ctx context.Context, patch string, cached, reverse bool) er
 	if reverse {
 		args = append(args, "--reverse")
 	}
-	_, err := runInput(ctx, r.Dir, patch, nil, append(args, "-")...)
+	_, err := git(ctx, r.run, r.Dir, patch, nil, append(args, "-")...)
 	return err
 }
 
@@ -180,7 +183,7 @@ func (r *Repo) Apply(ctx context.Context, patch string, cached, reverse bool) er
 // files go back to the index, untracked ones are deleted.
 func (r *Repo) Discard(ctx context.Context, c Change) error {
 	if c.Work == '?' {
-		return os.RemoveAll(filepath.Join(r.Dir, filepath.FromSlash(c.Path)))
+		return r.Remove(ctx, c.Path)
 	}
 	_, err := r.Git(ctx, "restore", "--worktree", "--", c.Path)
 	return err
@@ -208,7 +211,7 @@ func (r *Repo) ShowStage(ctx context.Context, path string, s Stage) string {
 // Resolve writes a file's resolved text and stages it, which marks its
 // conflict resolved.
 func (r *Repo) Resolve(ctx context.Context, path, text string) error {
-	if err := os.WriteFile(filepath.Join(r.Dir, filepath.FromSlash(path)), []byte(text), 0o644); err != nil {
+	if err := r.WriteFile(ctx, path, text); err != nil {
 		return err
 	}
 	return r.Stage(ctx, path)
@@ -233,7 +236,7 @@ func (r *Repo) Generated(ctx context.Context, paths []string) map[string]bool {
 	if len(paths) == 0 {
 		return marked
 	}
-	out, err := runInput(ctx, r.Dir, strings.Join(paths, "\x00")+"\x00", nil,
+	out, err := git(ctx, r.run, r.Dir, strings.Join(paths, "\x00")+"\x00", nil,
 		"check-attr", "-z", "--stdin", "linguist-generated", "linguist-vendored")
 	if err != nil {
 		return marked

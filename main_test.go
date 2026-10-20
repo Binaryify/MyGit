@@ -568,7 +568,7 @@ func TestIgnore(t *testing.T) {
 	if len(tt.a.unstaged) != 1 || tt.a.unstaged[0].Path != ".gitignore" {
 		t.Fatalf("changes %+v", tt.a.unstaged)
 	}
-	if err := appendIgnore(tt.a.repo.Dir, "*.txt"); err != nil {
+	if err := appendIgnore(context.Background(), tt.a.repo, "*.txt"); err != nil {
 		t.Fatal(err)
 	}
 	if b, _ := os.ReadFile(filepath.Join(tt.a.repo.Dir, ".gitignore")); string(b) != "*.txt\n" {

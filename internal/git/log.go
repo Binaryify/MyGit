@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -51,16 +52,14 @@ func (s Scope) args() []string {
 // batch in groups as git prints it, so the first commits show before a
 // long history is read.
 func (r *Repo) Log(ctx context.Context, scope Scope, batchSize int, batch func([]Commit)) error {
-	cmd := command(ctx, r.Dir, append([]string{"log", "--date-order", "-z", "--format=" + logFormat}, scope.args()...)...)
-	out, err := cmd.StdoutPipe()
-	if err != nil {
-		return err
-	}
+	out, w := io.Pipe()
 	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-	if err := cmd.Start(); err != nil {
-		return err
-	}
+	done := make(chan error, 1)
+	go func() {
+		err := stream(ctx, r.run, r.Dir, w, &stderr, append([]string{"log", "--date-order", "-z", "--format=" + logFormat}, scope.args()...)...)
+		w.CloseWithError(err)
+		done <- err
+	}()
 	sc := bufio.NewScanner(out)
 	sc.Buffer(make([]byte, 64<<10), 16<<20)
 	sc.Split(splitNUL)
@@ -77,7 +76,11 @@ func (r *Repo) Log(ctx context.Context, scope Scope, batchSize int, batch func([
 	if len(commits) > 0 {
 		batch(commits)
 	}
-	if err := cmd.Wait(); err != nil && ctx.Err() == nil {
+	if sc.Err() != nil {
+		out.CloseWithError(sc.Err()) // let git end
+	}
+	_, _ = io.Copy(io.Discard, out)
+	if err := <-done; err != nil && ctx.Err() == nil {
 		// An empty repository has no HEAD to list: no commits, no error.
 		if strings.Contains(stderr.String(), "unknown revision") || strings.Contains(stderr.String(), "bad revision 'HEAD'") {
 			return nil

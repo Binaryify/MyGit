@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"path"
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -75,12 +74,25 @@ func (a *app) view(c *ui.Context) {
 	c.OnShortcut(ui.Cmd, ui.KeyK, a.openCommands)
 }
 
+// remoteBadge says the repository is on another computer, and which.
+func (a *app) remoteBadge(c *ui.Context) {
+	t := c.Theme()
+	ui.Row(c).Gap(5).AlignItems(ui.Center).Padding(2, 8).Radius(10).Background(t.Accent.Alpha(0.16)).
+		TextColor(t.AccentText).Tooltip(loc.RemoteBadge(a.repo.Host(), a.repo.Dir)).Children(func() {
+		ui.Icon(c, icons["server"]).Size(12, 12)
+		ui.Text(c, "SSH · "+a.repo.Host()).FontSize(12).Bold().TextColor(t.AccentText).SingleLine()
+	})
+}
+
 func (a *app) toolbar(c *ui.Context) {
 	t := c.Theme()
 	st := a.status
 	titleBar(c).Background(t.Surface).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 		ui.Image(c, icon).Size(22, 22)
-		ui.Text(c, a.repo.Name()).FontSize(13).Bold().Tooltip(a.repo.Dir)
+		ui.Text(c, a.repo.Name()).FontSize(13).Bold().Tooltip(a.repo.Location())
+		if !a.local() {
+			a.remoteBadge(c)
+		}
 		branch := st.Branch
 		if branch == "" {
 			branch = loc.Detached()
@@ -216,7 +228,7 @@ func (a *app) changeSection(c *ui.Context, title string, staged bool) {
 			}
 			if row.Hovered() || chosen {
 				if iconButton(c, "open", loc.OpenFile()) {
-					a.openInEditor(filepath.Join(a.repo.Dir, filepath.FromSlash(ch.Path)), 0)
+					a.openInEditor(a.repo.Path(ch.Path), 0)
 				}
 				if !staged && !ch.Conflict && iconButton(c, "undo", loc.DiscardChanges()) {
 					a.discard(ch)
@@ -407,7 +419,7 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 // fileMenu is a file's context menu, of a commit's files or the changes.
 func (a *app) fileMenu(m *ui.Menu, path, rev string) {
 	if m.Item(loc.OpenInEditor()).Chosen() {
-		a.openInEditor(filepath.Join(a.repo.Dir, filepath.FromSlash(path)), 0)
+		a.openInEditor(a.repo.Path(path), 0)
 	}
 	if m.Item(loc.FileHistory()).Chosen() {
 		a.setScope(git.Scope{Ref: a.scope.Ref, Path: path})
@@ -419,8 +431,8 @@ func (a *app) fileMenu(m *ui.Menu, path, rev string) {
 	if m.Item(loc.CopyPath()).Chosen() {
 		mygo.Clipboard.WriteText(path)
 	}
-	if m.Item(loc.ShowInFolder()).Chosen() {
-		mygo.Shell.ShowItemInFolder(filepath.Join(a.repo.Dir, filepath.FromSlash(path)))
+	if a.local() && m.Item(loc.ShowInFolder()).Chosen() {
+		mygo.Shell.ShowItemInFolder(a.repo.Path(path))
 	}
 }
 
