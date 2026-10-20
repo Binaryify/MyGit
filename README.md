@@ -134,6 +134,7 @@ To build it from source instead, see [Development](#development).
 | ⌘P / Ctrl+P | Go to a file of the commit or the changes |
 | ⌘K / Ctrl+K | Commands |
 | ⌘S / Ctrl+S | Save the file edited in the diff |
+| F7 / ⇧F7 | Next / previous change in the diff |
 | Space | Stage or unstage the change chosen; mark a commit's file viewed |
 | Delete | Discard the change chosen |
 | ⌘-click | Compare two commits |

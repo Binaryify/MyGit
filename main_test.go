@@ -829,3 +829,34 @@ func TestBranchMenuClosesPopover(t *testing.T) {
 		t.Errorf("open %v, scope %+v", tt.a.branchesOpen, tt.a.scope)
 	}
 }
+
+// F7 and ⇧F7 step the caret from change to change, and stop at the ends.
+func TestStepChange(t *testing.T) {
+	var oldText, newText strings.Builder
+	for i := range 40 {
+		line := fmt.Sprintf("line %d\n", i)
+		oldText.WriteString(line)
+		if i == 5 || i == 20 || i == 30 {
+			line = fmt.Sprintf("changed %d\n", i)
+		}
+		newText.WriteString(line)
+	}
+	a := &app{}
+	a.detail.diff = &editor.DiffState{Old: editor.NewBuffer(oldText.String()), New: editor.NewBuffer(newText.String())}
+	at := func() int {
+		i, inside := a.detail.diff.CurrentHunk()
+		if !inside {
+			return -1
+		}
+		return i
+	}
+	for _, step := range []struct {
+		back bool
+		want int
+	}{{false, 0}, {false, 1}, {false, 2}, {false, 2}, {true, 1}, {true, 0}, {true, 0}} {
+		a.stepChange(step.back)
+		if got := at(); got != step.want {
+			t.Fatalf("back %v: at change %d, want %d", step.back, got, step.want)
+		}
+	}
+}

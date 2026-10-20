@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.3
+
+- diff 里可以在改动之间跳转：F7 跳到下一处、⇧F7 跳到上一处（Windows / Linux 上是 Shift+F7）；diff 上方也有上下箭头按钮，旁边显示「第 2/5 处」；⌘K 命令面板里也能找到
+
 ## 0.3.2
 
 - 新标语：「轻快的原生 Git 客户端，远程仓库也能用」（A light, fast, native git client, for remote repositories too），欢迎窗口和「关于」里都换成了新的说法

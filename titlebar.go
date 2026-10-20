@@ -54,6 +54,15 @@ func shiftShortcut(key string) string {
 	return "Ctrl+Shift+" + key
 }
 
+// shiftKey writes a key with Shift the way the platform does: ⇧F7 on
+// macOS, Shift+F7 elsewhere.
+func shiftKey(key string) string {
+	if runtime.GOOS == "darwin" {
+		return "⇧" + key
+	}
+	return "Shift+" + key
+}
+
 // shortcut writes a key with the command modifier the way the platform
 // does: ⌘F on macOS, Ctrl+F elsewhere.
 func shortcut(key string) string {

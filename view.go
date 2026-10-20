@@ -78,6 +78,8 @@ func (a *app) view(c *ui.Context) {
 	c.OnShortcut(ui.Cmd, ui.KeyR, a.refresh)
 	c.OnShortcut(ui.Cmd, ui.KeyP, a.openFiles)
 	c.OnShortcut(ui.Cmd, ui.KeyK, a.openCommands)
+	c.OnShortcut(0, ui.KeyF7, func() { a.stepChange(false) })
+	c.OnShortcut(ui.Shift, ui.KeyF7, func() { a.stepChange(true) })
 	if !menuBar { // the menu bar's on macOS, which other systems' windows don't have
 		c.OnShortcut(ui.Cmd|ui.Shift, ui.KeyO, openSSH)
 		c.OnShortcut(ui.Cmd, ui.KeyComma, func() { a.settings.open = true })
@@ -400,6 +402,7 @@ func (a *app) detailView(c *ui.Context) {
 				}
 				ui.Badge(c, side)
 				ui.Box(c).Grow(1)
+				a.changeNav(c)
 				a.lineButtons(c)
 			})
 			a.diffView(c)
@@ -425,6 +428,7 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 			ui.Text(c, cm.Author).TextColor(t.TextMuted)
 			ui.Text(c, cm.Time.Format("2006-01-02 15:04")).TextColor(t.TextMuted)
 			ui.Box(c).Grow(1)
+			a.changeNav(c)
 			if n := len(cm.Parents); n > 1 {
 				labels := make([]string, n)
 				for i, p := range cm.Parents {
@@ -579,6 +583,46 @@ func refLabel(ref string) (string, bool) {
 		return tag, true
 	}
 	return ref, false
+}
+
+// changeNav steps through the changes of the diff shown, as F7 and ⇧F7
+// do, and says which the caret is in.
+func (a *app) changeNav(c *ui.Context) {
+	d := a.detail.diff
+	if d == nil || len(d.Hunks()) == 0 {
+		return
+	}
+	n := len(d.Hunks())
+	label := loc.ChangeCount(n)
+	if i, inside := d.CurrentHunk(); inside {
+		label = loc.ChangeOf(i+1, n)
+	}
+	ui.Row(c).Gap(2).AlignItems(ui.Center).Children(func() {
+		ui.Text(c, label).FontSize(11).TextColor(c.Theme().TextMuted).Padding(0, 4, 0, 0)
+		if iconButton(c, "up", loc.PreviousChange()+" "+shiftKey("F7")) {
+			a.stepChange(true)
+		}
+		if iconButton(c, "chevron-down", loc.NextChange()+" F7") {
+			a.stepChange(false)
+		}
+	})
+}
+
+// stepChange puts the caret on the next change of the diff shown, or with
+// back the one before, as JetBrains' F7 and ⇧F7 do; it stops at the ends.
+func (a *app) stepChange(back bool) {
+	d := a.detail.diff
+	if d == nil || len(d.Hunks()) == 0 {
+		return
+	}
+	i, inside := d.CurrentHunk() // else the last change before the caret
+	switch {
+	case !back:
+		i++
+	case inside:
+		i--
+	}
+	d.GoToHunk(min(max(i, 0), len(d.Hunks())-1))
 }
 
 // lineButtons act on the lines selected in the diff of a change.

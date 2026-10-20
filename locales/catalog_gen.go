@@ -3184,6 +3184,46 @@ func (msgs Messages) ViewedCount(viewed int, count int) string {
 	return Catalog.Format(msgs.locale, "viewedCount", map[string]any{"viewed": viewed, "count": count})
 }
 
+// NextChange says "Next Change"
+// in the language the app shows.
+func NextChange() string { return In(i18n.Locale()).NextChange() }
+
+// NextChange says "Next Change"
+// in the language of msgs.
+func (msgs Messages) NextChange() string {
+	return Catalog.Format(msgs.locale, "nextChange", nil)
+}
+
+// PreviousChange says "Previous Change"
+// in the language the app shows.
+func PreviousChange() string { return In(i18n.Locale()).PreviousChange() }
+
+// PreviousChange says "Previous Change"
+// in the language of msgs.
+func (msgs Messages) PreviousChange() string {
+	return Catalog.Format(msgs.locale, "previousChange", nil)
+}
+
+// ChangeOf says "{n} of {count}"
+// in the language the app shows.
+func ChangeOf(n int, count int) string { return In(i18n.Locale()).ChangeOf(n, count) }
+
+// ChangeOf says "{n} of {count}"
+// in the language of msgs.
+func (msgs Messages) ChangeOf(n int, count int) string {
+	return Catalog.Format(msgs.locale, "changeOf", map[string]any{"n": n, "count": count})
+}
+
+// ChangeCount says "{count, plural, one {# change} other {# changes}}"
+// in the language the app shows.
+func ChangeCount(count int) string { return In(i18n.Locale()).ChangeCount(count) }
+
+// ChangeCount says "{count, plural, one {# change} other {# changes}}"
+// in the language of msgs.
+func (msgs Messages) ChangeCount(count int) string {
+	return Catalog.Format(msgs.locale, "changeCount", map[string]any{"count": count})
+}
+
 // MarkViewed says "Mark as Viewed"
 // in the language the app shows.
 func MarkViewed() string { return In(i18n.Locale()).MarkViewed() }

@@ -168,6 +168,8 @@ func shortcuts() []keyBinding {
 		{shortcut("F"), loc.SearchHistory()},
 		{shortcut("↩"), loc.Commit()},
 		{shortcut("S"), loc.ShortcutSave()},
+		{"F7", loc.NextChange()},
+		{shiftKey("F7"), loc.PreviousChange()},
 		{shortcut("R"), loc.Refresh()},
 		{shortcut("O"), strings.TrimSuffix(loc.MenuOpenRepo(), "…")},
 		{shiftShortcut("O"), strings.TrimSuffix(loc.SshMenu(), "…")},

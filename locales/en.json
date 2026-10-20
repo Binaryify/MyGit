@@ -845,6 +845,27 @@
       }
     }
   },
+  "nextChange": "Next Change",
+  "previousChange": "Previous Change",
+  "changeOf": "{n} of {count}",
+  "@changeOf": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "changeCount": "{count, plural, one {# change} other {# changes}}",
+  "@changeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "markViewed": "Mark as Viewed",
   "markUnviewed": "Mark as Not Viewed",
   "imageBefore": "Before",
