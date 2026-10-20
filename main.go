@@ -17,6 +17,7 @@ import (
 
 	"mygit/internal/askpass"
 	"mygit/internal/git"
+	"mygit/internal/sysproxy"
 	loc "mygit/locales"
 )
 
@@ -36,6 +37,7 @@ func main() {
 		os.Exit(code)
 	}
 	mygo.App.SetName("MyGit")
+	sysproxy.Install() // downloads, the helpers' and the updates', through the system's proxy
 	loadSettings()
 	if !mygo.App.RequestSingleInstanceLock() {
 		return // the running MyGit opens it

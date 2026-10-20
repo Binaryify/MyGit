@@ -12,6 +12,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
+	"mygit/internal/sysproxy"
 	loc "mygit/locales"
 )
 
@@ -25,6 +26,7 @@ type settings struct {
 	SidebarW         float32  `json:"sidebarW"`
 	LogH             float32  `json:"logH"`
 	FilesW           float32  `json:"filesW"`
+	Proxy            string   `json:"proxy,omitempty"`   // the downloads', "" for the system's
 	Remotes          []string `json:"remotes,omitempty"` // repositories on other computers opened lately, host:dir
 	path             string
 }
@@ -40,6 +42,7 @@ func loadSettings() {
 	if data, err := os.ReadFile(prefs.path); err == nil {
 		_ = json.Unmarshal(data, prefs)
 	}
+	_ = sysproxy.Set(prefs.Proxy)
 }
 
 func (s *settings) save() {
@@ -105,6 +108,18 @@ func (a *app) settingsView(c *ui.Context) {
 			ui.Text(c, loc.DiffSection()).Bold().TextColor(t.TextMuted)
 			ui.Checkbox(c, &prefs.Unified, loc.DiffUnified())
 			ui.Checkbox(c, &prefs.IgnoreWhitespace, loc.IgnoreWhitespace())
+			ui.Text(c, loc.NetworkSection()).Bold().TextColor(t.TextMuted)
+			if ui.TextInput(c, &prefs.Proxy).Placeholder(loc.ProxyPlaceholder()).Label(loc.Proxy()).Changed() {
+				a.proxyErr = ""
+				if err := sysproxy.Set(prefs.Proxy); err != nil {
+					a.proxyErr = loc.ProxyInvalid()
+				}
+			}
+			if a.proxyErr != "" {
+				ui.Text(c, a.proxyErr).FontSize(11).TextColor(t.Danger)
+			} else {
+				ui.Text(c, loc.ProxyHint()).FontSize(11).TextColor(t.TextMuted).Wrap()
+			}
 			ui.Text(c, loc.Shortcuts()).Bold().TextColor(t.TextMuted)
 			ui.Column(c).Gap(6).Children(func() {
 				for _, k := range shortcuts() {

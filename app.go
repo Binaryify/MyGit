@@ -23,10 +23,11 @@ const logBatch = 2000
 // app is a repository's window: its history, its changes, and the diff of
 // what was chosen last.
 type app struct {
-	repo   *git.Repo
-	win    *mygo.Window
-	update func(func())  // runs a function on the main thread, the window's Update
-	online chan struct{} // a refresh reached the repository, for a watch to start again
+	repo     *git.Repo
+	win      *mygo.Window
+	update   func(func())  // runs a function on the main thread, the window's Update
+	online   chan struct{} // a refresh reached the repository, for a watch to start again
+	proxyErr string        // why the proxy written in the settings isn't one
 
 	// The history and its graph, a row per commit.
 	commits   []git.Commit
@@ -189,7 +190,7 @@ func (a *app) watch() {
 	}()
 }
 
-// watchRemote has the agent watch a tree on another computer. Once the
+// watchRemote has the helper watch a tree on another computer. Once the
 // connection ends it waits for a refresh to reach the computer again, as
 // the window is focused, and watches again.
 func (a *app) watchRemote(ctx context.Context) {

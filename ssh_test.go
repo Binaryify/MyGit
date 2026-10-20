@@ -11,8 +11,8 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"mygit/internal/agent"
 	"mygit/internal/git"
+	"mygit/internal/helper"
 )
 
 func TestParseLocation(t *testing.T) {
@@ -61,20 +61,20 @@ func TestConnectDialog(t *testing.T) {
 	t.Setenv("HOME", home)
 	os.MkdirAll(filepath.Join(home, ".ssh"), 0o755)
 	os.WriteFile(filepath.Join(home, ".ssh", "config"), []byte("Host box\n  HostName 10.0.0.2\nHost *\n  ServerAliveInterval 30\n"), 0o644)
-	folders := map[string]agent.Listing{
-		"":                {Dir: "/home/ada", Parent: "/home", Entries: []agent.Entry{{Name: "code"}, {Name: "notes"}}},
-		"/home/ada/code":  {Dir: "/home/ada/code", Parent: "/home/ada", Entries: []agent.Entry{{Name: "app", Repo: true}}},
+	folders := map[string]helper.Listing{
+		"":                {Dir: "/home/ada", Parent: "/home", Entries: []helper.Entry{{Name: "code"}, {Name: "notes"}}},
+		"/home/ada/code":  {Dir: "/home/ada/code", Parent: "/home/ada", Entries: []helper.Entry{{Name: "app", Repo: true}}},
 		"/home/ada/notes": {Dir: "/home/ada/notes", Parent: "/home/ada"},
 	}
 	folders["/home/ada"] = folders[""]
 	var listed []string
 	old := listFolder
-	listFolder = func(_ context.Context, host, dir string) (agent.Listing, error) {
+	listFolder = func(_ context.Context, host, dir string) (helper.Listing, error) {
 		listed = append(listed, host+":"+dir)
 		if l, ok := folders[dir]; ok {
 			return l, nil
 		}
-		return agent.Listing{}, errors.New(dir + ": no such folder")
+		return helper.Listing{}, errors.New(dir + ": no such folder")
 	}
 	defer func() { listFolder = old }()
 
@@ -130,14 +130,14 @@ func TestConnectDialog(t *testing.T) {
 	}
 }
 
-// agentRepo opens the repository in dir as on host, through an agent
+// helperRepo opens the repository in dir as on host, through a helper
 // over pipes.
-func agentRepo(t *testing.T, host, dir string) *git.Repo {
+func helperRepo(t *testing.T, host, dir string) *git.Repo {
 	t.Helper()
 	toServer, fromClient := io.Pipe()
 	toClient, fromServer := io.Pipe()
-	go func() { _ = agent.Serve(toServer, fromServer) }()
-	c, err := agent.NewClient(host, toClient, fromClient, nil)
+	go func() { _ = helper.Serve(toServer, fromServer) }()
+	c, err := helper.NewClient(host, toClient, fromClient, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,7 +152,7 @@ func agentRepo(t *testing.T, host, dir string) *git.Repo {
 // A repository on another computer says so in the toolbar, with its host,
 // and its history and changes show as a local one's.
 func TestRemoteRepository(t *testing.T) {
-	a := newApp(agentRepo(t, "box", testRepo(t).Dir))
+	a := newApp(helperRepo(t, "box", testRepo(t).Dir))
 	tt := &tester{a: a, queue: make(chan func(), 64)}
 	a.update = func(fn func()) { tt.queue <- fn }
 	tt.Tester = ui.NewTester(a.view, 1200, 800)
@@ -174,7 +174,7 @@ func TestWelcomeDialogsFit(t *testing.T) {
 		for name, plan := range map[string]func(w *welcome){
 			"连接": func(w *welcome) { w.ssh = connectPlan{open: true} },
 			"打开这个文件夹": func(w *welcome) {
-				w.ssh = connectPlan{open: true, connected: "box", listing: agent.Listing{Dir: "/home/ada", Entries: []agent.Entry{{Name: "app", Repo: true}}}}
+				w.ssh = connectPlan{open: true, connected: "box", listing: helper.Listing{Dir: "/home/ada", Entries: []helper.Entry{{Name: "app", Repo: true}}}}
 			},
 			"克隆": func(w *welcome) { w.clone = clonePlan{open: true, parent: "/home/ada"} },
 		} {
@@ -200,7 +200,7 @@ func TestWelcomeDialogsWidth(t *testing.T) {
 		want        float32
 	}{
 		{connectPlan{open: true, hosts: []string{"box"}}, "SSH 主机", "连接", 460},
-		{connectPlan{open: true, connected: "box", listing: agent.Listing{Dir: "/home/ada"}}, "换主机", "打开这个文件夹", 600},
+		{connectPlan{open: true, connected: "box", listing: helper.Listing{Dir: "/home/ada"}}, "换主机", "打开这个文件夹", 600},
 	} {
 		w := &welcome{ssh: tc.plan}
 		tt := ui.NewTester(w.view, 680, 720)
@@ -229,5 +229,36 @@ func TestOpenOverSSHFromAWindow(t *testing.T) {
 	tt.Frame()
 	if !tt.HasText("通过 SSH 打开…") || !tt.HasText(shiftShortcut("O")) {
 		t.Errorf("commands %q", tt.Texts())
+	}
+}
+
+// A repository owned by another user over there is offered to trust, and
+// trusted by its whole path there.
+func TestConnectTrust(t *testing.T) {
+	oldList, oldTrust := listFolder, trustRemote
+	defer func() { listFolder, trustRemote = oldList, oldTrust }()
+	listFolder = func(_ context.Context, host, dir string) (helper.Listing, error) {
+		return helper.Listing{Dir: "/home/ada/" + dir}, nil
+	}
+	var trusted string
+	trustRemote = func(_ context.Context, host, dir string) error {
+		trusted = host + ":" + dir
+		return errors.New("stop here")
+	}
+	queue := make(chan func(), 8)
+	w := &welcome{updFn: func(fn func()) { queue <- fn }}
+	w.ssh = connectPlan{open: true, connected: "box", listing: helper.Listing{Dir: "/home/ada"},
+		fail: "app is owned by another user", unsafe: &git.UnsafeError{Dir: "app", Host: "box"}}
+	tt := ui.NewTester(w.view, 680, 720)
+	if err := tt.Click("信任并打开"); err != nil {
+		t.Fatalf("%v; texts %q", err, tt.Texts())
+	}
+	tt.Frame()
+	for w.ssh.running {
+		(<-queue)()
+		tt.Frame()
+	}
+	if trusted != "box:/home/ada/app" || w.ssh.fail != "stop here" || w.ssh.unsafe != nil {
+		t.Errorf("trusted %q, fail %q, unsafe %v", trusted, w.ssh.fail, w.ssh.unsafe)
 	}
 }

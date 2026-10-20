@@ -15,7 +15,7 @@ import (
 	"testing"
 )
 
-// The agents are signed with the app's update key.
+// The helpers are signed with the app's update key.
 func TestPublicKeyIsTheApps(t *testing.T) {
 	b, err := os.ReadFile("../../mygo.json")
 	if err != nil {
@@ -38,7 +38,7 @@ func TestStoreDownloadsSigned(t *testing.T) {
 
 	var gz bytes.Buffer
 	zw := gzip.NewWriter(&gz)
-	zw.Write([]byte("#!agent"))
+	zw.Write([]byte("#!helper"))
 	zw.Close()
 	sig, err := Sign(gz.Bytes(), base64.StdEncoding.EncodeToString(priv))
 	if err != nil {
@@ -59,12 +59,12 @@ func TestStoreDownloadsSigned(t *testing.T) {
 	s := Store{Dir: t.TempDir(), BaseURL: srv.URL}
 	for range 2 { // the second time from where it's kept
 		bin, err := s.Binary(context.Background(), p)
-		if err != nil || string(bin) != "#!agent" {
+		if err != nil || string(bin) != "#!helper" {
 			t.Fatalf("binary = %q, %v", bin, err)
 		}
 	}
 	if hits != 2 {
-		t.Errorf("%d downloads, want the agent and its signature once", hits)
+		t.Errorf("%d downloads, want the helper and its signature once", hits)
 	}
 
 	// Another file under the signature isn't taken.
@@ -74,7 +74,7 @@ func TestStoreDownloadsSigned(t *testing.T) {
 		t.Errorf("err = %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(s.Dir, Asset(Platform{"linux", "amd64"}))); err == nil {
-		t.Error("an agent not signed was kept")
+		t.Error("a helper not signed was kept")
 	}
 }
 
@@ -97,10 +97,10 @@ func TestParseUname(t *testing.T) {
 }
 
 func TestRemotePath(t *testing.T) {
-	if got := remote(Platform{"windows", "amd64"}, ".mygit/agent-ab"); got != `.\.mygit\agent-ab\mygit-agent.exe` {
+	if got := remote(Platform{"windows", "amd64"}, ".mygit/helper-ab"); got != `.\.mygit\helper-ab\mygit-helper.exe` {
 		t.Error(got)
 	}
-	if got := remote(Platform{"linux", "amd64"}, ".mygit/agent-ab"); got != ".mygit/agent-ab/mygit-agent" {
+	if got := remote(Platform{"linux", "amd64"}, ".mygit/helper-ab"); got != ".mygit/helper-ab/mygit-helper" {
 		t.Error(got)
 	}
 }

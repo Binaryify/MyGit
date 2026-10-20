@@ -13,9 +13,9 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"mygit/internal/agent"
 	"mygit/internal/askpass"
 	"mygit/internal/git"
+	"mygit/internal/helper"
 	"mygit/internal/remote"
 	loc "mygit/locales"
 )
@@ -43,7 +43,7 @@ func parseLocation(s string) (host, dir string, ok bool) {
 	return host, dir, true
 }
 
-// hostConn is the agent started on a computer, shared by the windows of
+// hostConn is the helper started on a computer, shared by the windows of
 // its repositories, and started again when the connection ended.
 type hostConn struct {
 	mu       sync.Mutex
@@ -56,7 +56,7 @@ var (
 	hosts   = map[string]*hostConn{}
 )
 
-// connect is host's agent, started if it isn't running.
+// connect is host's helper, started if it isn't running.
 func connect(ctx context.Context, host string) (*remote.Conn, error) {
 	hostsMu.Lock()
 	h := hosts[host]
@@ -84,7 +84,7 @@ func connect(ctx context.Context, host string) (*remote.Conn, error) {
 	return c, nil
 }
 
-// closeHosts ends the agents, as the app quits.
+// closeHosts ends the helpers, as the app quits.
 func closeHosts() {
 	hostsMu.Lock()
 	defer hostsMu.Unlock()
@@ -98,10 +98,10 @@ func closeHosts() {
 func sshDialer() remote.SSH {
 	cache, _ := os.UserCacheDir()
 	store := remote.Store{
-		Dir:     filepath.Join(cache, "MyGit", "agent", mygo.App.Version()),
+		Dir:     filepath.Join(cache, "MyGit", "helper", mygo.App.Version()),
 		BaseURL: "https://github.com/Binaryify/MyGit/releases/download/v" + mygo.App.Version(),
 	}
-	if dir := os.Getenv("MYGIT_AGENT_DIR"); dir != "" { // agents built here, to try them
+	if dir := os.Getenv("MYGIT_HELPER_DIR"); dir != "" { // helpers built here, to try them
 		store.Dir = dir
 	}
 	return remote.SSH{
@@ -118,7 +118,7 @@ func sshDialer() remote.SSH {
 	}
 }
 
-// remoteHost runs git on another computer through its agent, starting it
+// remoteHost runs git on another computer through its helper, starting it
 // again when the connection ended. It is the git.Runner of repositories
 // there.
 type remoteHost struct{ host string }
@@ -133,7 +133,7 @@ func (h remoteHost) conn(ctx context.Context) (*remote.Conn, error) {
 
 // lost says the connection ended in the app's words.
 func (h remoteHost) lost(err error) error {
-	if errors.Is(err, agent.ErrClosed) {
+	if errors.Is(err, helper.ErrClosed) {
 		return errors.New(loc.ConnectionLost(h.host, err.Error()))
 	}
 	return err
@@ -189,7 +189,7 @@ func (h remoteHost) Watch(ctx context.Context, dir string, changed func()) error
 	return h.lost(c.Watch(ctx, dir, changed))
 }
 
-// openRemote opens a repository on another computer, starting its agent.
+// openRemote opens a repository on another computer, starting its helper.
 func openRemote(ctx context.Context, host, dir string) (*git.Repo, error) {
 	if _, err := connect(ctx, host); err != nil {
 		return nil, err

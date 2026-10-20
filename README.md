@@ -92,7 +92,7 @@ MyGit reads what `git` prints and lets `git` itself make every change, so a repo
 - **Conflicts** — a three-pane merge view, and continue, skip or abort a merge, rebase, cherry-pick or revert
 - **Stash, blame and remotes** — stash with untracked files, blame a file line by line, manage remotes, pull (fast-forward, rebase or merge), preview a push, force with lease
 - **Sign-ins** — when git needs a username, token or passphrase, the window asks
-- **Over SSH** — open a repository on another computer (`host:/path/to/repo`, Linux, macOS or Windows) with your ssh config and keys; MyGit runs a small agent there, in `~/.mygit`, and needs only git on it
+- **Over SSH** — open a repository on another computer (`host:/path/to/repo`, Linux, macOS or Windows) with your ssh config and keys; MyGit runs a small helper there, in `~/.mygit`, and needs only git on it
 - **Everywhere** — a window per repository, drag folders in, `mygit .` from a terminal, custom title bars, light and dark, English and 简体中文, signed auto-updates
 
 ## Install
@@ -150,7 +150,7 @@ The texts live in [`locales/`](locales): `en.json` is the source and `zh-Hans.js
 
 To release, describe the version in [`CHANGELOG.md`](CHANGELOG.md), whose section becomes the release notes, and push a tag such as `v0.2.0`: CI signs the updates with the `MYGO_UPDATER_PRIVATE_KEY` secret, builds the macOS disk image, the Windows installer and zip, and the Linux package, and publishes them in a release.
 
-Over SSH: a release also builds and signs the agent for six platforms (`mygit-agent-<os>-<arch>.gz`), which the app downloads and checks the first time it reaches a computer of each. To try local changes, `go run ./internal/tools/agents` builds them into `build/agents`; start the app with `MYGIT_AGENT_DIR=$PWD/build/agents`. `MYGIT_E2E_HOST=<host> MYGIT_AGENT_DIR=$PWD/build/agents go test ./internal/remote -run E2E -v` tests against a real computer.
+Over SSH: a release also builds and signs the helper for six platforms (`mygit-helper-<os>-<arch>.gz`), which the app downloads and checks the first time it reaches a computer of each. To try local changes, `go run ./internal/tools/helpers` builds them into `build/helpers`; start the app with `MYGIT_HELPER_DIR=$PWD/build/helpers`. `MYGIT_E2E_HOST=<host> MYGIT_HELPER_DIR=$PWD/build/helpers go test ./internal/remote -run E2E -v` tests against a real computer.
 
 Benchmarks: `MYGIT_BENCH_REPO=<repo> MYGIT_BENCH_COMMIT=<commit> go test -run '^$' -bench .`
 

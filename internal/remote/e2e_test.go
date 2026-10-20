@@ -10,17 +10,17 @@ import (
 	"mygit/internal/git"
 )
 
-// TestE2E reaches a real computer over SSH, with the agents built by
-// internal/tools/agents:
+// TestE2E reaches a real computer over SSH, with the helpers built by
+// internal/tools/helpers:
 //
-//	go run ./internal/tools/agents
-//	MYGIT_E2E_HOST=box MYGIT_AGENT_DIR=$PWD/build/agents go test ./internal/remote -run E2E -v
+//	go run ./internal/tools/helpers
+//	MYGIT_E2E_HOST=box MYGIT_HELPER_DIR=$PWD/build/helpers go test ./internal/remote -run E2E -v
 //
 // It works in ~/.mygit-e2e there and removes it.
 func TestE2E(t *testing.T) {
-	host, dir := os.Getenv("MYGIT_E2E_HOST"), os.Getenv("MYGIT_AGENT_DIR")
+	host, dir := os.Getenv("MYGIT_E2E_HOST"), os.Getenv("MYGIT_HELPER_DIR")
 	if host == "" || dir == "" {
-		t.Skip("MYGIT_E2E_HOST and MYGIT_AGENT_DIR not set")
+		t.Skip("MYGIT_E2E_HOST and MYGIT_HELPER_DIR not set")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
@@ -112,7 +112,7 @@ func TestE2E(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer c2.Close()
-	t.Logf("again, the agent there already: %v", time.Since(start))
+	t.Logf("again, the helper there already: %v", time.Since(start))
 	if !c2.Exists(ctx, work+"/hello world.txt") {
 		t.Error("the file isn't there")
 	}

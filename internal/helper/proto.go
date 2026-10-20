@@ -1,12 +1,12 @@
-// Package agent runs git for a window on another computer. The app starts
-// the agent there over SSH and they talk over its standard input and
+// Package helper runs git for a window on another computer. The app starts
+// the helper there over SSH and they talk over its standard input and
 // output: the app asks for git runs and file reads and writes, each a
-// call with an id, and the agent streams back what each prints and how it
+// call with an id, and the helper streams back what each prints and how it
 // ended, and hands the app git's prompts for a password or a passphrase.
 //
 // The wire is frames: a kind, the call's id and a length, then that many
 // bytes.
-package agent
+package helper
 
 import (
 	"encoding/binary"
@@ -16,9 +16,9 @@ import (
 	"sync"
 )
 
-// Magic is the line the agent starts its output with, after which frames
+// Magic is the line the helper starts its output with, after which frames
 // come: what a shell's startup files print before it is skipped.
-const Magic = "MYGIT-AGENT 1\n"
+const Magic = "MYGIT-HELPER 1\n"
 
 const (
 	// From the app.
@@ -27,7 +27,7 @@ const (
 	kCancel byte = 3 // stop a call
 	kAnswer byte = 4 // the answer of a prompt, JSON
 
-	// From the agent.
+	// From the helper.
 	kStdout byte = 10 // output of a call
 	kStderr byte = 11
 	kExit   byte = 12 // a call ended, JSON
@@ -119,7 +119,7 @@ func readFrame(r io.Reader) (kind byte, id uint32, data []byte, err error) {
 	kind, id = h[0], binary.BigEndian.Uint32(h[1:])
 	n := binary.BigEndian.Uint32(h[5:])
 	if n > maxFrame {
-		return 0, 0, nil, errors.New("agent: frame too big")
+		return 0, 0, nil, errors.New("helper: frame too big")
 	}
 	data = make([]byte, n)
 	_, err = io.ReadFull(r, data)

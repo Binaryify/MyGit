@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"mygit/internal/agent"
+	"mygit/internal/helper"
 )
 
 // repo makes a repository in a temporary folder.
@@ -32,16 +32,16 @@ func repo(t *testing.T) *Repo {
 	return r
 }
 
-// testRunner is Local, or an agent over pipes when the tests run again
+// testRunner is Local, or a helper over pipes when the tests run again
 // as another computer's would.
 func testRunner(t *testing.T) Runner {
-	if os.Getenv("MYGIT_TEST_AGENT") == "" {
+	if os.Getenv("MYGIT_TEST_HELPER") == "" {
 		return Local
 	}
 	toServer, fromClient := io.Pipe()
 	toClient, fromServer := io.Pipe()
-	go func() { _ = agent.Serve(toServer, fromServer) }()
-	c, err := agent.NewClient("box", toClient, fromClient, nil)
+	go func() { _ = helper.Serve(toServer, fromServer) }()
+	c, err := helper.NewClient("box", toClient, fromClient, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,10 +49,10 @@ func testRunner(t *testing.T) Runner {
 	return c
 }
 
-// TestOverAgent runs the tests again with git run by an agent, as for a
+// TestOverHelper runs the tests again with git run by a helper, as for a
 // repository on another computer.
-func TestOverAgent(t *testing.T) {
-	if os.Getenv("MYGIT_TEST_AGENT") != "" || testing.Short() {
+func TestOverHelper(t *testing.T) {
+	if os.Getenv("MYGIT_TEST_HELPER") != "" || testing.Short() {
 		t.Skip()
 	}
 	exe, err := os.Executable()
@@ -60,7 +60,7 @@ func TestOverAgent(t *testing.T) {
 		t.Fatal(err)
 	}
 	cmd := exec.Command(exe, "-test.run", "^Test[^O]", "-test.count=1")
-	cmd.Env = append(os.Environ(), "MYGIT_TEST_AGENT=1")
+	cmd.Env = append(os.Environ(), "MYGIT_TEST_HELPER=1")
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("%v\n%s", err, out)
 	}
@@ -460,5 +460,21 @@ func TestCloneInitRemotes(t *testing.T) {
 		if got := RepoName(url); got != want {
 			t.Errorf("RepoName(%q) = %q", url, got)
 		}
+	}
+}
+
+// Trusting a repository on another computer writes its path to git's
+// safe.directory there, the user's.
+func TestTrustOn(t *testing.T) {
+	r := repo(t)
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("GIT_CONFIG_GLOBAL", filepath.Join(home, ".gitconfig"))
+	if err := TrustOn(context.Background(), r.run, r.Dir); err != nil {
+		t.Fatal(err)
+	}
+	out, err := git(context.Background(), Local, r.Dir, "", nil, "config", "--global", "--get-all", "safe.directory")
+	if err != nil || !strings.Contains(out, filepath.ToSlash(r.Dir)) {
+		t.Errorf("safe.directory %q, %v", out, err)
 	}
 }

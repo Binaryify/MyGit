@@ -4052,11 +4052,11 @@ func (msgs Messages) SshTitle() string {
 	return Catalog.Format(msgs.locale, "sshTitle", nil)
 }
 
-// SshHint says "ssh connects as in a terminal, with your config and keys. MyGit runs a small agent there, kept in ~/.mygit, and then …"
+// SshHint says "ssh connects as in a terminal, with your config and keys. MyGit runs a small helper there, kept in ~/.mygit, and then…"
 // in the language the app shows.
 func SshHint() string { return In(i18n.Locale()).SshHint() }
 
-// SshHint says "ssh connects as in a terminal, with your config and keys. MyGit runs a small agent there, kept in ~/.mygit, and then …"
+// SshHint says "ssh connects as in a terminal, with your config and keys. MyGit runs a small helper there, kept in ~/.mygit, and then…"
 // in the language of msgs.
 func (msgs Messages) SshHint() string {
 	return Catalog.Format(msgs.locale, "sshHint", nil)
@@ -4244,4 +4244,54 @@ func RemoteBadge(host string, dir string) string { return In(i18n.Locale()).Remo
 // in the language of msgs.
 func (msgs Messages) RemoteBadge(host string, dir string) string {
 	return Catalog.Format(msgs.locale, "remoteBadge", map[string]any{"host": host, "dir": dir})
+}
+
+// NetworkSection says "Network proxy"
+// in the language the app shows.
+func NetworkSection() string { return In(i18n.Locale()).NetworkSection() }
+
+// NetworkSection says "Network proxy"
+// in the language of msgs.
+func (msgs Messages) NetworkSection() string {
+	return Catalog.Format(msgs.locale, "networkSection", nil)
+}
+
+// Proxy says "Proxy"
+// in the language the app shows.
+func Proxy() string { return In(i18n.Locale()).Proxy() }
+
+// Proxy says "Proxy"
+// in the language of msgs.
+func (msgs Messages) Proxy() string {
+	return Catalog.Format(msgs.locale, "proxy", nil)
+}
+
+// ProxyPlaceholder says "The system's, or http://127.0.0.1:7890, socks5://…"
+// in the language the app shows.
+func ProxyPlaceholder() string { return In(i18n.Locale()).ProxyPlaceholder() }
+
+// ProxyPlaceholder says "The system's, or http://127.0.0.1:7890, socks5://…"
+// in the language of msgs.
+func (msgs Messages) ProxyPlaceholder() string {
+	return Catalog.Format(msgs.locale, "proxyPlaceholder", nil)
+}
+
+// ProxyHint says "For downloading the SSH helpers and updates. Empty follows the system's proxy. git and ssh keep their own."
+// in the language the app shows.
+func ProxyHint() string { return In(i18n.Locale()).ProxyHint() }
+
+// ProxyHint says "For downloading the SSH helpers and updates. Empty follows the system's proxy. git and ssh keep their own."
+// in the language of msgs.
+func (msgs Messages) ProxyHint() string {
+	return Catalog.Format(msgs.locale, "proxyHint", nil)
+}
+
+// ProxyInvalid says "Write a proxy as http://host:port, https://… or socks5://…"
+// in the language the app shows.
+func ProxyInvalid() string { return In(i18n.Locale()).ProxyInvalid() }
+
+// ProxyInvalid says "Write a proxy as http://host:port, https://… or socks5://…"
+// in the language of msgs.
+func (msgs Messages) ProxyInvalid() string {
+	return Catalog.Format(msgs.locale, "proxyInvalid", nil)
 }

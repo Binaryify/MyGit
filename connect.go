@@ -9,8 +9,8 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"mygit/internal/agent"
 	"mygit/internal/git"
+	"mygit/internal/helper"
 	"mygit/internal/remote"
 	loc "mygit/locales"
 )
@@ -25,9 +25,11 @@ type connectPlan struct {
 	fail    string
 	cancel  context.CancelFunc
 
+	unsafe *git.UnsafeError // the repository that failed, owned by another user there, to trust
+
 	// Once connected: the host and the folder shown.
 	connected string
-	listing   agent.Listing
+	listing   helper.Listing
 	path      string // the folder's path as edited
 }
 
@@ -163,6 +165,14 @@ func (w *welcome) connectStatus(c *ui.Context, running string) {
 		})
 	case p.fail != "":
 		ui.Text(c, p.fail).TextColor(t.Danger).Wrap()
+		if p.unsafe != nil {
+			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+				ui.Text(c, loc.TrustHint()).FontSize(12).TextColor(t.TextMuted).Wrap().Grow(1).Basis(0)
+				if ui.PrimaryButton(c, loc.TrustOpen()).Tooltip(loc.TrustTooltip()).Clicked() {
+					w.trustAndOpen(*p.unsafe)
+				}
+			})
+		}
 	}
 }
 
@@ -227,7 +237,7 @@ func (w *welcome) stopConnect() {
 // done on the main thread, unless the dialog was closed meanwhile.
 func (w *welcome) task(fn func(ctx context.Context) error, done func()) {
 	ctx, cancel := context.WithCancel(context.Background())
-	w.ssh.running, w.ssh.fail, w.ssh.cancel = true, "", cancel
+	w.ssh.running, w.ssh.fail, w.ssh.unsafe, w.ssh.cancel = true, "", nil, cancel
 	go func() {
 		err := fn(ctx)
 		w.update(func() {
@@ -237,6 +247,9 @@ func (w *welcome) task(fn func(ctx context.Context) error, done func()) {
 			w.ssh.running = false
 			if err != nil {
 				w.ssh.fail = err.Error()
+				if u := (*git.UnsafeError)(nil); errors.As(err, &u) && u.Host != "" {
+					w.ssh.unsafe = u
+				}
 				return
 			}
 			done()
@@ -244,19 +257,19 @@ func (w *welcome) task(fn func(ctx context.Context) error, done func()) {
 	}()
 }
 
-// listFolder lists dir on host, starting its agent if it isn't running.
-var listFolder = func(ctx context.Context, host, dir string) (agent.Listing, error) {
+// listFolder lists dir on host, starting its helper if it isn't running.
+var listFolder = func(ctx context.Context, host, dir string) (helper.Listing, error) {
 	c, err := connect(ctx, host)
 	if err != nil {
-		return agent.Listing{}, err
+		return helper.Listing{}, err
 	}
 	return c.List(ctx, dir)
 }
 
-// connectHost starts the agent on host and lists dir there, the home
+// connectHost starts the helper on host and lists dir there, the home
 // folder for "" or when dir isn't there.
 func (w *welcome) connectHost(host, dir string) {
-	var l agent.Listing
+	var l helper.Listing
 	w.task(func(ctx context.Context) (err error) {
 		if l, err = listFolder(ctx, host, dir); err != nil && dir != "" && !errors.Is(err, context.Canceled) {
 			l, err = listFolder(ctx, host, "")
@@ -271,7 +284,7 @@ func (w *welcome) connectHost(host, dir string) {
 // browse shows dir of the computer connected to.
 func (w *welcome) browse(dir string) {
 	host := w.ssh.connected
-	var l agent.Listing
+	var l helper.Listing
 	w.task(func(ctx context.Context) (err error) {
 		l, err = listFolder(ctx, host, dir)
 		return err
@@ -293,8 +306,34 @@ func (w *welcome) openFolder(dir string) {
 	})
 }
 
+// trustAndOpen has git on the repository's computer trust it, as the
+// user said to, and opens it. Its path is made whole first, as git's
+// safe.directory takes it.
+func (w *welcome) trustAndOpen(u git.UnsafeError) {
+	var repo *git.Repo
+	w.task(func(ctx context.Context) error {
+		l, err := listFolder(ctx, u.Host, u.Dir)
+		if err != nil {
+			return err
+		}
+		if err := trustRemote(ctx, u.Host, l.Dir); err != nil {
+			return err
+		}
+		repo, err = openRemote(ctx, u.Host, l.Dir)
+		return err
+	}, func() {
+		w.ssh.open = false
+		open(repo)
+	})
+}
+
+// trustRemote lets git work in dir on host.
+var trustRemote = func(ctx context.Context, host, dir string) error {
+	return git.TrustOn(ctx, remoteHost{host}, dir)
+}
+
 // connect opens the repository dir is in on host, as one opened lately,
-// starting the agent there.
+// starting the helper there.
 func (w *welcome) connect(host, dir string) {
 	w.ssh = connectPlan{open: true, host: git.Location(host, dir)}
 	var repo *git.Repo

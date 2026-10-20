@@ -1,4 +1,4 @@
-package agent
+package helper
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 	"mygit/internal/askpass"
 )
 
-// server runs the app's calls on the agent's computer.
+// server runs the app's calls on the helper's computer.
 type server struct {
 	w     *wire
 	mu    sync.Mutex
@@ -194,7 +194,7 @@ func (s *server) do(ctx context.Context, id uint32, c *call, req Request) (err e
 		}
 		return json.NewEncoder(stdout).Encode(l), false
 	}
-	return errors.New("agent: unknown call " + req.Op), false
+	return errors.New("helper: unknown call " + req.Op), false
 }
 
 // watch calls changed, a little after files of the tree change, until ctx

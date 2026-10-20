@@ -1,4 +1,4 @@
-package agent
+package helper
 
 import (
 	"bufio"
@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-// Client calls an agent. It runs git and reaches files on the agent's
+// Client calls an helper. It runs git and reaches files on the helper's
 // computer for a repository there, as git.Runner.
 type Client struct {
 	host string
@@ -32,10 +32,10 @@ type pending struct {
 	exit           chan Exit
 }
 
-// ErrClosed says the connection to the agent ended.
+// ErrClosed says the connection to the helper ended.
 var ErrClosed = errors.New("the connection to the remote computer ended")
 
-// NewClient talks to an agent reading r and writing w, an agent on host.
+// NewClient talks to a helper reading r and writing w, a helper on host.
 // Ask answers git's prompts there, tagged with the folder git runs in; it
 // is called on a goroutine of its own.
 func NewClient(host string, r io.Reader, w io.Writer, ask func(tag, prompt string) (string, bool)) (*Client, error) {
@@ -48,7 +48,7 @@ func NewClient(host string, r io.Reader, w io.Writer, ask func(tag, prompt strin
 	return c, nil
 }
 
-// skipToMagic reads past what a shell may print before the agent starts.
+// skipToMagic reads past what a shell may print before the helper starts.
 func skipToMagic(r *bufio.Reader) error {
 	var seen []byte
 	for {
@@ -59,12 +59,12 @@ func skipToMagic(r *bufio.Reader) error {
 		seen = append(seen, line...)
 		if err != nil {
 			if msg := bytes.TrimSpace(seen); len(msg) > 0 {
-				return fmt.Errorf("the agent didn't start: %s", msg)
+				return fmt.Errorf("the helper didn't start: %s", msg)
 			}
-			return fmt.Errorf("the agent didn't start: %w", err)
+			return fmt.Errorf("the helper didn't start: %w", err)
 		}
 		if len(seen) > 64<<10 {
-			return errors.New("the agent didn't start")
+			return errors.New("the helper didn't start")
 		}
 	}
 }
@@ -90,7 +90,7 @@ func (c *Client) read(r io.Reader) {
 		case kExit:
 			var e Exit
 			if json.Unmarshal(data, &e) != nil {
-				e.Err = "agent: bad reply"
+				e.Err = "helper: bad reply"
 			}
 			c.mu.Lock()
 			p := c.calls[id]
@@ -203,7 +203,7 @@ func (c *Client) do(ctx context.Context, req Request, stdin io.Reader, stdout io
 	return e.error()
 }
 
-// Exec runs git on the agent's computer.
+// Exec runs git on the helper's computer.
 func (c *Client) Exec(ctx context.Context, dir string, env []string, stdin io.Reader, stdout, stderr io.Writer, args ...string) error {
 	e, err := c.call(ctx, Request{Op: "exec", Dir: dir, Args: args, Env: env, Stdin: stdin != nil}, stdin, stdout, stderr)
 	if err != nil {
@@ -231,7 +231,7 @@ func (c *Client) Exists(ctx context.Context, path string) bool {
 	return err == nil && e.Err == "" && !e.No
 }
 
-// Join joins with slashes, which the agent reads on every system, as git
+// Join joins with slashes, which the helper reads on every system, as git
 // prints paths on Windows too.
 func (c *Client) Join(dir, rel string) string { return path.Join(dir, rel) }
 
@@ -247,7 +247,7 @@ func (c *Client) Watch(ctx context.Context, dir string, changed func()) error {
 	}))
 }
 
-// List lists the folders in dir on the agent's computer, its home folder
+// List lists the folders in dir on the helper's computer, its home folder
 // for "".
 func (c *Client) List(ctx context.Context, dir string) (Listing, error) {
 	var b bytes.Buffer

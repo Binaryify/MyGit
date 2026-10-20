@@ -3,7 +3,7 @@ package main
 import (
 	"image/color"
 	"image/png"
-	"mygit/internal/agent"
+	"mygit/internal/helper"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -150,7 +150,7 @@ func TestDumpSSH(t *testing.T) {
 		tt.SetTitleBar(ui.TitleBar{Left: 80, Height: 28})
 	}
 
-	w := &welcome{ssh: connectPlan{open: true, connected: "devbox", listing: agent.Listing{Dir: "/home/mia", Parent: "/home", Entries: []agent.Entry{
+	w := &welcome{ssh: connectPlan{open: true, connected: "devbox", listing: helper.Listing{Dir: "/home/mia", Parent: "/home", Entries: []helper.Entry{
 		{Name: "api-gateway", Repo: true}, {Name: "dotfiles"}, {Name: "infra", Repo: true},
 		{Name: "notes"}, {Name: "orbit", Repo: true}, {Name: "scratch"}, {Name: "scripts"},
 	}}}}
@@ -162,7 +162,7 @@ func TestDumpSSH(t *testing.T) {
 		t.Logf("orbit's row at %v (×1.4)", r)
 	}
 
-	a := newApp(agentRepo(t, "devbox", orbitRepo(t)))
+	a := newApp(helperRepo(t, "devbox", orbitRepo(t)))
 	at := &tester{a: a, queue: make(chan func(), 64)}
 	a.update = func(fn func()) { at.queue <- fn }
 	at.Tester = ui.NewTester(a.view, 1120, 733)

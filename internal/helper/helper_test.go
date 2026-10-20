@@ -1,4 +1,4 @@
-package agent
+package helper
 
 import (
 	"bytes"
@@ -160,7 +160,7 @@ func TestAsk(t *testing.T) {
 	if os.Getenv("MYGIT_ASKPASS") != "" {
 		t.Skip()
 	}
-	exe := buildAgent(t)
+	exe := buildHelper(t)
 	cmd := exec.Command(exe, "serve")
 	in, _ := cmd.StdinPipe()
 	out, _ := cmd.StdoutPipe()
@@ -189,10 +189,10 @@ func TestAsk(t *testing.T) {
 	}
 }
 
-func buildAgent(t *testing.T) string {
+func buildHelper(t *testing.T) string {
 	t.Helper()
-	exe := filepath.Join(t.TempDir(), "mygit-agent")
-	if out, err := exec.Command("go", "build", "-o", exe, "mygit/cmd/mygit-agent").CombinedOutput(); err != nil {
+	exe := filepath.Join(t.TempDir(), "mygit-helper")
+	if out, err := exec.Command("go", "build", "-o", exe, "mygit/cmd/mygit-helper").CombinedOutput(); err != nil {
 		t.Fatal(string(out))
 	}
 	return exe
@@ -216,7 +216,7 @@ func TestList(t *testing.T) {
 	if !slices.Equal(l.Entries, want) || l.Parent == "" {
 		t.Errorf("listing %+v", l)
 	}
-	home, _ := os.Getwd() // the agent's folder, its home over SSH
+	home, _ := os.Getwd() // the helper's folder, its home over SSH
 	if l, err := c.List(context.Background(), ""); err != nil || l.Dir != filepath.ToSlash(home) {
 		t.Errorf("home: %+v %v", l, err)
 	}

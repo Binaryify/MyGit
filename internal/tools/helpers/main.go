@@ -1,11 +1,11 @@
-// Agents builds the agent for every platform MyGit reaches over SSH,
+// Helpers builds the helper for every platform MyGit reaches over SSH,
 // gzipped as a release publishes them, and signs each with the key of the
 // app's updates when MYGO_UPDATER_PRIVATE_KEY has it.
 //
-//	go run ./internal/tools/agents [-o dir]
+//	go run ./internal/tools/helpers [-o dir]
 //
-// The folder is where the app keeps the agents it downloads, so pointing
-// MYGIT_AGENT_DIR at it tries agents built here.
+// The folder is where the app keeps the helpers it downloads, so pointing
+// MYGIT_HELPER_DIR at it tries helpers built here.
 package main
 
 import (
@@ -28,20 +28,20 @@ var platforms = []remote.Platform{
 }
 
 func main() {
-	out := flag.String("o", "build/agents", "the folder to write them in")
+	out := flag.String("o", "build/helpers", "the folder to write them in")
 	flag.Parse()
 	key := os.Getenv("MYGO_UPDATER_PRIVATE_KEY")
 	if err := os.MkdirAll(*out, 0o755); err != nil {
 		log.Fatal(err)
 	}
-	tmp, err := os.MkdirTemp("", "mygit-agents")
+	tmp, err := os.MkdirTemp("", "mygit-helpers")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer os.RemoveAll(tmp)
 	for _, p := range platforms {
 		exe := filepath.Join(tmp, p.OS+"-"+p.Arch)
-		cmd := exec.Command("go", "build", "-trimpath", "-ldflags=-s -w", "-o", exe, "./cmd/mygit-agent")
+		cmd := exec.Command("go", "build", "-trimpath", "-ldflags=-s -w", "-o", exe, "./cmd/mygit-helper")
 		cmd.Env = append(os.Environ(), "GOOS="+p.OS, "GOARCH="+p.Arch, "CGO_ENABLED=0")
 		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 		if err := cmd.Run(); err != nil {

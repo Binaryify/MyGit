@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mygit/internal/agent"
+	"mygit/internal/helper"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,7 +16,7 @@ import (
 	"strings"
 )
 
-// SSH reaches computers with the system's ssh, so its config, keys, agent
+// SSH reaches computers with the system's ssh, so its config, keys, helper
 // and known hosts apply as in a terminal.
 type SSH struct {
 	Store Store
@@ -28,21 +28,21 @@ type SSH struct {
 	Ask func(host, dir, prompt string) (string, bool)
 }
 
-// Conn is an agent started on a computer.
+// Conn is a helper started on a computer.
 type Conn struct {
-	*agent.Client
+	*helper.Client
 	Platform Platform
 	cmd      *exec.Cmd
 	stdin    io.Closer
 }
 
-// Close ends the connection and the agent.
+// Close ends the connection and the helper.
 func (c *Conn) Close() error {
 	c.stdin.Close()
 	return c.cmd.Wait()
 }
 
-// Dial starts the agent on host, sending it there first if it isn't yet.
+// Dial starts the helper on host, sending it there first if it isn't yet.
 // Known is host's platform as last reached, which saves asking.
 func (s SSH) Dial(ctx context.Context, host string, known Platform) (*Conn, error) {
 	p := known
@@ -57,7 +57,7 @@ func (s SSH) Dial(ctx context.Context, host string, known Platform) (*Conn, erro
 		return nil, err
 	}
 	sum := sha256.Sum256(bin)
-	dir := ".mygit/agent-" + hex.EncodeToString(sum[:6]) // in the home folder, where ssh starts
+	dir := ".mygit/helper-" + hex.EncodeToString(sum[:6]) // in the home folder, where ssh starts
 	c, err := s.start(ctx, host, p, dir)
 	if err == nil {
 		return c, nil
@@ -73,16 +73,16 @@ func (s SSH) Dial(ctx context.Context, host string, known Platform) (*Conn, erro
 	return s.start(ctx, host, p, dir)
 }
 
-// remote is the agent's path in dir for p's shell, which on Windows is
+// remote is the helper's path in dir for p's shell, which on Windows is
 // cmd or PowerShell: backslashes, which both read, and .\ to run it.
 func remote(p Platform, dir string) string {
 	if p.OS == "windows" {
-		return `.\` + strings.ReplaceAll(dir, "/", `\`) + `\mygit-agent.exe`
+		return `.\` + strings.ReplaceAll(dir, "/", `\`) + `\mygit-helper.exe`
 	}
-	return dir + "/mygit-agent"
+	return dir + "/mygit-helper"
 }
 
-// start runs the agent in dir, waiting for it until ctx ends; it then
+// start runs the helper in dir, waiting for it until ctx ends; it then
 // runs until closed.
 func (s SSH) start(ctx context.Context, host string, p Platform, dir string) (*Conn, error) {
 	cmd := s.command(host, remote(p, dir)+" serve")
@@ -108,7 +108,7 @@ func (s SSH) start(ctx context.Context, host string, p Platform, dir string) (*C
 		case <-started:
 		}
 	}()
-	c, err := agent.NewClient(host, out, in, func(dir, prompt string) (string, bool) {
+	c, err := helper.NewClient(host, out, in, func(dir, prompt string) (string, bool) {
 		if s.Ask == nil {
 			return "", false
 		}
@@ -223,7 +223,7 @@ func parseUname(out string) (Platform, bool) {
 	return p, (p.OS == "linux" || p.OS == "darwin") && p.Arch != ""
 }
 
-// upload puts the agent in dir on host: through ssh's input on Unix,
+// upload puts the helper in dir on host: through ssh's input on Unix,
 // and with scp on Windows, whose shells can't write their input to a file.
 func (s SSH) upload(ctx context.Context, host string, p Platform, dir string, bin []byte) error {
 	if p.OS != "windows" {
@@ -232,7 +232,7 @@ func (s SSH) upload(ctx context.Context, host string, p Platform, dir string, bi
 		return err
 	}
 	_, _ = s.output(ctx, host, "mkdir "+strings.ReplaceAll(dir, "/", `\`), nil) // there already, it says so
-	tmp, err := os.CreateTemp("", "mygit-agent-*.exe")
+	tmp, err := os.CreateTemp("", "mygit-helper-*.exe")
 	if err != nil {
 		return err
 	}
@@ -245,7 +245,7 @@ func (s SSH) upload(ctx context.Context, host string, p Platform, dir string, bi
 		return err
 	}
 	// A path with a drive, C:/…, would read as a host: scp runs where it is.
-	cmd := s.cmd(host, "scp", "-q", "--", filepath.Base(tmp.Name()), host+":"+dir+"/mygit-agent.exe")
+	cmd := s.cmd(host, "scp", "-q", "--", filepath.Base(tmp.Name()), host+":"+dir+"/mygit-helper.exe")
 	cmd.Dir = filepath.Dir(tmp.Name())
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr

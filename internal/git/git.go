@@ -43,7 +43,10 @@ type Repo struct {
 
 // UnsafeError says git won't work in a repository another user owns, as
 // on a shared or external disk, until it is trusted (safe.directory).
-type UnsafeError struct{ Dir string }
+type UnsafeError struct {
+	Dir  string
+	Host string // the computer it is on, "" for this one
+}
 
 func (e *UnsafeError) Error() string {
 	return loc.GitUnsafe(e.Dir)
@@ -56,7 +59,7 @@ func Open(dir string) (*Repo, error) { return OpenOn(Local, dir) }
 func OpenOn(run Runner, dir string) (*Repo, error) {
 	out, err := git(context.Background(), run, dir, "", nil, "rev-parse", "--show-toplevel", "--absolute-git-dir")
 	if err != nil && strings.Contains(err.Error(), "dubious ownership") {
-		return nil, &UnsafeError{Dir: dir}
+		return nil, &UnsafeError{Dir: dir, Host: run.Host()}
 	}
 	lines := strings.Split(strings.TrimSpace(out), "\n")
 	if err != nil || len(lines) != 2 {
@@ -68,6 +71,16 @@ func OpenOn(run Runner, dir string) (*Repo, error) {
 // Trust lets git work in a repository another user owns, for the user,
 // as git's own message says to.
 func Trust(dir string) error { return Local.trust(dir) }
+
+// TrustOn lets git work in a repository another user owns on the computer
+// of run, for the user there; dir is its whole path there.
+func TrustOn(ctx context.Context, run Runner, dir string) error {
+	if run.Host() == "" {
+		return Local.trust(dir)
+	}
+	_, err := git(ctx, run, dir, "", nil, "config", "--global", "--add", "safe.directory", strings.ReplaceAll(dir, `\`, "/"))
+	return err
+}
 
 // Host is the computer the repository is on, "" for this one.
 func (r *Repo) Host() string { return r.run.Host() }
