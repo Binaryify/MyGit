@@ -5,9 +5,9 @@
 <h1 align="center">MyGit</h1>
 
 <p align="center">
-  <b>快速查看 agent 的改动</b><br>
-  在终端里敲 <code>mygit .</code> 就能打开，文件一改马上能看到，没问题的一键暂存，不用等 IDE 启动。<br>
-  轻量、快速、现代的 git 客户端：JetBrains 的分支图和历史操作，VS Code 的暂存方式，内存却只要它们的零头。
+  <b>轻快的原生 Git 客户端，远程仓库也能用</b><br>
+  JetBrains 那样的分支图和历史，VS Code 那样的暂存，安装包不到 7 MB，秒开；本地和 SSH 远程的仓库都能用。<br>
+  也为 agent 写代码而做：终端里 <code>mygit .</code> 打开，agent 改到哪你看到哪，没问题的暂存，其余的交回给它。
 </p>
 
 <p align="center">

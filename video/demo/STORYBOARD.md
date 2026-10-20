@@ -1,7 +1,7 @@
 ---
 format: 1920x1080 (index.html), 1080x1920 (../vertical/index.html)
 duration: 48s
-message: "Check your agent's changes, fast: open it from a terminal, stage what's right, hand the rest back"
+message: "A light, fast, native git client, for remote repositories too: open it from a terminal, stage what's right, hand the rest back"
 arc: Brand → Agent at work → See → Keep → Send back → The IDE you know → Over SSH → Proof → Outro
 audience: developers who code with agents and find IDEs heavy
 mode: collaborative
@@ -14,7 +14,7 @@ own camera ([x, y, zoom] of the screenshots).
 
 ## Frame 1: Brand open (0-3.6s)
 - blueprint: logo-assemble-lockup
-- caption: "Check your agent's changes, fast" / "快速查看 agent 的改动"
+- caption: "A light, fast, native git client, for remote repositories too" / "轻快的原生 Git 客户端，远程仓库也能用"
 
 ## Frame 2: The agent at work (3.5-11s)
 - blueprint: device-surface-showcase (rules: cursor-ui-demo)

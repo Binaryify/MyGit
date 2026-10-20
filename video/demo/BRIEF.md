@@ -2,7 +2,7 @@
 workflow: general-video
 flow: automation
 storyboard: yes
-message: "MyGit: check your agent's changes, fast — mygit . opens it at once; stage what's right, hand the rest back; in a fraction of the memory"
+message: "MyGit: a light, fast, native git client, for remote repositories too — mygit . opens it at once; stage what's right, hand the rest back; in a fraction of the memory"
 destination: github-readme, site, douyin
 aspect: 1920x1080 (video/demo), 1080x1920 (video/vertical)
 language: en, zh-Hans

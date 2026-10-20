@@ -5,7 +5,7 @@
 
 const TEXT = {
   en: {
-    tagline: "Check your agent's changes, fast",
+    tagline: "A light, fast, native git client,\nfor remote repositories too",
     s2: "It edits,\nyou see it.\nNo refresh",
     s3: "One click,\nside by side",
     s4: "Stage what's right,\nin one click",
@@ -22,7 +22,7 @@ const TEXT = {
     reply: "After the third try this gives up without a word…",
   },
   zh: {
-    tagline: "快速查看 agent 的改动",
+    tagline: "轻快的原生 Git 客户端，\n远程仓库也能用",
     s2: "不用刷新，\n它改到哪你看到哪",
     s3: "看：点一下，\n就是并排 diff",
     s4: "留：没问题的，\n一键暂存",

@@ -1256,11 +1256,11 @@ func (msgs Messages) InitDialog() string {
 	return Catalog.Format(msgs.locale, "initDialog", nil)
 }
 
-// Tagline says "Check your agent's changes, fast"
+// Tagline says "A light, fast, native git client, for remote repositories too"
 // in the language the app shows.
 func Tagline() string { return In(i18n.Locale()).Tagline() }
 
-// Tagline says "Check your agent's changes, fast"
+// Tagline says "A light, fast, native git client, for remote repositories too"
 // in the language of msgs.
 func (msgs Messages) Tagline() string {
 	return Catalog.Format(msgs.locale, "tagline", nil)
@@ -3122,11 +3122,11 @@ func (msgs Messages) About() string {
 	return Catalog.Format(msgs.locale, "about", nil)
 }
 
-// AboutDetail says "Check your agent's changes, fast: the changes to stage and commit, their diffs, and the history with its graph."
+// AboutDetail says "A light, fast, native git client, for remote repositories too: the changes to stage and commit, their diffs, and the …"
 // in the language the app shows.
 func AboutDetail() string { return In(i18n.Locale()).AboutDetail() }
 
-// AboutDetail says "Check your agent's changes, fast: the changes to stage and commit, their diffs, and the history with its graph."
+// AboutDetail says "A light, fast, native git client, for remote repositories too: the changes to stage and commit, their diffs, and the …"
 // in the language of msgs.
 func (msgs Messages) AboutDetail() string {
 	return Catalog.Format(msgs.locale, "aboutDetail", nil)

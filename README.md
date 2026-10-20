@@ -5,9 +5,9 @@
 <h1 align="center">MyGit</h1>
 
 <p align="center">
-  <b>Check your agent's changes, fast</b><br>
-  <code>mygit .</code> in a terminal opens it in a moment, and it refreshes as the agent works; stage what's right and commit, without waiting for an IDE.<br>
-  A light, fast, modern git client: JetBrains' commit graph and history tools, VS Code's way of staging, in a fraction of the memory.
+  <b>A light, fast, native git client, for remote repositories too</b><br>
+  JetBrains' commit graph and history, VS Code's way of staging, under 7 MB and open in a moment; for repositories on this computer or over SSH.<br>
+  Made for coding with agents too: <code>mygit .</code> refreshes as the agent works, so you check its changes, stage what's right and hand the rest back.
 </p>
 
 <p align="center">
