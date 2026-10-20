@@ -200,7 +200,7 @@ html[lang="zh-CN"] .hero h1 { line-height: 1.18; letter-spacing: 0; font-size: c
 .cta { display: flex; justify-content: center; gap: 12px; margin-top: 36px; flex-wrap: wrap; }
 .platforms { margin: 18px 0 0; color: var(--faint); font-size: 13px; }
 
-.hero-stage { position: relative; margin-top: 72px; perspective: 1800px; }
+.hero-stage { position: relative; margin-top: 72px; }
 .hero-glow {
   position: absolute;
   inset: 6% 10% auto;
@@ -215,9 +215,6 @@ html[lang="zh-CN"] .hero h1 { line-height: 1.18; letter-spacing: 0; font-size: c
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .03));
   box-shadow: 0 50px 120px -40px rgba(0, 0, 0, .9);
-  transform: rotateX(var(--tilt, 0deg));
-  transform-origin: center top;
-  will-change: transform;
 }
 .hero-shot img { border-radius: 15px; }
 
@@ -466,7 +463,6 @@ kbd {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .reveal { opacity: 1; transform: none; }
   .fill { width: var(--w); }
-  .hero-shot { transform: none; }
 }
 
 /* ---------- Why: the three steps ---------- */

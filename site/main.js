@@ -1,5 +1,5 @@
-// MyGit's site: its two languages, the hero shot settling as the page
-// scrolls, the cards' pointer light, the demo's play button, and reveals.
+// MyGit's site: its two languages, the nav's rule as the page scrolls,
+// the cards' pointer light, the demo's play button, and reveals.
 
 const zh = {
   "nav.demo": "演示",
@@ -140,20 +140,12 @@ function setLang(next) {
 document.querySelectorAll(".lang button").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.lang)));
 setLang(preferredLang());
 
-// The nav gains its rule once the page moves, and the hero shot starts
-// tilted back and lies flat as it comes up the window.
+// The nav gains its rule once the page moves.
 const nav = document.querySelector(".nav");
-const shot = document.querySelector(".hero-shot");
-const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
 function onScroll() {
   nav.classList.toggle("scrolled", window.scrollY > 8);
-  if (still) return;
-  const top = shot.getBoundingClientRect().top;
-  const t = Math.max(0, Math.min(1, (top - window.innerHeight * 0.15) / (window.innerHeight * 0.6)));
-  shot.style.setProperty("--tilt", `${(t * 14).toFixed(2)}deg`);
 }
 window.addEventListener("scroll", onScroll, { passive: true });
-window.addEventListener("resize", onScroll);
 onScroll();
 
 // The light under the pointer on each card.
