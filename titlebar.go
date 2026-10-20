@@ -41,6 +41,15 @@ func titleBar(c *ui.Context) ui.Element {
 		Gap(8).AlignItems(ui.Center).DragWindow()
 }
 
+// shiftShortcut writes a key with the command modifier and shift the way
+// the platform does: ⇧⌘O on macOS, Ctrl+Shift+O elsewhere.
+func shiftShortcut(key string) string {
+	if runtime.GOOS == "darwin" {
+		return "⇧⌘" + key
+	}
+	return "Ctrl+Shift+" + key
+}
+
 // shortcut writes a key with the command modifier the way the platform
 // does: ⌘F on macOS, Ctrl+F elsewhere.
 func shortcut(key string) string {

@@ -188,6 +188,7 @@ func appMenu() *mygo.Menu {
 		{Role: mygo.RoleAppMenu},
 		{Label: loc.MenuFile(), Submenu: []*mygo.MenuItem{
 			{Label: loc.MenuOpenRepo(), Accelerator: "CmdOrCtrl+O", Click: func(*mygo.MenuItem, *mygo.Window) { go pickAndOpen() }},
+			{Label: loc.SshMenu(), Accelerator: "CmdOrCtrl+Shift+O", Click: func(*mygo.MenuItem, *mygo.Window) { openSSH() }},
 			{Role: mygo.RoleOpenRecent, Label: loc.MenuRecent()},
 			mygo.Separator(),
 			{Label: loc.MenuInstallCLI(), Click: func(*mygo.MenuItem, *mygo.Window) { go installLauncher() }},

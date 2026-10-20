@@ -231,6 +231,7 @@ func (a *app) openCommands() {
 	add(true, loc.OpenRepoInEditor(), "", func() { a.openInEditor(a.repo.Dir, 0) })
 	add(a.local(), loc.ShowInFolder(), "", func() { mygo.Shell.ShowItemInFolder(a.repo.Dir) })
 	add(true, loc.MenuOpenRepo(), shortcut("O"), showWelcome)
+	add(true, loc.SshMenu(), shiftShortcut("O"), openSSH)
 	add(true, loc.MenuInstallCLI(), "", func() { go installLauncher() })
 	add(true, loc.MenuUninstallCLI(), "", func() { go uninstallLauncher() })
 	add(true, loc.SettingsMenu(), "", func() { a.settingsOpen = true })

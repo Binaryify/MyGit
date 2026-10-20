@@ -124,6 +124,9 @@ func (a *app) repoMenu(m *ui.Menu) {
 	if m.Item(loc.MenuOpenRepo()).Chosen() {
 		showWelcome()
 	}
+	if m.Item(loc.SshMenu()).Chosen() {
+		openSSH()
+	}
 	if recent := recentRepos(); len(recent) > 0 || len(prefs.Remotes) > 0 {
 		m.Submenu(loc.MenuRecent(), func(m *ui.Menu) {
 			for _, l := range prefs.Remotes {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"runtime"
 	"slices"
 	"strings"
 
@@ -72,6 +73,9 @@ func (a *app) view(c *ui.Context) {
 	c.OnShortcut(ui.Cmd, ui.KeyR, a.refresh)
 	c.OnShortcut(ui.Cmd, ui.KeyP, a.openFiles)
 	c.OnShortcut(ui.Cmd, ui.KeyK, a.openCommands)
+	if runtime.GOOS != "darwin" { // the menu bar's on macOS, which other systems' windows don't have
+		c.OnShortcut(ui.Cmd|ui.Shift, ui.KeyO, openSSH)
+	}
 }
 
 // remoteBadge says the repository is on another computer, and which.

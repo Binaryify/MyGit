@@ -140,6 +140,7 @@ func shortcuts() []keyBinding {
 		{shortcut("S"), loc.ShortcutSave()},
 		{shortcut("R"), loc.Refresh()},
 		{shortcut("O"), strings.TrimSuffix(loc.MenuOpenRepo(), "…")},
+		{shiftShortcut("O"), strings.TrimSuffix(loc.SshMenu(), "…")},
 		{loc.ShortcutSpace(), loc.ShortcutStage()},
 		{loc.ShortcutDelete(), loc.ShortcutDiscard()},
 		{shortcut(loc.ShortcutClick()), loc.ShortcutCompare()},

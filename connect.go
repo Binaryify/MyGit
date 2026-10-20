@@ -173,6 +173,18 @@ func dialogWidth(c *ui.Context, width float32) float32 {
 	return min(width, w-c.Theme().Space(20))
 }
 
+// openSSH shows the welcome window with its dialog to open a repository
+// over SSH, from a repository's window or the menu bar.
+func openSSH() {
+	showWelcome()
+	w := welcomeWin
+	w.win.Update(func() {
+		if !w.ssh.open {
+			w.ssh = newConnectPlan()
+		}
+	})
+}
+
 // newConnectPlan opens the dialog with the hosts of ~/.ssh/config.
 func newConnectPlan() connectPlan {
 	home, _ := os.UserHomeDir()

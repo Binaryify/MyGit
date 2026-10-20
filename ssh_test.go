@@ -212,3 +212,22 @@ func TestWelcomeDialogsWidth(t *testing.T) {
 		}
 	}
 }
+
+// A repository's window opens another over SSH from its menu and the
+// commands.
+func TestOpenOverSSHFromAWindow(t *testing.T) {
+	tt := newTester(t)
+	if err := tt.Click("仓库"); err != nil {
+		t.Fatalf("%v; texts %q", err, tt.Texts())
+	}
+	tt.Frame()
+	if !slices.Contains(tt.Menu(), "通过 SSH 打开…") {
+		t.Errorf("menu %q", tt.Menu())
+	}
+	tt.CloseMenu()
+	tt.a.openCommands()
+	tt.Frame()
+	if !tt.HasText("通过 SSH 打开…") || !tt.HasText(shiftShortcut("O")) {
+		t.Errorf("commands %q", tt.Texts())
+	}
+}
