@@ -7,7 +7,7 @@ destination: github-readme, site, douyin
 aspect: 1920x1080 (video/demo), 1080x1920 (video/vertical)
 language: en, zh-Hans
 audience: developers who use git daily and find IDE-based git clients heavy
-length: 42s
+length: 48s
 angle: feature walkthrough
 ---
 
@@ -23,6 +23,8 @@ Chinese for README.zh-CN.md — with the app's UI and the captions in each langu
 - Real app screenshots of a demo repository (orbit), in English and Chinese, taken for this film:
   the history with its graph, a commit's diff, staging lines and editing in the diff, the branch
   search popover, the three-pane conflict view, and the welcome window.
+- The app rendered headless (visual_test.go, TestDumpSSH) for the SSH beat: devbox's folders and
+  orbit's window on it, at the screenshots' size and with their window chrome.
 
 ## Customizations
 

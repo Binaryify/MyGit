@@ -12,6 +12,8 @@ const TEXT = {
     s5: "Copy the rest\nback to the agent",
     s6: "Opens at once.\nNo IDE needed",
     s6sub: "JetBrains' graph and history, VS Code's staging",
+    s9: "Repos on other\nmachines, too",
+    s9sub: "Over SSH, to Linux, macOS or Windows. Only git needed there",
     s7: "Fast, in a fraction of the memory",
     read: "to read 20,000 commits and lay out the graph",
     open: "to open a commit with a 20 MB patch",
@@ -27,6 +29,8 @@ const TEXT = {
     s5: "退：其余的，\n一键交回 agent",
     s6: "终端一句命令，\n秒开，不用等 IDE",
     s6sub: "JetBrains 的分支图和历史，VS Code 的暂存方式",
+    s9: "其他机器上的仓库，\nSSH 直接打开",
+    s9sub: "Linux、macOS、Windows 都行，对方只要装了 git",
     s7: "快，内存还只要零头",
     read: "读完 2 万个提交并布局分支图",
     open: "打开一个 20 MB 补丁的提交",
@@ -48,6 +52,8 @@ const AT = {
   stagedHead: [14, 327],
   menu: { en: [1295, 28], zh: [1333, 28] },
   copy: { en: [1327, 66], zh: [1374, 66] },
+  openOrbit: { en: [1146, 533], zh: [1152, 533] },
+  badge: [222, 27],
 };
 
 function film(cam, register) {
@@ -97,8 +103,8 @@ function film(cam, register) {
     const tl = gsap.timeline({ paused: true });
 
     // Background: the glows breathe and drift the whole film.
-    tl.fromTo("#glow-a", { scale: 1, x: 0 }, { scale: 1.12, x: -80, duration: 21, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0);
-    tl.fromTo("#glow-b", { scale: 1.05, y: 0 }, { scale: 0.92, y: -60, duration: 21, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0);
+    tl.fromTo("#glow-a", { scale: 1, x: 0 }, { scale: 1.12, x: -80, duration: 24, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0);
+    tl.fromTo("#glow-b", { scale: 1.05, y: 0 }, { scale: 0.92, y: -60, duration: 24, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0);
 
     // 1 · logo-assemble-lockup: the body blooms, the branches draw down
     // and meet, the merge pops, the words arrive.
@@ -184,11 +190,27 @@ function film(cam, register) {
     tl.set("#shot", place(...cam.merged), 32.6);
     view(tl, cam.mergedNear, 32.7, 1.1);
     tl.to("#cap6", { opacity: 0, duration: 0.3 }, 33.7);
-    tl.to("#app", { opacity: 0, scale: 0.96, duration: 0.4, ease: "power2.in" }, 33.7);
+
+    // 6b · Over SSH: devbox's folders, orbit among its repositories, opened
+    // in a window that says where it is.
+    capIn(tl, "#cap9", 34.1);
+    swap(tl, "#shot-merged", "#shot-folders", 33.9, 0.3);
+    tl.set("#shot", place(...cam.agent), 33.9);
+    view(tl, cam.folders, 34.4, 1.0);
+    tl.set("#cursor", { x: 900, y: 860 }, 35.0);
+    tl.to("#cursor", { opacity: 1, duration: 0.2 }, 35.1);
+    clickAt(tl, AT.openOrbit[lang], 36.1, 0.8);
+    swap(tl, "#shot-folders", "#shot-remote", 36.25, 0.3);
+    tl.to("#cursor", { opacity: 0, duration: 0.2 }, 36.4);
+    view(tl, cam.agent, 36.3, 0.7);
+    view(tl, cam.badge, 37.2, 0.9);
+    flash(tl, AT.badge, 160, 38.0);
+    tl.to("#cap9", { opacity: 0, duration: 0.3 }, 39.4);
+    tl.to("#app", { opacity: 0, scale: 0.96, duration: 0.4, ease: "power2.in" }, 39.5);
 
     // 7 · dataviz-countup with stat-bars-and-fills: the bars grow and their
     // numbers count up.
-    tl.fromTo("#s7 > *", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out", stagger: 0.08 }, 34.1);
+    tl.fromTo("#s7 > *", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out", stagger: 0.08 }, 40.1);
     const speed = { read: 0, open: 0 };
     tl.fromTo(speed, { read: 0, open: 0 }, {
       read: 0.13, open: 0.24, duration: 1.2, ease: "power2.out",
@@ -196,10 +218,10 @@ function film(cam, register) {
         document.getElementById("v-read").textContent = speed.read.toFixed(2);
         document.getElementById("v-open").textContent = speed.open.toFixed(2);
       },
-    }, 34.4);
+    }, 40.4);
     const bars = [["#fill-me", "#v-me", 109], ["#fill-code", "#v-code", 1000], ["#fill-idea", "#v-idea", 2300]];
     const count = { me: 0, code: 0, idea: 0 };
-    bars.forEach(([fill, , mb]) => tl.fromTo(fill, { scaleX: 0 }, { scaleX: mb / 2300, duration: 1.5, ease: "power2.out" }, 34.5));
+    bars.forEach(([fill, , mb]) => tl.fromTo(fill, { scaleX: 0 }, { scaleX: mb / 2300, duration: 1.5, ease: "power2.out" }, 40.5));
     tl.fromTo(count, { me: 0, code: 0, idea: 0 }, {
       me: 109, code: 1000, idea: 2300, duration: 1.5, ease: "power2.out",
       onUpdate: () => {
@@ -207,15 +229,15 @@ function film(cam, register) {
         document.getElementById("v-code").textContent = Math.round(count.code).toLocaleString("en");
         document.getElementById("v-idea").textContent = Math.round(count.idea).toLocaleString("en");
       },
-    }, 34.5);
-    tl.to("#s7", { opacity: 0, duration: 0.35 }, 37.65);
+    }, 40.5);
+    tl.to("#s7", { opacity: 0, duration: 0.35 }, 43.65);
 
     // 8 · The end card: the logo settles, the words, the chips, the address.
-    tl.fromTo("#end-mark", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.7, ease: "back.out(1.8)" }, 38.1);
-    tl.fromTo("#s8 .name", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 38.4);
-    tl.fromTo("#s8 .tag", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 38.7);
-    tl.fromTo(".chip", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out", stagger: 0.09 }, 39.0);
-    tl.fromTo(".url", { opacity: 0 }, { opacity: 1, duration: 0.6 }, 39.6);
+    tl.fromTo("#end-mark", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.7, ease: "back.out(1.8)" }, 44.1);
+    tl.fromTo("#s8 .name", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 44.4);
+    tl.fromTo("#s8 .tag", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 44.7);
+    tl.fromTo(".chip", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out", stagger: 0.09 }, 45);
+    tl.fromTo(".url", { opacity: 0 }, { opacity: 1, duration: 0.6 }, 45.6);
 
     register(tl);
   }

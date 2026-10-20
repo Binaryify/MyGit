@@ -130,23 +130,29 @@ func TestConnectDialog(t *testing.T) {
 	}
 }
 
-// A repository on another computer says so in the toolbar, with its host,
-// and its history and changes show as a local one's.
-func TestRemoteRepository(t *testing.T) {
-	local := testRepo(t)
+// agentRepo opens the repository in dir as on host, through an agent
+// over pipes.
+func agentRepo(t *testing.T, host, dir string) *git.Repo {
+	t.Helper()
 	toServer, fromClient := io.Pipe()
 	toClient, fromServer := io.Pipe()
 	go func() { _ = agent.Serve(toServer, fromServer) }()
-	c, err := agent.NewClient("box", toClient, fromClient, nil)
+	c, err := agent.NewClient(host, toClient, fromClient, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer fromClient.Close()
-	repo, err := git.OpenOn(c, local.Dir)
+	t.Cleanup(func() { fromClient.Close() })
+	repo, err := git.OpenOn(c, dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	a := newApp(repo)
+	return repo
+}
+
+// A repository on another computer says so in the toolbar, with its host,
+// and its history and changes show as a local one's.
+func TestRemoteRepository(t *testing.T) {
+	a := newApp(agentRepo(t, "box", testRepo(t).Dir))
 	tt := &tester{a: a, queue: make(chan func(), 64)}
 	a.update = func(fn func()) { tt.queue <- fn }
 	tt.Tester = ui.NewTester(a.view, 1200, 800)
