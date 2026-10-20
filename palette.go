@@ -234,6 +234,6 @@ func (a *app) openCommands() {
 	add(true, loc.SshMenu(), shiftShortcut("O"), openSSH)
 	add(true, loc.MenuInstallCLI(), "", func() { go installLauncher() })
 	add(true, loc.MenuUninstallCLI(), "", func() { go uninstallLauncher() })
-	add(true, loc.SettingsMenu(), "", func() { a.settingsOpen = true })
+	add(true, loc.SettingsMenu(), "", func() { a.settings.open = true })
 	a.openPalette(loc.PaletteCommands(), items)
 }

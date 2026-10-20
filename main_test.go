@@ -794,3 +794,38 @@ func TestChooseAfterAChangeIsGone(t *testing.T) {
 		t.Fatalf("a.txt not shown: %+v", tt.a.detail)
 	}
 }
+
+// What a branch's menu in the branches' popover does closes the popover:
+// switching, as the rest.
+func TestBranchMenuClosesPopover(t *testing.T) {
+	tt := newTester(t)
+	// The popover's first local branch, under its heading: "feature" is
+	// in the history too.
+	firstBranch := func() {
+		t.Helper()
+		r, ok := tt.Find(loc.BranchesLocal())
+		if !ok {
+			t.Fatalf("texts %q", tt.Texts())
+		}
+		tt.ClickAt(r.X+30, r.Y+r.H+16)
+		tt.Frame()
+	}
+	tt.click(t, "分支")
+	firstBranch()
+	if err := tt.ChooseMenuItem(loc.BranchSwitch()); err != nil {
+		t.Fatalf("%v; menu %q", err, tt.Menu())
+	}
+	tt.settle()
+	if tt.a.branchesOpen || tt.a.status.Branch != "feature" {
+		t.Fatalf("open %v, branch %q", tt.a.branchesOpen, tt.a.status.Branch)
+	}
+	tt.click(t, "分支")
+	firstBranch()
+	if err := tt.ChooseMenuItem(loc.BranchHistory()); err != nil {
+		t.Fatalf("%v; menu %q", err, tt.Menu())
+	}
+	tt.settle()
+	if tt.a.branchesOpen || tt.a.scope.Ref == "" {
+		t.Errorf("open %v, scope %+v", tt.a.branchesOpen, tt.a.scope)
+	}
+}

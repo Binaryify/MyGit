@@ -23,12 +23,11 @@ const logBatch = 2000
 // app is a repository's window: its history, its changes, and the diff of
 // what was chosen last.
 type app struct {
-	repo     *git.Repo
-	win      *mygo.Window
-	update   func(func())  // runs a function on the main thread, the window's Update
-	online   chan struct{} // a refresh reached the repository, for a watch to start again
-	proxyErr string        // why the proxy written in the settings isn't one
-	ws       *workspace    // the workspace it is one of, nil in a window of its own
+	repo   *git.Repo
+	win    *mygo.Window
+	update func(func())  // runs a function on the main thread, the window's Update
+	online chan struct{} // a refresh reached the repository, for a watch to start again
+	ws     *workspace    // the workspace it is one of, nil in a window of its own
 
 	// The history and its graph, a row per commit.
 	commits   []git.Commit
@@ -81,7 +80,7 @@ type app struct {
 	push         pushPlan
 	cred         credPrompt
 	remotes2     remotesPlan // the remotes dialog
-	settingsOpen bool
+	settings     settingsDialog
 	palette      palette   // ⌘P's files and ⌘K's commands
 	comments     []comment // the review's, to copy as Markdown
 	composer     composer

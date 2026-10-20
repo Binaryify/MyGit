@@ -71,13 +71,24 @@ func editorChoices() []string {
 	return []string{loc.EditorSystem(), "code", "cursor", "zed", "subl", "idea", loc.EditorOther()}
 }
 
-func (a *app) settingsView(c *ui.Context) {
-	if !a.settingsOpen {
+// settingsDialog is the settings, open or not, in a repository's window
+// or the welcome window.
+type settingsDialog struct {
+	open     bool
+	proxyErr string // why the proxy written isn't one
+}
+
+func (a *app) settingsView(c *ui.Context) { a.settings.view(c, true, a.reloadDiff) }
+
+// view shows the settings while they are open, the shortcuts too in a
+// repository's window, and saves them as they close, then calls closed.
+func (d *settingsDialog) view(c *ui.Context, withShortcuts bool, closed func()) {
+	if !d.open {
 		return
 	}
 	t := c.Theme()
-	if ui.Modal(c, &a.settingsOpen, func() {
-		ui.Column(c).Gap(12).Width(440).Children(func() {
+	if ui.Modal(c, &d.open, func() {
+		ui.Column(c).Gap(12).Width(dialogWidth(c, 440)).Children(func() {
 			ui.Text(c, loc.Settings()).Bold().FontSize(15)
 			ui.Text(c, loc.ExternalEditor()).Bold().TextColor(t.TextMuted)
 			choices := editorChoices()
@@ -110,34 +121,38 @@ func (a *app) settingsView(c *ui.Context) {
 			ui.Checkbox(c, &prefs.IgnoreWhitespace, loc.IgnoreWhitespace())
 			ui.Text(c, loc.NetworkSection()).Bold().TextColor(t.TextMuted)
 			if ui.TextInput(c, &prefs.Proxy).Placeholder(loc.ProxyPlaceholder()).Label(loc.Proxy()).Changed() {
-				a.proxyErr = ""
+				d.proxyErr = ""
 				if err := sysproxy.Set(prefs.Proxy); err != nil {
-					a.proxyErr = loc.ProxyInvalid()
+					d.proxyErr = loc.ProxyInvalid()
 				}
 			}
-			if a.proxyErr != "" {
-				ui.Text(c, a.proxyErr).FontSize(11).TextColor(t.Danger)
+			if d.proxyErr != "" {
+				ui.Text(c, d.proxyErr).FontSize(11).TextColor(t.Danger)
 			} else {
 				ui.Text(c, loc.ProxyHint()).FontSize(11).TextColor(t.TextMuted).Wrap()
 			}
-			ui.Text(c, loc.Shortcuts()).Bold().TextColor(t.TextMuted)
-			ui.Column(c).Gap(6).Children(func() {
-				for _, k := range shortcuts() {
-					ui.Row(c.Key(k.keys)).Gap(12).Children(func() {
-						ui.Text(c, k.keys).Font("monospace").FontSize(12).Width(96)
-						ui.Text(c, k.does).FontSize(12).TextColor(t.TextMuted).Grow(1).Basis(0)
-					})
-				}
-			})
+			if withShortcuts {
+				ui.Text(c, loc.Shortcuts()).Bold().TextColor(t.TextMuted)
+				ui.Column(c).Gap(6).Children(func() {
+					for _, k := range shortcuts() {
+						ui.Row(c.Key(k.keys)).Gap(12).Children(func() {
+							ui.Text(c, k.keys).Font("monospace").FontSize(12).Width(96)
+							ui.Text(c, k.does).FontSize(12).TextColor(t.TextMuted).Grow(1).Basis(0)
+						})
+					}
+				})
+			}
 			ui.Row(c).Justify(ui.End).Children(func() {
 				if ui.PrimaryButton(c, loc.Done()).Clicked() {
-					a.settingsOpen = false
+					d.open = false
 				}
 			})
 		})
-	}).Dismissed() || !a.settingsOpen {
+	}).Dismissed() || !d.open {
 		prefs.save()
-		a.reloadDiff()
+		if closed != nil {
+			closed()
+		}
 	}
 }
 
@@ -156,6 +171,7 @@ func shortcuts() []keyBinding {
 		{shortcut("R"), loc.Refresh()},
 		{shortcut("O"), strings.TrimSuffix(loc.MenuOpenRepo(), "…")},
 		{shiftShortcut("O"), strings.TrimSuffix(loc.SshMenu(), "…")},
+		{shortcut(","), strings.TrimSuffix(loc.SettingsMenu(), "…")},
 		{loc.ShortcutSpace(), loc.ShortcutStage()},
 		{loc.ShortcutDelete(), loc.ShortcutDiscard()},
 		{shortcut(loc.ShortcutClick()), loc.ShortcutCompare()},

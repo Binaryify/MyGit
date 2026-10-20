@@ -152,7 +152,7 @@ func (a *app) repoMenu(m *ui.Menu) {
 	}
 	m.Separator()
 	if m.Item(loc.SettingsMenu()).Chosen() {
-		a.settingsOpen = true
+		a.settings.open = true
 	}
 	if mygo.Updater.Enabled() && m.Item(loc.UpdateCheck()).Chosen() {
 		checkUpdate(func(msg string) { a.notice = msg })

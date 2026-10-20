@@ -1163,5 +1163,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "updateLater": "Later",
+  "checkUpdatesMenu": "Check for Updates…",
+  "menuApp": "MyGit"
 }

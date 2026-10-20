@@ -4315,3 +4315,33 @@ func OpSync() string { return In(i18n.Locale()).OpSync() }
 func (msgs Messages) OpSync() string {
 	return Catalog.Format(msgs.locale, "opSync", nil)
 }
+
+// UpdateLater says "Later"
+// in the language the app shows.
+func UpdateLater() string { return In(i18n.Locale()).UpdateLater() }
+
+// UpdateLater says "Later"
+// in the language of msgs.
+func (msgs Messages) UpdateLater() string {
+	return Catalog.Format(msgs.locale, "updateLater", nil)
+}
+
+// CheckUpdatesMenu says "Check for Updates…"
+// in the language the app shows.
+func CheckUpdatesMenu() string { return In(i18n.Locale()).CheckUpdatesMenu() }
+
+// CheckUpdatesMenu says "Check for Updates…"
+// in the language of msgs.
+func (msgs Messages) CheckUpdatesMenu() string {
+	return Catalog.Format(msgs.locale, "checkUpdatesMenu", nil)
+}
+
+// MenuApp says "MyGit"
+// in the language the app shows.
+func MenuApp() string { return In(i18n.Locale()).MenuApp() }
+
+// MenuApp says "MyGit"
+// in the language of msgs.
+func (msgs Messages) MenuApp() string {
+	return Catalog.Format(msgs.locale, "menuApp", nil)
+}

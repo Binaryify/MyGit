@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"path"
-	"runtime"
 	"slices"
 	"strings"
 
@@ -79,8 +78,9 @@ func (a *app) view(c *ui.Context) {
 	c.OnShortcut(ui.Cmd, ui.KeyR, a.refresh)
 	c.OnShortcut(ui.Cmd, ui.KeyP, a.openFiles)
 	c.OnShortcut(ui.Cmd, ui.KeyK, a.openCommands)
-	if runtime.GOOS != "darwin" { // the menu bar's on macOS, which other systems' windows don't have
+	if !menuBar { // the menu bar's on macOS, which other systems' windows don't have
 		c.OnShortcut(ui.Cmd|ui.Shift, ui.KeyO, openSSH)
+		c.OnShortcut(ui.Cmd, ui.KeyComma, func() { a.settings.open = true })
 	}
 }
 
@@ -199,7 +199,12 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 	}
 	// A fixed height, so the header doesn't move as its button comes and
 	// goes; the button stays while git runs, doing nothing then.
-	ui.Row(c).Height(32).Padding(4, 8, 0, 10).Gap(6).AlignItems(ui.Center).Children(func() {
+	head := ui.Row(c).Height(32).Padding(4, 8, 0, 10).Gap(6).AlignItems(ui.Center)
+	if !staged && (fill || len(a.staged) > 0) {
+		// A line between the staged changes above and these.
+		head.BorderWidth(1, 0, 0, 0).BorderColor(t.Border)
+	}
+	head.Children(func() {
 		ui.Text(c, title).Bold().TextColor(t.TextMuted)
 		ui.Badge(c, fmt.Sprint(len(changes)))
 		ui.Box(c).Grow(1)

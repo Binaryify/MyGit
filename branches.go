@@ -55,44 +55,54 @@ func (a *app) promptView(c *ui.Context) {
 // branchItems are what a local branch's menu does with it.
 func (a *app) branchItems(m *ui.Menu, b string) {
 	cur := a.status.Branch
-	if b != cur && m.Item(loc.BranchSwitch()).Chosen() {
+	if b != cur && a.chose(m.Item(loc.BranchSwitch())) {
 		a.switchTo(b)
 	}
 	if b != cur {
 		a.mergeItems(m, b)
 	}
-	if m.Item(loc.BranchNewFrom()).Chosen() {
+	if a.chose(m.Item(loc.BranchNewFrom())) {
 		a.newBranch(b)
 	}
-	if m.Item(loc.BranchHistory()).Chosen() {
+	if a.chose(m.Item(loc.BranchHistory())) {
 		a.setScope(git.Scope{Ref: b})
 	}
 	m.Separator()
-	if m.Item(loc.RenameMenu()).Chosen() {
+	if a.chose(m.Item(loc.RenameMenu())) {
 		a.ask1(loc.BranchRenameTitle(b), loc.Rename(), b, func(to string) {
 			a.run(loc.OpRenameBranch(), func(ctx context.Context) error { return a.repo.RenameBranch(ctx, b, to) }, nil)
 		})
 	}
-	if b != cur && m.Item(loc.Delete()).Chosen() {
+	if b != cur && a.chose(m.Item(loc.Delete())) {
 		a.deleteBranch(b)
 	}
 }
 
 // remoteItems are what a remote branch's menu does with it.
 func (a *app) remoteItems(m *ui.Menu, rb string) {
-	if m.Item(loc.BranchCheckoutLocal()).Chosen() {
+	if a.chose(m.Item(loc.BranchCheckoutLocal())) {
 		a.run(loc.OpCheckout(rb), func(ctx context.Context) error { return a.repo.CheckoutRemote(ctx, rb) }, nil)
 	}
 	a.mergeItems(m, rb)
-	if m.Item(loc.BranchNewFrom()).Chosen() {
+	if a.chose(m.Item(loc.BranchNewFrom())) {
 		a.newBranch(rb)
 	}
 	m.Separator()
-	if m.Item(loc.BranchDeleteRemote()).Chosen() {
+	if a.chose(m.Item(loc.BranchDeleteRemote())) {
 		a.ask(loc.BranchDeleteRemoteTitle(rb), loc.BranchDeleteRemoteMessage(), loc.Delete(), func() {
 			a.run(loc.OpDeleteRemoteBranch(), func(ctx context.Context) error { return a.repo.DeleteRemoteBranch(ctx, rb) }, nil)
 		})
 	}
+}
+
+// chose reports the item chosen, closing the branches' popover then, as
+// whatever its branches' menus do is done with it.
+func (a *app) chose(it *ui.MenuItem) bool {
+	if !it.Chosen() {
+		return false
+	}
+	a.branchesOpen = false
+	return true
 }
 
 func (a *app) switchTo(b string) {
@@ -192,13 +202,13 @@ func (a *app) mergeItems(m *ui.Menu, rev string) {
 	if cur == "" {
 		cur = "HEAD"
 	}
-	if m.Item(loc.CompareWith(cur)).Chosen() {
+	if a.chose(m.Item(loc.CompareWith(cur))) {
 		a.showCompare(loc.CompareTitle(cur, shortRev(rev)), "HEAD", rev)
 	}
-	if m.Item(loc.MergeInto(cur)).Chosen() {
+	if a.chose(m.Item(loc.MergeInto(cur))) {
 		a.run(loc.OpMerge(shortRev(rev)), func(ctx context.Context) error { return a.repo.Merge(ctx, rev) }, nil)
 	}
-	if m.Item(loc.RebaseOnto(cur)).Chosen() {
+	if a.chose(m.Item(loc.RebaseOnto(cur))) {
 		a.run(loc.OpRebaseOnto(shortRev(rev)), func(ctx context.Context) error { return a.repo.Rebase(ctx, rev) }, nil)
 	}
 }

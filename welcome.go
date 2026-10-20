@@ -33,6 +33,7 @@ type welcome struct {
 	// dragging says folders are dragged over the window, which the drop
 	// zone shows.
 	dragging bool
+	settings settingsDialog
 	updFn    func(func()) // runs on the main thread: the window's Update, or the tests'
 }
 
@@ -75,6 +76,21 @@ func closeWelcome() {
 	}
 }
 
+// appMenu is the app's menu of the welcome window, as macOS' menu bar has
+// it.
+func (w *welcome) appMenu(m *ui.Menu) {
+	if mygo.Updater.Enabled() && m.Item(loc.CheckUpdatesMenu()).Chosen() {
+		checkUpdateAsked()
+	}
+	if m.Item(loc.SettingsMenu()).Chosen() {
+		w.settings.open = true
+	}
+	m.Separator()
+	if m.Item(loc.About()).Chosen() {
+		go about()
+	}
+}
+
 // recentRepos are the repositories opened lately that are still there.
 func recentRepos() []string {
 	var dirs []string
@@ -90,16 +106,28 @@ func (w *welcome) view(c *ui.Context) {
 	defer w.cloneView(c)
 	defer w.connectView(c)
 	defer w.cred.view(c)
+	defer w.settings.view(c, false, nil)
 	// Folders dropped anywhere open; the drop zone lights up for them,
 	// with no hint over the window as well.
 	root := ui.Column(c).Fill()
 	root.Children(func() {
-		titleBar(c) // nothing in it but room to drag the window by
+		// Room to drag the window by, and, with no menu bar, the app's menu
+		// there: checking for updates, the settings and the version.
+		titleBar(c).Children(func() {
+			if !menuBar {
+				ui.Box(c).Grow(1)
+				iconMenu(c, "more", loc.MenuApp(), w.appMenu)
+			}
+		})
+		updateBar(c, func(msg string) { w.errMsg = msg }) // with no repository open, update here
 		w.dragging = root.FileDragOver()
 		w.body(c)
 	})
 	if paths := root.DroppedFiles(); len(paths) > 0 {
 		w.open(dropTarget(paths[0]))
+	}
+	if !menuBar { // the menu bar's on macOS
+		c.OnShortcut(ui.Cmd, ui.KeyComma, func() { w.settings.open = true })
 	}
 }
 

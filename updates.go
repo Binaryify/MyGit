@@ -101,6 +101,9 @@ func redrawAll() {
 	for _, a := range apps {
 		a.win.Invalidate()
 	}
+	for _, ws := range workspaces {
+		ws.win.Invalidate()
+	}
 	if welcomeWin != nil {
 		welcomeWin.win.Invalidate()
 	}
@@ -108,6 +111,12 @@ func redrawAll() {
 
 // updateBar offers the newer version, under a repository's title bar.
 func (a *app) updateBar(c *ui.Context) {
+	updateBar(c, func(msg string) { a.errMsg = msg })
+}
+
+// updateBar offers the newer version, under a window's title bar, saying
+// with failed why it couldn't be installed.
+func updateBar(c *ui.Context, failed func(string)) {
 	up := updates.available
 	if up == nil {
 		return
@@ -121,9 +130,50 @@ func (a *app) updateBar(c *ui.Context) {
 			return
 		}
 		if ui.PrimaryButton(c, loc.UpdateInstall()).Clicked() {
-			installUpdate(func(msg string) { a.errMsg = msg })
+			installUpdate(failed)
 		}
 	})
+}
+
+// checkUpdateAsked checks for a newer version as the menu asks, saying in
+// a dialog what it found, and offering to install it.
+func checkUpdateAsked() {
+	if !mygo.Updater.Enabled() || updates.installing {
+		return
+	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		up, err := mygo.Updater.Check(ctx)
+		mygo.RunOnMain(func() {
+			if err == nil {
+				updates.available = up
+			}
+			redrawAll()
+		})
+		switch {
+		case err != nil:
+			message(loc.UpdateCheck(), loc.UpdateCheckFailed())
+		case up == nil:
+			message(loc.UpdateCheck(), loc.UpdateLatest(mygo.App.Version()))
+		default:
+			r, err := mygo.Dialog.Message(mygo.MessageOptions{
+				Title:   loc.UpdateCheck(),
+				Message: loc.UpdateAvailable(up.Version),
+				Buttons: []string{loc.UpdateInstall(), loc.UpdateLater()},
+			})
+			if err == nil && r.Button == 0 {
+				mygo.RunOnMain(func() {
+					installUpdate(func(msg string) { go message(loc.UpdateCheck(), msg) })
+				})
+			}
+		}
+	}()
+}
+
+// message tells something in a dialog. It waits: call it on a goroutine.
+func message(title, text string) {
+	_, _ = mygo.Dialog.Message(mygo.MessageOptions{Title: title, Message: text})
 }
 
 // about tells the version. The dialog waits: call it on a goroutine.

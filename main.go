@@ -197,7 +197,22 @@ func pickAndOpen() {
 
 func appMenu() *mygo.Menu {
 	return mygo.NewMenu([]*mygo.MenuItem{
-		{Role: mygo.RoleAppMenu},
+		// macOS' app menu, with checking for updates and the settings, which
+		// a user who hasn't opened a repository reaches there.
+		{Role: mygo.RoleAppMenu, Submenu: []*mygo.MenuItem{
+			{Role: mygo.RoleAbout},
+			{Label: loc.CheckUpdatesMenu(), Hidden: !mygo.Updater.Enabled(), Click: func(*mygo.MenuItem, *mygo.Window) { checkUpdateAsked() }},
+			mygo.Separator(),
+			{Label: loc.SettingsMenu(), Accelerator: "CmdOrCtrl+,", Click: func(_ *mygo.MenuItem, w *mygo.Window) { openSettings(w) }},
+			mygo.Separator(),
+			{Role: mygo.RoleServices},
+			mygo.Separator(),
+			{Role: mygo.RoleHide},
+			{Role: mygo.RoleHideOthers},
+			{Role: mygo.RoleUnhide},
+			mygo.Separator(),
+			{Role: mygo.RoleQuit},
+		}},
 		{Label: loc.MenuFile(), Submenu: []*mygo.MenuItem{
 			{Label: loc.MenuOpenRepo(), Accelerator: "CmdOrCtrl+O", Click: func(*mygo.MenuItem, *mygo.Window) { go pickAndOpen() }},
 			{Label: loc.SshMenu(), Accelerator: "CmdOrCtrl+Shift+O", Click: func(*mygo.MenuItem, *mygo.Window) { openSSH() }},
@@ -211,6 +226,24 @@ func appMenu() *mygo.Menu {
 		{Role: mygo.RoleEditMenu, Label: loc.MenuEdit()},
 		{Role: mygo.RoleWindowMenu, Label: loc.MenuWindow()},
 	})
+}
+
+// openSettings opens the settings in the window w, a repository's, or the
+// welcome window when no repository's window is in front.
+func openSettings(w *mygo.Window) {
+	for _, a := range allApps() {
+		if a.win == w && w != nil {
+			if a.ws != nil {
+				a = a.ws.apps[a.ws.active]
+			}
+			a.settings.open = true
+			w.Invalidate()
+			return
+		}
+	}
+	showWelcome()
+	welcomeWin.settings.open = true
+	welcomeWin.win.Invalidate()
 }
 
 // exists tells whether there is a file or a folder at p.

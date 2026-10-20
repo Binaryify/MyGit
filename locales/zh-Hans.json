@@ -425,5 +425,8 @@
   "proxyHint": "用于下载 SSH 的辅助程序和应用更新；留空跟随系统代理。不影响 git 和 ssh 自己的网络设置。",
   "proxyInvalid": "请写成 http://主机:端口、https://… 或 socks5://…",
   "syncChanges": "同步更改 {counts}",
-  "opSync": "同步"
+  "opSync": "同步",
+  "updateLater": "以后再说",
+  "checkUpdatesMenu": "检查更新…",
+  "menuApp": "MyGit"
 }

@@ -41,6 +41,10 @@ func titleBar(c *ui.Context) ui.Element {
 		Gap(8).AlignItems(ui.Center).DragWindow()
 }
 
+// menuBar tells whether the app has a menu bar, macOS', where its menus
+// are; other systems' windows carry them.
+var menuBar = runtime.GOOS == "darwin"
+
 // shiftShortcut writes a key with the command modifier and shift the way
 // the platform does: ⇧⌘O on macOS, Ctrl+Shift+O elsewhere.
 func shiftShortcut(key string) string {
