@@ -30,7 +30,10 @@ type welcome struct {
 	cred   credPrompt
 	clone  clonePlan
 	ssh    connectPlan
-	updFn  func(func()) // runs on the main thread: the window's Update, or the tests'
+	// dragging says folders are dragged over the window, which the drop
+	// zone shows.
+	dragging bool
+	updFn    func(func()) // runs on the main thread: the window's Update, or the tests'
 }
 
 // update runs fn on the main thread.
@@ -87,13 +90,13 @@ func (w *welcome) view(c *ui.Context) {
 	defer w.cloneView(c)
 	defer w.connectView(c)
 	defer w.cred.view(c)
+	// Folders dropped anywhere open; the drop zone lights up for them,
+	// with no hint over the window as well.
 	root := ui.Column(c).Fill()
 	root.Children(func() {
 		titleBar(c) // nothing in it but room to drag the window by
+		w.dragging = root.FileDragOver()
 		w.body(c)
-		if root.FileDragOver() {
-			dropHint(c)
-		}
 	})
 	if paths := root.DroppedFiles(); len(paths) > 0 {
 		w.open(dropTarget(paths[0]))
@@ -156,7 +159,10 @@ func (w *welcome) dropZone(c *ui.Context) {
 	t := c.Theme()
 	zone := ui.ButtonBase(c).Column().Height(150).Center().Gap(6).Radius(14).Border(1.5, t.Border).
 		BorderStyle(ui.BorderDashed).Cursor(ui.CursorPointer).Label(loc.DropZoneLabel())
-	if zone.FileDragOver() {
+	// Lit as folders are dragged over the window, which takes the drop:
+	// asking the zone itself would make it the drop's target, and it would
+	// take nothing then.
+	if w.dragging {
 		zone.Border(2, t.Accent).Background(t.Selection)
 	} else if zone.Hovered() {
 		zone.Background(t.SurfaceHover)
