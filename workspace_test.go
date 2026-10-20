@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -186,5 +187,64 @@ func TestFindReposOnHost(t *testing.T) {
 	}
 	if slices.Contains(listed, "/srv/web/node_modules") {
 		t.Error("looked in node_modules")
+	}
+}
+
+// A workspace folder that is a repository too: the repositories cloned in
+// folders it ignores join it, its submodules and those it doesn't ignore
+// don't, and only the folders git ignores are looked in.
+func TestIgnoredRepos(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "meta")
+	gitInit(t, root, "Start the meta repository", "")
+	os.WriteFile(filepath.Join(root, ".gitignore"), []byte("repos/\ntools/cli/\nnode_modules/\ndist/\n"), 0o644)
+	gitInit(t, filepath.Join(root, "repos", "api"), "Start the api", "")
+	gitInit(t, filepath.Join(root, "repos", "web"), "Start the web", "")
+	gitInit(t, filepath.Join(root, "tools", "cli"), "Start the cli", "")
+	gitInit(t, filepath.Join(root, "node_modules", "dep"), "A dependency", "")
+	gitInit(t, filepath.Join(root, "scratch"), "Not ignored", "") // untracked, not ignored
+	os.MkdirAll(filepath.Join(root, "dist", "assets"), 0o755)
+	os.WriteFile(filepath.Join(root, "dist", "assets", "a.js"), nil, 0o644)
+	for i := range 30 { // the repository's own folders, many
+		os.MkdirAll(filepath.Join(root, "src", fmt.Sprint(i)), 0o755)
+		os.WriteFile(filepath.Join(root, "src", fmt.Sprint(i), "f.go"), []byte("package f\n"), 0o644)
+	}
+	lib := filepath.Join(t.TempDir(), "lib")
+	gitInit(t, lib, "Start the lib", "")
+	run(t, root, "add", ".gitignore", "src")
+	run(t, root, "-c", "protocol.file.allow=always", "submodule", "add", "-q", lib, "lib")
+	run(t, root, "commit", "-q", "-m", "Add the sources and the lib")
+
+	var listed []string
+	counting := func(ctx context.Context, dir string) (string, []folder, error) {
+		listed = append(listed, dir)
+		return listLocal(ctx, dir)
+	}
+	_, repos, err := openFolders(context.Background(), git.Local, counting, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, r := range repos {
+		names = append(names, r.Name())
+	}
+	if want := []string{"meta", "api", "web", "cli"}; !slices.Equal(names, want) {
+		t.Errorf("repositories %q, want %q", names, want)
+	}
+	for _, d := range listed {
+		if strings.Contains(d, "src") || strings.Contains(d, "node_modules") {
+			t.Errorf("looked in %s", d)
+		}
+	}
+	if len(listed) > 5 { // meta, repos, tools, dist and dist/assets
+		t.Errorf("%d folders listed: %q", len(listed), listed)
+	}
+
+	// A repository with nothing ignored lists no folder at all.
+	listed = nil
+	plain := filepath.Join(t.TempDir(), "plain")
+	gitInit(t, plain, "Start", "")
+	_, repos, err = openFolders(context.Background(), git.Local, counting, plain)
+	if err != nil || len(repos) != 1 || len(listed) != 0 {
+		t.Errorf("%d repositories, %v, listed %q", len(repos), err, listed)
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/egoist/mygo"
@@ -81,26 +82,52 @@ func findRepos(ctx context.Context, list lister, root string, depth, max int) (s
 	return whole, repos, nil
 }
 
-// ignoredRepos keeps the repositories under folders the repository ignores:
-// separately cloned working trees, rather than its own files or submodules.
-func ignoredRepos(ctx context.Context, repo *git.Repo, paths []string) []string {
-	if len(paths) == 0 {
-		return nil
-	}
-	out, err := repo.Git(ctx, append([]string{"check-ignore", "--"}, paths...)...)
+// ignoredRepos are the repositories in the folders repo ignores, down to
+// depth folders from its top: working trees cloned there apart, not its
+// own files or its submodules, which it tracks. Git names the folders it
+// ignores, so only those are looked in, a folder or so for most
+// repositories, which matters over SSH, a round trip each.
+func ignoredRepos(ctx context.Context, list lister, repo *git.Repo, depth, max int) []string {
+	out, err := repo.Git(ctx, "ls-files", "-z", "--others", "--ignored", "--exclude-standard", "--directory", "--no-empty-directory")
 	if err != nil {
 		return nil
 	}
-	ignored := make(map[string]bool, len(paths))
-	for _, line := range strings.Split(out, "\n") {
-		if line = strings.TrimSpace(line); line != "" {
-			ignored[line] = true
+	// Folders listed once, as the ignored ones share their parents.
+	listed := map[string][]folder{}
+	siblingsOf := func(dir string) ([]folder, error) {
+		if fs, ok := listed[dir]; ok {
+			return fs, nil
 		}
+		_, fs, err := list(ctx, dir)
+		if err == nil {
+			listed[dir] = fs
+		}
+		return fs, err
 	}
 	var found []string
-	for _, p := range paths {
-		if ignored[p] {
+	for _, rel := range strings.Split(out, "\x00") {
+		rel, isDir := strings.CutSuffix(rel, "/")
+		levels := strings.Count(rel, "/") + 1
+		name := path.Base(rel)
+		if !isDir || rel == "" || levels > depth || strings.HasPrefix(name, ".") || skipFolders[name] {
+			continue
+		}
+		// The folder itself a repository, as its parent's listing tells,
+		// or repositories under it.
+		p := repo.Path(rel)
+		siblings, err := siblingsOf(repo.Path(path.Dir(rel)))
+		if err != nil {
+			continue
+		}
+		if i := slices.IndexFunc(siblings, func(f folder) bool { return f.path == p }); i >= 0 && siblings[i].repo {
 			found = append(found, p)
+		} else if levels < depth {
+			if _, under, err := findRepos(ctx, list, p, depth-levels, max-len(found)); err == nil {
+				found = append(found, under...)
+			}
+		}
+		if len(found) >= max {
+			return found[:max]
 		}
 	}
 	return found
@@ -152,10 +179,7 @@ func openFolders(ctx context.Context, run git.Runner, list lister, dir string) (
 		// A workspace folder can itself be a repository, with separately
 		// cloned repositories in folders it ignores. Keep it as one section
 		// beside those, but not with the repositories it tracks (submodules).
-		_, found, ferr := findRepos(ctx, list, dir, 3, 64)
-		if ferr == nil {
-			found = ignoredRepos(ctx, repo, found)
-		}
+		found := ignoredRepos(ctx, list, repo, 3, 64)
 		if len(found) == 0 {
 			return repo.Dir, []*git.Repo{repo}, nil
 		}
