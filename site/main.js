@@ -181,6 +181,7 @@ const io = new IntersectionObserver(
 );
 document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
 
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
 function countUp(el) {
   const to = +el.dataset.to;
   if (still) { el.textContent = to; return; }
