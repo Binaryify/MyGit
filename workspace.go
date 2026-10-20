@@ -81,6 +81,31 @@ func findRepos(ctx context.Context, list lister, root string, depth, max int) (s
 	return whole, repos, nil
 }
 
+// ignoredRepos keeps the repositories under folders the repository ignores:
+// separately cloned working trees, rather than its own files or submodules.
+func ignoredRepos(ctx context.Context, repo *git.Repo, paths []string) []string {
+	if len(paths) == 0 {
+		return nil
+	}
+	out, err := repo.Git(ctx, append([]string{"check-ignore", "--"}, paths...)...)
+	if err != nil {
+		return nil
+	}
+	ignored := make(map[string]bool, len(paths))
+	for _, line := range strings.Split(out, "\n") {
+		if line = strings.TrimSpace(line); line != "" {
+			ignored[line] = true
+		}
+	}
+	var found []string
+	for _, p := range paths {
+		if ignored[p] {
+			found = append(found, p)
+		}
+	}
+	return found
+}
+
 // listLocal lists a folder of this computer, leaving out hidden folders
 // and links, which could lead back up.
 func listLocal(_ context.Context, dir string) (string, []folder, error) {
@@ -124,7 +149,25 @@ func listOn(host string) lister {
 func openFolders(ctx context.Context, run git.Runner, list lister, dir string) (string, []*git.Repo, error) {
 	repo, err := git.OpenOn(run, dir)
 	if err == nil {
-		return repo.Dir, []*git.Repo{repo}, nil
+		// A workspace folder can itself be a repository, with separately
+		// cloned repositories in folders it ignores. Keep it as one section
+		// beside those, but not with the repositories it tracks (submodules).
+		_, found, ferr := findRepos(ctx, list, dir, 3, 64)
+		if ferr == nil {
+			found = ignoredRepos(ctx, repo, found)
+		}
+		if len(found) == 0 {
+			return repo.Dir, []*git.Repo{repo}, nil
+		}
+		repos := []*git.Repo{repo}
+		for _, p := range found {
+			r, err := git.OpenOn(run, p)
+			if err != nil {
+				continue
+			}
+			repos = append(repos, r)
+		}
+		return repo.Dir, repos, nil
 	}
 	var unsafe *git.UnsafeError
 	if errors.As(err, &unsafe) {
