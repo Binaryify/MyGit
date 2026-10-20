@@ -1087,7 +1087,7 @@
   "shortcutClick": "click",
   "sshMenu": "Open over SSH…",
   "sshTitle": "Open a Repository over SSH",
-  "sshHint": "ssh connects as in a terminal, with your config and keys. MyGit runs a small helper there, kept in ~/.mygit, and then you choose the repository.",
+  "sshHint": "The first time, MyGit installs its helper (about 3.5 MB) in ~/.mygit on that computer, and uses it again after. The helper runs git, reads and writes the files and watches them change there, for MyGit.",
   "sshBadLocation": "Write the computer as user@host, or an alias of ~/.ssh/config.",
   "connect": "Connect",
   "connectionLost": "Lost the connection to {host}: {error}",
@@ -1154,5 +1154,14 @@
   "proxy": "Proxy",
   "proxyPlaceholder": "The system's, or http://127.0.0.1:7890, socks5://…",
   "proxyHint": "For downloading the SSH helpers and updates. Empty follows the system's proxy. git and ssh keep their own.",
-  "proxyInvalid": "Write a proxy as http://host:port, https://… or socks5://…"
+  "proxyInvalid": "Write a proxy as http://host:port, https://… or socks5://…",
+  "syncChanges": "Sync Changes {counts}",
+  "opSync": "Sync",
+  "@syncChanges": {
+    "placeholders": {
+      "counts": {
+        "type": "String"
+      }
+    }
+  }
 }

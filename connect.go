@@ -296,13 +296,14 @@ func (w *welcome) browse(dir string) {
 // openFolder opens the repository dir is in, on the computer connected to.
 func (w *welcome) openFolder(dir string) {
 	host := w.ssh.connected
-	var repo *git.Repo
+	var whole string
+	var repos []*git.Repo
 	w.task(func(ctx context.Context) (err error) {
-		repo, err = openRemote(ctx, host, dir)
+		whole, repos, err = openRemote(ctx, host, dir)
 		return err
 	}, func() {
 		w.ssh.open = false
-		open(repo)
+		show(host, whole, repos)
 	})
 }
 
@@ -310,7 +311,8 @@ func (w *welcome) openFolder(dir string) {
 // user said to, and opens it. Its path is made whole first, as git's
 // safe.directory takes it.
 func (w *welcome) trustAndOpen(u git.UnsafeError) {
-	var repo *git.Repo
+	var whole string
+	var repos []*git.Repo
 	w.task(func(ctx context.Context) error {
 		l, err := listFolder(ctx, u.Host, u.Dir)
 		if err != nil {
@@ -319,11 +321,11 @@ func (w *welcome) trustAndOpen(u git.UnsafeError) {
 		if err := trustRemote(ctx, u.Host, l.Dir); err != nil {
 			return err
 		}
-		repo, err = openRemote(ctx, u.Host, l.Dir)
+		whole, repos, err = openRemote(ctx, u.Host, l.Dir)
 		return err
 	}, func() {
 		w.ssh.open = false
-		open(repo)
+		show(u.Host, whole, repos)
 	})
 }
 
@@ -336,12 +338,13 @@ var trustRemote = func(ctx context.Context, host, dir string) error {
 // starting the helper there.
 func (w *welcome) connect(host, dir string) {
 	w.ssh = connectPlan{open: true, host: git.Location(host, dir)}
-	var repo *git.Repo
+	var whole string
+	var repos []*git.Repo
 	w.task(func(ctx context.Context) (err error) {
-		repo, err = openRemote(ctx, host, dir)
+		whole, repos, err = openRemote(ctx, host, dir)
 		return err
 	}, func() {
 		w.ssh.open = false
-		open(repo)
+		show(host, whole, repos)
 	})
 }

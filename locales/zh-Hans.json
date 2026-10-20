@@ -400,7 +400,7 @@
   "shortcutClick": "点击",
   "sshMenu": "通过 SSH 打开…",
   "sshTitle": "通过 SSH 打开仓库",
-  "sshHint": "ssh 照终端里那样连接，用你的配置和密钥。MyGit 会在那台电脑上运行一个小的辅助程序（放在 ~/.mygit），连上后再选仓库。",
+  "sshHint": "第一次连接时，MyGit 会在对方电脑的 ~/.mygit 里安装一个 helper（约 3.5 MB），之后直接复用。helper 负责在那台电脑上运行 git、读写文件、监听改动。",
   "sshBadLocation": "请把电脑写成 user@host，或 ~/.ssh/config 里的别名。",
   "connect": "连接",
   "connectionLost": "与 {host} 的连接断开了：{error}",
@@ -423,5 +423,7 @@
   "proxy": "代理",
   "proxyPlaceholder": "跟随系统，或 http://127.0.0.1:7890、socks5://…",
   "proxyHint": "用于下载 SSH 的辅助程序和应用更新；留空跟随系统代理。不影响 git 和 ssh 自己的网络设置。",
-  "proxyInvalid": "请写成 http://主机:端口、https://… 或 socks5://…"
+  "proxyInvalid": "请写成 http://主机:端口、https://… 或 socks5://…",
+  "syncChanges": "同步更改 {counts}",
+  "opSync": "同步"
 }

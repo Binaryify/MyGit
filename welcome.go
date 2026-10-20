@@ -220,11 +220,7 @@ func (w *welcome) pick() {
 // open opens a repository's window, and says why when the folder isn't
 // in one.
 func (w *welcome) open(dir string) {
-	repo, err := git.Open(dir)
-	w.failed(dir, err)
-	if err == nil {
-		open(repo)
-	}
+	w.failed(dir, openLocal(dir))
 }
 
 // failed says why a folder didn't open, and offers to trust a repository
@@ -259,16 +255,13 @@ func (a *app) openDropped(paths []string) {
 	a.errMsg, a.trustDir = "", ""
 	for _, p := range paths {
 		dir := dropTarget(p)
-		repo, err := git.Open(dir)
-		if err != nil {
+		if err := openLocal(dir); err != nil {
 			a.errMsg = err.Error()
 			var unsafe *git.UnsafeError
 			if errors.As(err, &unsafe) {
 				a.trustDir = dir
 			}
-			continue
 		}
-		open(repo)
 	}
 }
 

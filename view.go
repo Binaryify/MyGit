@@ -49,7 +49,13 @@ func (a *app) view(c *ui.Context) {
 			})
 		}
 		a.operationBar(c)
-		ui.Split(c, &a.sidebarW, func() { a.leftPanel(c) }, func() {
+		ui.Split(c, &a.sidebarW, func() {
+			if a.ws != nil {
+				a.ws.sidebar(c)
+			} else {
+				a.leftPanel(c)
+			}
+		}, func() {
 			ui.SplitVertical(c, &a.logH, func() { a.logView(c) }, func() { a.detailView(c) }).Fill()
 		}).Grow(1)
 		if root.FileDragOver() {
@@ -93,6 +99,9 @@ func (a *app) toolbar(c *ui.Context) {
 	st := a.status
 	titleBar(c).Background(t.Surface).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 		ui.Image(c, icon).Size(22, 22)
+		if a.ws != nil {
+			ui.Text(c, a.ws.name()+" /").FontSize(13).TextColor(t.TextMuted)
+		}
 		ui.Text(c, a.repo.Name()).FontSize(13).Bold().Tooltip(a.repo.Location())
 		if !a.local() {
 			a.remoteBadge(c)
@@ -172,13 +181,16 @@ func (a *app) changesPanel(c *ui.Context) {
 				}
 			})
 		})
-		a.changeSection(c, loc.Staged(), true)
-		a.changeSection(c, loc.Changes(), false)
+		a.changeSection(c, loc.Staged(), true, true)
+		a.changeSection(c, loc.Changes(), false, true)
 	})
 	c.OnShortcut(ui.Cmd, ui.KeyEnter, a.commit)
 }
 
-func (a *app) changeSection(c *ui.Context, title string, staged bool) {
+// changeSection lists the staged changes or the others, filling the room
+// left when fill, else as tall as its rows, as a workspace's repositories
+// stack them.
+func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 	t := c.Theme()
 	changes := a.changes(staged)
 	list, sel := &a.unstagedList, &a.unstagedSel
@@ -266,7 +278,12 @@ func (a *app) changeSection(c *ui.Context, title string, staged bool) {
 				a.ignoreItems(m, ch.Path)
 			}
 		})
-	}).Grow(1).Basis(0)
+	})
+	if fill {
+		l.Grow(1).Basis(0)
+	} else {
+		l.Height(float32(len(changes) * 24))
+	}
 	if l.Changed() && *sel >= 0 && *sel < len(changes) {
 		// One change is chosen at a time, of both lists.
 		a.chooseChange(*sel, staged)

@@ -33,11 +33,16 @@ const (
 	PullFastForward PullMode = "--ff-only"   // only when no merge is needed
 	PullRebase      PullMode = "--rebase"    // replay the branch's commits on them
 	PullMerge       PullMode = "--no-rebase" // merge them
+	PullConfigured  PullMode = ""            // as git is set to, pull.rebase
 )
 
 // Pull brings the upstream's commits in.
 func (r *Repo) Pull(ctx context.Context, mode PullMode) error {
-	_, err := r.Git(ctx, "pull", string(mode))
+	args := []string{"pull"}
+	if mode != PullConfigured {
+		args = append(args, string(mode))
+	}
+	_, err := r.Git(ctx, args...)
 	return err
 }
 

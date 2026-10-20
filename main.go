@@ -8,9 +8,11 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
@@ -69,9 +71,12 @@ func main() {
 		// Quitting with a file edited and not saved asks, in its window,
 		// a window at a time; quitting goes on once each is saved or given up.
 		mygo.App.OnBeforeQuit(func(e *mygo.QuitEvent) {
-			for _, a := range apps {
+			for _, a := range allApps() {
 				if a.unsaved() {
 					e.PreventDefault()
+					if a.ws != nil {
+						a.ws.activate(slices.Index(a.ws.apps, a))
+					}
 					a.win.Focus()
 					a.leaving(mygo.App.Quit)
 					return
@@ -97,9 +102,11 @@ func main() {
 	}
 }
 
-// openArg opens the repository named by a command line's arguments, its
-// working folder's when none is, or the welcome window when that isn't a
-// repository either, as when the app starts from Finder or the Start menu.
+// openArg opens the repository named by a command line's arguments, or
+// the repositories under the folder they name; with none, the repository
+// of its working folder, or the welcome window when that isn't in one, as
+// when the app starts from Finder or the Start menu, in /, where it doesn't
+// look for repositories below.
 func openArg(args []string, cwd string) {
 	if len(args) > 0 {
 		if host, dir, ok := parseLocation(args[0]); ok && !exists(filepath.Join(cwd, args[0])) {
@@ -115,9 +122,15 @@ func openArg(args []string, cwd string) {
 			dir = filepath.Join(cwd, dir)
 		}
 	}
-	repo, err := git.Open(dir)
-	if err == nil {
+	var err error
+	if len(args) > 0 {
+		err = openLocal(dir)
+	} else if repo, rerr := git.Open(dir); rerr == nil {
 		open(repo)
+	} else {
+		err = rerr
+	}
+	if err == nil {
 		return
 	}
 	showWelcome()
@@ -127,13 +140,10 @@ func openArg(args []string, cwd string) {
 }
 
 func openDir(dir string) {
-	repo, err := git.Open(dir)
-	if err != nil {
+	if err := openLocal(dir); err != nil {
 		showWelcome()
 		welcomeWin.failed(dir, err)
-		return
 	}
-	open(repo)
 }
 
 // open shows a repository's window, the one open already if there is one.
@@ -176,9 +186,9 @@ func pickAndOpen() {
 		if err != nil || len(paths) == 0 {
 			return
 		}
-		repo, err := git.Open(paths[0])
+		whole, repos, err := openFolders(context.Background(), git.Local, listLocal, paths[0])
 		if err == nil {
-			mygo.RunOnMain(func() { open(repo) })
+			mygo.RunOnMain(func() { show("", whole, repos) })
 			return
 		}
 		_, _ = mygo.Dialog.Message(mygo.MessageOptions{Title: loc.CantOpenFolder(), Message: err.Error()})
@@ -216,8 +226,12 @@ func askUser(dir, prompt string) (string, bool) {
 	done := make(chan credAnswer, 1)
 	mygo.RunOnMain(func() {
 		switch {
-		case apps[dir] != nil:
-			apps[dir].askCredential(prompt, done)
+		case appAt(dir) != nil:
+			a := appAt(dir)
+			if a.ws != nil {
+				a.ws.activate(slices.Index(a.ws.apps, a))
+			}
+			a.askCredential(prompt, done)
 		case welcomeWin != nil:
 			welcomeWin.cred.ask(welcomeWin.win, prompt, done)
 		default:

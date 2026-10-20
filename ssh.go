@@ -189,12 +189,13 @@ func (h remoteHost) Watch(ctx context.Context, dir string, changed func()) error
 	return h.lost(c.Watch(ctx, dir, changed))
 }
 
-// openRemote opens a repository on another computer, starting its helper.
-func openRemote(ctx context.Context, host, dir string) (*git.Repo, error) {
+// openRemote opens a repository on another computer, or the repositories
+// in the folders under dir, starting its helper.
+func openRemote(ctx context.Context, host, dir string) (string, []*git.Repo, error) {
 	if _, err := connect(ctx, host); err != nil {
-		return nil, err
+		return "", nil, err
 	}
-	return git.OpenOn(remoteHost{host}, dir)
+	return openFolders(ctx, remoteHost{host}, listOn(host), dir)
 }
 
 // addRemoteRecent puts a repository on another computer first among those

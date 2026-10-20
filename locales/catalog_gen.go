@@ -4052,11 +4052,11 @@ func (msgs Messages) SshTitle() string {
 	return Catalog.Format(msgs.locale, "sshTitle", nil)
 }
 
-// SshHint says "ssh connects as in a terminal, with your config and keys. MyGit runs a small helper there, kept in ~/.mygit, and then…"
+// SshHint says "The first time, MyGit installs its helper (about 3.5 MB) in ~/.mygit on that computer, and uses it again after. The h…"
 // in the language the app shows.
 func SshHint() string { return In(i18n.Locale()).SshHint() }
 
-// SshHint says "ssh connects as in a terminal, with your config and keys. MyGit runs a small helper there, kept in ~/.mygit, and then…"
+// SshHint says "The first time, MyGit installs its helper (about 3.5 MB) in ~/.mygit on that computer, and uses it again after. The h…"
 // in the language of msgs.
 func (msgs Messages) SshHint() string {
 	return Catalog.Format(msgs.locale, "sshHint", nil)
@@ -4294,4 +4294,24 @@ func ProxyInvalid() string { return In(i18n.Locale()).ProxyInvalid() }
 // in the language of msgs.
 func (msgs Messages) ProxyInvalid() string {
 	return Catalog.Format(msgs.locale, "proxyInvalid", nil)
+}
+
+// SyncChanges says "Sync Changes {counts}"
+// in the language the app shows.
+func SyncChanges(counts string) string { return In(i18n.Locale()).SyncChanges(counts) }
+
+// SyncChanges says "Sync Changes {counts}"
+// in the language of msgs.
+func (msgs Messages) SyncChanges(counts string) string {
+	return Catalog.Format(msgs.locale, "syncChanges", map[string]any{"counts": counts})
+}
+
+// OpSync says "Sync"
+// in the language the app shows.
+func OpSync() string { return In(i18n.Locale()).OpSync() }
+
+// OpSync says "Sync"
+// in the language of msgs.
+func (msgs Messages) OpSync() string {
+	return Catalog.Format(msgs.locale, "opSync", nil)
 }

@@ -28,6 +28,7 @@ type app struct {
 	update   func(func())  // runs a function on the main thread, the window's Update
 	online   chan struct{} // a refresh reached the repository, for a watch to start again
 	proxyErr string        // why the proxy written in the settings isn't one
+	ws       *workspace    // the workspace it is one of, nil in a window of its own
 
 	// The history and its graph, a row per commit.
 	commits   []git.Commit
@@ -143,11 +144,13 @@ func (a *app) start() {
 		a.update = a.win.Update
 		a.win.OnFocus(a.refresh) // the repository may have changed in a terminal
 		// A window closed with a file edited and not saved asks first.
-		a.win.OnClose(func(e *mygo.CloseEvent) {
-			if a.unsaved() && a.leaving(a.win.Close) {
-				e.PreventDefault()
-			}
-		})
+		if a.ws == nil { // a workspace asks for its repositories
+			a.win.OnClose(func(e *mygo.CloseEvent) {
+				if a.unsaved() && a.leaving(a.win.Close) {
+					e.PreventDefault()
+				}
+			})
+		}
 		a.win.OnClosed(func() { // the next window opens as this one was laid out
 			prefs.SidebarW, prefs.LogH, prefs.FilesW = a.sidebarW, a.logH, a.filesW
 			prefs.save()
