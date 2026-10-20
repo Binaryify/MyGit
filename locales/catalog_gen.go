@@ -3204,6 +3204,26 @@ func (msgs Messages) PreviousChange() string {
 	return Catalog.Format(msgs.locale, "previousChange", nil)
 }
 
+// PressAgainNext says "Last change: {key} again for the next file"
+// in the language the app shows.
+func PressAgainNext(key string) string { return In(i18n.Locale()).PressAgainNext(key) }
+
+// PressAgainNext says "Last change: {key} again for the next file"
+// in the language of msgs.
+func (msgs Messages) PressAgainNext(key string) string {
+	return Catalog.Format(msgs.locale, "pressAgainNext", map[string]any{"key": key})
+}
+
+// PressAgainPrevious says "First change: {key} again for the previous file"
+// in the language the app shows.
+func PressAgainPrevious(key string) string { return In(i18n.Locale()).PressAgainPrevious(key) }
+
+// PressAgainPrevious says "First change: {key} again for the previous file"
+// in the language of msgs.
+func (msgs Messages) PressAgainPrevious(key string) string {
+	return Catalog.Format(msgs.locale, "pressAgainPrevious", map[string]any{"key": key})
+}
+
 // ChangeOf says "{n} of {count}"
 // in the language the app shows.
 func ChangeOf(n int, count int) string { return In(i18n.Locale()).ChangeOf(n, count) }

@@ -316,6 +316,8 @@
   "viewedCount": "已看 {viewed}/{count}",
   "nextChange": "下一处改动",
   "previousChange": "上一处改动",
+  "pressAgainNext": "已是最后一处，再按 {key} 去下一个文件",
+  "pressAgainPrevious": "已是第一处，再按 {key} 回上一个文件",
   "changeOf": "第 {n}/{count} 处",
   "changeCount": "{count} 处改动",
   "markViewed": "标记为已看",

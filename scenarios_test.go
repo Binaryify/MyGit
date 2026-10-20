@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -455,4 +456,71 @@ func TestScenarioChangeGoneWhileEdited(t *testing.T) {
 	if string(b) != "a edited\n" || tt.shown() != "a.txt" {
 		t.Fatalf("saved %q, shown %q", b, tt.shown())
 	}
+}
+
+// F7 past a file's last change says so, and pressed again goes on to the
+// next file at its first change, a commit's or along the staged changes
+// and then the others; ⇧F7 comes back to the last change of the one before.
+func TestScenarioStepAcrossFiles(t *testing.T) {
+	long := func(changed ...int) string {
+		var b strings.Builder
+		for i := range 40 {
+			if len(changed) > 0 && (i == changed[0] || i == changed[len(changed)-1]) {
+				b.WriteString("changed ")
+			}
+			b.WriteString("line " + strconv.Itoa(i) + "\n")
+		}
+		return b.String()
+	}
+	tt := newTester(t)
+	tt.commitFiles(t, "Long files", map[string]string{"a.txt": long(), "b.txt": long()})
+	tt.commitFiles(t, "Change both", map[string]string{"a.txt": long(5, 30), "b.txt": long(5, 30)})
+	tt.write(t, map[string]string{"a.txt": long(), "b.txt": long()})
+	gitIn(t, tt.a.repo.Dir, "add", "a.txt")
+	tt.a.refresh()
+	tt.settle()
+
+	type place struct {
+		file  string
+		hunk  int // -1 out of the changes
+		armed int
+	}
+	at := func() place {
+		d := tt.a.detail
+		file := tt.shown()
+		if d.commit != nil {
+			file = fileName(d.files[d.fileSel])
+		}
+		h, inside := d.diff.CurrentHunk()
+		if !inside {
+			h = -1
+		}
+		return place{file, h, tt.a.armed()}
+	}
+	walk := func(steps []bool, want []place) {
+		t.Helper()
+		for i, back := range steps {
+			tt.a.stepChange(back)
+			tt.settle()
+			if got := at(); got != want[i] {
+				t.Fatalf("step %d (back %v): at %+v, want %+v", i, back, got, want[i])
+			}
+		}
+	}
+	steps := []bool{false, false, false, false, true, true}
+	want := []place{{"a.txt", 0, 0}, {"a.txt", 1, 0}, {"a.txt", 1, 1}, {"b.txt", 0, 0}, {"b.txt", 0, -1}, {"a.txt", 1, 0}}
+
+	tt.a.chooseChange(0, true) // a.txt, staged
+	tt.settle()
+	walk(steps, want)
+	if !tt.a.detail.staged {
+		t.Fatal("came back to a.txt's working tree, not its staged change")
+	}
+	// The last file has nothing after it to say.
+	tt.a.chooseChange(indexOf(tt.a.unstaged, "b.txt"), false)
+	tt.settle()
+	walk([]bool{false, false, false}, []place{{"b.txt", 1, 0}, {"b.txt", 1, 0}, {"b.txt", 1, 0}})
+
+	tt.click(t, "Change both")
+	walk(steps, want)
 }

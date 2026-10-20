@@ -208,8 +208,8 @@ func (a *app) openCommands() {
 		}
 	}
 	add(len(a.detail.files) > 0 || len(a.staged)+len(a.unstaged) > 0, loc.GoToFile(), shortcut("P"), a.openFiles)
-	add(a.detail.diff != nil, loc.NextChange(), "F7", func() { a.stepChange(false) })
-	add(a.detail.diff != nil, loc.PreviousChange(), shiftKey("F7"), func() { a.stepChange(true) })
+	add(a.detail.diff != nil || a.fileStep(1) != nil, loc.NextChange(), "F7", func() { a.stepChange(false) })
+	add(a.detail.diff != nil || a.fileStep(-1) != nil, loc.PreviousChange(), shiftKey("F7"), func() { a.stepChange(true) })
 	add(true, loc.SearchHistory(), shortcut("F"), func() { a.searchBox.Focus() })
 	add(a.canCommit(), loc.Commit(), shortcut("↩"), a.commit)
 	add(idle && len(a.unstaged) > 0, loc.StageAll(), "", a.stageAll)

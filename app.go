@@ -123,6 +123,10 @@ type detail struct {
 	patch     *editor.FilePatch // the change's, when its lines can be chosen
 	gen       int
 	loading   bool
+	// F7's past the diff's last change (1) or ⇧F7's before its first (-1),
+	// with the caret it left, saying the next goes on to another file.
+	edge, edgeAt int
+	enter        int // the way the change loading was stepped into, to open at its first change or last
 }
 
 func newApp(repo *git.Repo) *app {
@@ -648,9 +652,12 @@ func (a *app) showChange(c git.Change, staged bool) {
 		if r.patch != nil && patch.Partial(*r.patch) && !ignoreSpace {
 			a.reviewLines(r.diff)
 		}
-		if a.detail.whole && len(r.diff.Hunks()) > 0 {
-			r.diff.GoToHunk(0) // the file opens at its first change
+		// The file opens at its first change, or its last when ⇧F7 came
+		// back to it.
+		if r.diff != nil && (a.detail.whole || a.detail.enter != 0) {
+			r.diff.GoToHunk(enteredHunk(len(r.diff.Hunks()), a.detail.enter))
 		}
+		a.detail.enter = 0
 	})
 }
 

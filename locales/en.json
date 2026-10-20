@@ -847,6 +847,22 @@
   },
   "nextChange": "Next Change",
   "previousChange": "Previous Change",
+  "pressAgainNext": "Last change: {key} again for the next file",
+  "@pressAgainNext": {
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "pressAgainPrevious": "First change: {key} again for the previous file",
+  "@pressAgainPrevious": {
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
   "changeOf": "{n} of {count}",
   "@changeOf": {
     "placeholders": {
