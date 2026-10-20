@@ -58,7 +58,7 @@ MyGit feels like the IDE you know: JetBrains' commit graph and history tools, VS
 | VS Code, 167 extensions | 1,400 MB |
 | IntelliJ IDEA 2026.2 | 2,300 MB |
 
-On the same repository, MyGit reads the whole history and lays out its graph in **0.13 s**, opens a commit with a 20 MB patch (5,677 files) in **0.24 s**, and uses **0 %** CPU while idle.
+On the same repository, MyGit reads the whole history and lays out its graph in **0.13 s** and opens a commit with a 20 MB patch (5,677 files) in **0.24 s**.
 
 MyGit reads what `git` prints and lets `git` itself make every change, so a repository behaves in MyGit exactly as it does in a terminal. The same app, with the same features, runs on macOS, Windows and Linux.
 
