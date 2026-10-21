@@ -3,6 +3,7 @@ package remote
 import (
 	"context"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -16,7 +17,8 @@ import (
 //	go run ./internal/tools/helpers
 //	MYGIT_E2E_HOST=box MYGIT_HELPER_DIR=$PWD/build/helpers go test ./internal/remote -run E2E -v
 //
-// It works in ~/.mygit-e2e there and removes it.
+// On Windows, MYGIT_E2E_HOST=wsl+Ubuntu reaches a distribution of WSL
+// instead. It works in ~/.mygit-e2e there and removes it.
 func TestE2E(t *testing.T) {
 	host, dir := os.Getenv("MYGIT_E2E_HOST"), os.Getenv("MYGIT_HELPER_DIR")
 	if host == "" || dir == "" {
@@ -24,6 +26,9 @@ func TestE2E(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
+	if distro, ok := WSL(host); ok && !slices.Contains(Distros(ctx), distro) {
+		t.Fatalf("%s isn't among WSL's distributions: %q", distro, Distros(ctx))
+	}
 	s := SSH{Store: Store{Dir: dir}}
 
 	start := time.Now()

@@ -13,6 +13,7 @@ import (
 
 	"mygit/internal/git"
 	"mygit/internal/patch"
+	"mygit/internal/remote"
 	loc "mygit/locales"
 )
 
@@ -89,10 +90,15 @@ func (a *app) view(c *ui.Context) {
 // remoteBadge says the repository is on another computer, and which.
 func (a *app) remoteBadge(c *ui.Context) {
 	t := c.Theme()
+	host, dir := a.repo.Host(), a.repo.Dir
+	label, tip := "SSH · "+host, loc.RemoteBadge(host, dir)
+	if distro, ok := remote.WSL(host); ok {
+		label, tip = "WSL · "+distro, loc.RemoteBadgeWsl(distro, dir)
+	}
 	ui.Row(c).Gap(5).AlignItems(ui.Center).Padding(2, 8).Radius(10).Background(t.Accent.Alpha(0.16)).
-		TextColor(t.AccentText).Tooltip(loc.RemoteBadge(a.repo.Host(), a.repo.Dir)).Children(func() {
+		TextColor(t.AccentText).Tooltip(tip).Children(func() {
 		ui.Icon(c, icons["server"]).Size(12, 12)
-		ui.Text(c, "SSH · "+a.repo.Host()).FontSize(12).Bold().TextColor(t.AccentText).SingleLine()
+		ui.Text(c, label).FontSize(12).Bold().TextColor(t.AccentText).SingleLine()
 	})
 }
 

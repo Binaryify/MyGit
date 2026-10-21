@@ -22,6 +22,7 @@ func TestParseLocation(t *testing.T) {
 		"win:C:/Users/ada/repo": {"win", "C:/Users/ada/repo"},
 		"box:~":                 {"box", "."},
 		" box:repo ":            {"box", "repo"},
+		"wsl+Ubuntu:~/code/x":   {"wsl+Ubuntu", "code/x"},
 	} {
 		host, dir, ok := parseLocation(in)
 		if !ok || host != want[0] || dir != want[1] {
@@ -41,6 +42,7 @@ func TestSplitHost(t *testing.T) {
 		" ada@10.0.0.2 ": {"ada@10.0.0.2", ""},
 		"box:/srv/repo":  {"box", "/srv/repo"},
 		"box:~/code":     {"box", "code"},
+		"wsl+Ubuntu":     {"wsl+Ubuntu", ""},
 	} {
 		host, dir, ok := splitHost(in)
 		if !ok || host != want[0] || dir != want[1] {
@@ -119,6 +121,20 @@ func TestConnectDialog(t *testing.T) {
 	settle()
 	if !tt.HasText("/nope: no such folder") || w.ssh.listing.Dir != "/home/ada/notes" {
 		t.Errorf("texts %q", tt.Texts())
+	}
+	// The folder written opens, though not gone into: a hidden one isn't
+	// listed to go into.
+	oldOpen := openRemote
+	defer func() { openRemote = oldOpen }()
+	var opened string
+	openRemote = func(_ context.Context, host, dir string) (string, []*git.Repo, error) {
+		opened = host + ":" + dir
+		return "", nil, errors.New("stop here")
+	}
+	w.ssh.path = " /home/ada/.dotfiles "
+	click("打开这个文件夹")
+	if opened != "box:/home/ada/.dotfiles" || !tt.HasText("stop here") {
+		t.Errorf("opened %q; texts %q", opened, tt.Texts())
 	}
 	click("换主机")
 	if !tt.HasText("通过 SSH 打开仓库") || w.ssh.host != "box" {

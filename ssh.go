@@ -191,7 +191,7 @@ func (h remoteHost) Watch(ctx context.Context, dir string, changed func()) error
 
 // openRemote opens a repository on another computer, or the repositories
 // in the folders under dir, starting its helper.
-func openRemote(ctx context.Context, host, dir string) (string, []*git.Repo, error) {
+var openRemote = func(ctx context.Context, host, dir string) (string, []*git.Repo, error) {
 	if _, err := connect(ctx, host); err != nil {
 		return "", nil, err
 	}

@@ -17,7 +17,8 @@ import (
 )
 
 // SSH reaches computers with the system's ssh, so its config, keys, helper
-// and known hosts apply as in a terminal.
+// and known hosts apply as in a terminal, and WSL's distributions on this
+// computer with wsl.exe.
 type SSH struct {
 	Store Store
 	// Env is added to the environment of ssh, as the askpass that asks
@@ -128,8 +129,12 @@ func (s SSH) start(ctx context.Context, host string, p Platform, dir string) (*C
 	return &Conn{Client: c, Platform: p, cmd: cmd, stdin: in}, nil
 }
 
-// command is ssh running line on host.
+// command is ssh running line on host, or wsl.exe in a distribution of
+// WSL.
 func (s SSH) command(host, line string) *exec.Cmd {
+	if distro, ok := WSL(host); ok {
+		return wslCommand(distro, line)
+	}
 	return s.cmd(host, "ssh", "-T", "-o", "ServerAliveInterval=15", "-o", "ServerAliveCountMax=4", "--", host, line)
 }
 

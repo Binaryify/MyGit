@@ -1166,6 +1166,7 @@
     }
   },
   "sshHosts": "SSH Hosts",
+  "wslDistros": "WSL",
   "sshHost": "Host",
   "sshHostPlaceholder": "user@host, or a Host of ~/.ssh/config",
   "sshChoose": "Choose a repository on {host}",
@@ -1185,6 +1186,17 @@
   "@remoteBadge": {
     "placeholders": {
       "host": {
+        "type": "String"
+      },
+      "dir": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteBadgeWsl": "{dir} in WSL's {distro}",
+  "@remoteBadgeWsl": {
+    "placeholders": {
+      "distro": {
         "type": "String"
       },
       "dir": {

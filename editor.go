@@ -12,6 +12,7 @@ import (
 
 	"github.com/egoist/mygo"
 
+	"mygit/internal/remote"
 	loc "mygit/locales"
 )
 
@@ -70,7 +71,11 @@ func runEditor(cmd, host, path string, line int) error {
 		}
 	}
 	if host != "" {
-		args = append([]string{"--remote", "ssh-remote+" + host}, args...)
+		authority := "ssh-remote+" + host
+		if _, ok := remote.WSL(host); ok {
+			authority = host // wsl+Ubuntu, as VS Code names it too
+		}
+		args = append([]string{"--remote", authority}, args...)
 	}
 	c := exec.Command(exe, args...)
 	if err := c.Start(); err != nil {

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/egoist/mygo/ui"
 
@@ -20,6 +21,7 @@ import (
 type connectPlan struct {
 	open    bool
 	hosts   []string // those ~/.ssh/config names, to choose from
+	distros []string // WSL's, on Windows
 	host    string   // as written: user@host, an alias, or host:/path
 	running bool     // connecting, listing or opening
 	fail    string
@@ -74,6 +76,16 @@ func (w *welcome) hostStep(c *ui.Context) {
 				}
 			}).Disabled(p.running)
 		}
+		if len(p.distros) > 0 {
+			ui.MenuButton(c, loc.WslDistros(), func(m *ui.Menu) {
+				for _, d := range p.distros {
+					if m.Item(d).Chosen() {
+						p.host = remote.WSLHost(d)
+						w.connectHost(p.host, "")
+					}
+				}
+			}).Disabled(p.running)
+		}
 		ui.Box(c).Grow(1)
 		if ui.Button(c, loc.Cancel()).Clicked() {
 			w.stopConnect()
@@ -118,7 +130,7 @@ func (w *welcome) folderStep(c *ui.Context) {
 	w.connectStatus(c, "")
 	ui.Row(c).Gap(8).Children(func() {
 		if ui.Button(c, loc.SshChangeHost()).Disabled(p.running).Clicked() {
-			w.ssh = connectPlan{open: true, hosts: p.hosts, host: p.connected}
+			w.ssh = connectPlan{open: true, hosts: p.hosts, distros: p.distros, host: p.connected}
 			return
 		}
 		ui.Box(c).Grow(1)
@@ -126,7 +138,11 @@ func (w *welcome) folderStep(c *ui.Context) {
 			w.stopConnect()
 		}
 		if ui.PrimaryButton(c, loc.SshOpenFolder()).Disabled(p.running).Clicked() {
-			w.openFolder(l.Dir)
+			dir := strings.TrimSpace(p.path) // as written, though not gone into yet
+			if dir == "" {
+				dir = l.Dir
+			}
+			w.openFolder(dir)
 		}
 	})
 }
@@ -195,10 +211,13 @@ func openSSH() {
 	})
 }
 
-// newConnectPlan opens the dialog with the hosts of ~/.ssh/config.
+// newConnectPlan opens the dialog with the hosts of ~/.ssh/config, and
+// WSL's distributions on Windows.
 func newConnectPlan() connectPlan {
 	home, _ := os.UserHomeDir()
-	return connectPlan{open: true, hosts: remote.ConfigHosts(home)}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	return connectPlan{open: true, hosts: remote.ConfigHosts(home), distros: remote.Distros(ctx)}
 }
 
 // splitHost reads the host written, and the folder to start in when it is
