@@ -89,9 +89,9 @@ func TestWelcomeUpdateAndSettings(t *testing.T) {
 // With no menu bar, as on Windows and Linux, the welcome window carries
 // the app's menu and opens the settings with Ctrl+,.
 func TestWelcomeAppMenu(t *testing.T) {
-	old := menuBar
-	defer func() { menuBar = old }()
-	menuBar = false
+	old := macOS
+	defer func() { macOS = old }()
+	macOS = false
 	w := &welcome{}
 	tt := ui.NewTester(w.view, 520, 640)
 	tt.SetTitleBar(ui.TitleBar{Right: 138, Height: 32})
@@ -126,7 +126,7 @@ func TestWelcomeAppMenu(t *testing.T) {
 	if !w.settings.open {
 		t.Error("Ctrl+, didn't open the settings")
 	}
-	menuBar = true
+	macOS = true
 	w2 := &welcome{}
 	tt2 := ui.NewTester(w2.view, 520, 640)
 	tt2.Frame()

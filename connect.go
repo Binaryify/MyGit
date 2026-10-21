@@ -108,7 +108,7 @@ func (w *welcome) folderStep(c *ui.Context) {
 	p := &w.ssh
 	t := c.Theme()
 	l := p.listing
-	ui.Text(c, loc.SshChoose(p.connected)).Bold().FontSize(15)
+	ui.Text(c, loc.SshChoose(hostName(p.connected))).Bold().FontSize(15)
 	if ui.TextInput(c, &p.path).Label(loc.SshFolder()).Submitted() && !p.running {
 		w.browse(strings.TrimSpace(p.path))
 	}

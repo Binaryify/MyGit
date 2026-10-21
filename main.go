@@ -159,7 +159,7 @@ func open(repo *git.Repo) {
 		_ = mygo.App.AddRecentDocument(repo.Dir)
 	} else {
 		addRemoteRecent(key)
-		title = repo.Name() + " — " + repo.Host()
+		title = repo.Name() + " — " + hostName(repo.Host())
 	}
 	a := newApp(repo)
 	a.win = mygo.NewWindow(customTitleBar(mygo.WindowOptions{

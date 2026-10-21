@@ -81,19 +81,28 @@ func (a *app) view(c *ui.Context) {
 	c.OnShortcut(ui.Cmd, ui.KeyK, a.openCommands)
 	c.OnShortcut(0, ui.KeyF7, func() { a.stepChange(false) })
 	c.OnShortcut(ui.Shift, ui.KeyF7, func() { a.stepChange(true) })
-	if !menuBar { // the menu bar's on macOS, which other systems' windows don't have
+	if !macOS { // the menu bar's on macOS, which other systems' windows don't have
 		c.OnShortcut(ui.Cmd|ui.Shift, ui.KeyO, openSSH)
 		c.OnShortcut(ui.Cmd, ui.KeyComma, func() { a.settings.open = true })
 	}
 }
 
 // remoteBadge says the repository is on another computer, and which.
+// hostName is how a host shows: WSL · Ubuntu for a distribution of WSL's,
+// which is written wsl+Ubuntu, else as it is written.
+func hostName(host string) string {
+	if distro, ok := remote.WSL(host); ok {
+		return "WSL · " + distro
+	}
+	return host
+}
+
 func (a *app) remoteBadge(c *ui.Context) {
 	t := c.Theme()
 	host, dir := a.repo.Host(), a.repo.Dir
 	label, tip := "SSH · "+host, loc.RemoteBadge(host, dir)
 	if distro, ok := remote.WSL(host); ok {
-		label, tip = "WSL · "+distro, loc.RemoteBadgeWsl(distro, dir)
+		label, tip = hostName(host), loc.RemoteBadgeWsl(distro, dir)
 	}
 	ui.Row(c).Gap(5).AlignItems(ui.Center).Padding(2, 8).Radius(10).Background(t.Accent.Alpha(0.16)).
 		TextColor(t.AccentText).Tooltip(tip).Children(func() {

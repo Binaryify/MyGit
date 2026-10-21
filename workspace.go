@@ -259,7 +259,7 @@ func openWorkspace(host, dir string, repos []*git.Repo) {
 		_ = mygo.App.AddRecentDocument(dir)
 	} else {
 		addRemoteRecent(key)
-		title = name + " — " + host
+		title = name + " — " + hostName(host)
 	}
 	ws := &workspace{host: host, dir: dir, closed: map[string]bool{}}
 	for _, r := range repos {

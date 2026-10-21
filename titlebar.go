@@ -41,14 +41,15 @@ func titleBar(c *ui.Context) ui.Element {
 		Gap(8).AlignItems(ui.Center).DragWindow()
 }
 
-// menuBar tells whether the app has a menu bar, macOS', where its menus
-// are; other systems' windows carry them.
-var menuBar = runtime.GOOS == "darwin"
+// macOS tells whether the app runs on macOS, which has a menu bar where
+// its menus are, other systems' windows carrying them, and writes keys as
+// ⌘F, not Ctrl+F. Tests render other systems' windows by setting it.
+var macOS = runtime.GOOS == "darwin"
 
 // shiftShortcut writes a key with the command modifier and shift the way
 // the platform does: ⇧⌘O on macOS, Ctrl+Shift+O elsewhere.
 func shiftShortcut(key string) string {
-	if runtime.GOOS == "darwin" {
+	if macOS {
 		return "⇧⌘" + key
 	}
 	return "Ctrl+Shift+" + key
@@ -57,7 +58,7 @@ func shiftShortcut(key string) string {
 // shiftKey writes a key with Shift the way the platform does: ⇧F7 on
 // macOS, Shift+F7 elsewhere.
 func shiftKey(key string) string {
-	if runtime.GOOS == "darwin" {
+	if macOS {
 		return "⇧" + key
 	}
 	return "Shift+" + key
@@ -66,7 +67,7 @@ func shiftKey(key string) string {
 // shortcut writes a key with the command modifier the way the platform
 // does: ⌘F on macOS, Ctrl+F elsewhere.
 func shortcut(key string) string {
-	if runtime.GOOS == "darwin" {
+	if macOS {
 		return "⌘" + key
 	}
 	if key == "↩" {

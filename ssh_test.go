@@ -278,3 +278,11 @@ func TestConnectTrust(t *testing.T) {
 		t.Errorf("trusted %q, fail %q, unsafe %v", trusted, w.ssh.fail, w.ssh.unsafe)
 	}
 }
+
+func TestHostName(t *testing.T) {
+	for host, want := range map[string]string{"devbox": "devbox", "ada@box": "ada@box", "wsl+Ubuntu-24.04": "WSL · Ubuntu-24.04"} {
+		if got := hostName(host); got != want {
+			t.Errorf("hostName(%q) = %q, want %q", host, got, want)
+		}
+	}
+}

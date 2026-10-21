@@ -89,6 +89,12 @@ func newWorkspace(t *testing.T, dir string) (*workspace, *ui.Tester, func()) {
 		t.Fatal(err)
 	}
 	ws := &workspace{dir: whole, closed: map[string]bool{}}
+	return startWorkspace(ws, repos, func(view func(*ui.Context)) *ui.Tester { return ui.NewTester(view, 1200, 900) })
+}
+
+// startWorkspace opens the repositories in ws, rendered by the tester
+// newTester makes, and returns it with what waits for them to settle.
+func startWorkspace(ws *workspace, repos []*git.Repo, newTester func(view func(*ui.Context)) *ui.Tester) (*workspace, *ui.Tester, func()) {
 	queue := make(chan func(), 256)
 	for _, r := range repos {
 		a := newApp(r)
@@ -96,7 +102,7 @@ func newWorkspace(t *testing.T, dir string) (*workspace, *ui.Tester, func()) {
 		a.update = func(fn func()) { queue <- fn }
 		ws.apps = append(ws.apps, a)
 	}
-	tt := ui.NewTester(ws.view, 1200, 900)
+	tt := newTester(ws.view)
 	settle := func() {
 		for {
 			tt.Frame()

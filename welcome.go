@@ -114,7 +114,7 @@ func (w *welcome) view(c *ui.Context) {
 		// Room to drag the window by, and, with no menu bar, the app's menu
 		// there: checking for updates, the settings and the version.
 		titleBar(c).Children(func() {
-			if !menuBar {
+			if !macOS {
 				ui.Box(c).Grow(1)
 				iconMenu(c, "more", loc.MenuApp(), w.appMenu)
 			}
@@ -126,7 +126,7 @@ func (w *welcome) view(c *ui.Context) {
 	if paths := root.DroppedFiles(); len(paths) > 0 {
 		w.open(dropTarget(paths[0]))
 	}
-	if !menuBar { // the menu bar's on macOS
+	if !macOS { // the menu bar's on macOS
 		c.OnShortcut(ui.Cmd, ui.KeyComma, func() { w.settings.open = true })
 	}
 }
@@ -212,7 +212,7 @@ func (w *welcome) recentRow(c *ui.Context, location string) {
 	host, dir, remote := "", "", false
 	if !exists(location) {
 		if host, dir, remote = parseLocation(location); remote {
-			name = path.Base(dir)
+			name, where = path.Base(dir), hostName(host)+":"+dir
 		}
 	}
 	row := ui.ButtonBase(c.Key(location)).Padding(8, 10).Gap(10).Radius(8).AlignItems(ui.Center).

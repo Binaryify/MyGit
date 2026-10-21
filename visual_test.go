@@ -6,6 +6,7 @@ import (
 	"image/png"
 	"mygit/internal/git"
 	"mygit/internal/helper"
+	"mygit/internal/remote"
 	loc "mygit/locales"
 	"os"
 	"os/exec"
@@ -182,20 +183,21 @@ func TestDumpSSH(t *testing.T) {
 // its history by four people and a change of the working tree.
 func orbitRepo(t *testing.T) string {
 	t.Helper()
-	dir, _ := demoRepo(t, "orbit")
+	dir := filepath.Join(t.TempDir(), "orbit")
+	demoRepo(t, dir)
 	return dir
 }
 
-// demoRepo makes orbit in a folder named name, and returns it with its
-// git, to go on with.
-func demoRepo(t *testing.T, name string) (string, func(author string, at time.Time, args ...string)) {
+// gitAs runs git in dir as author, at a time.
+type gitAs func(author string, at time.Time, args ...string)
+
+// teamGit makes dir and returns its git, run as an author at a time.
+func teamGit(t *testing.T, dir string) gitAs {
 	t.Helper()
-	dir := filepath.Join(t.TempDir(), name)
-	if err := os.Mkdir(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	day := time.Date(2026, 9, 20, 10, 13, 0, 0, time.Local)
-	git := func(author string, at time.Time, args ...string) {
+	return func(author string, at time.Time, args ...string) {
 		t.Helper()
 		cmd := exec.Command("git", args...)
 		cmd.Dir = dir
@@ -207,6 +209,13 @@ func demoRepo(t *testing.T, name string) (string, func(author string, at time.Ti
 			t.Fatalf("git %v: %v\n%s", args, err, out)
 		}
 	}
+}
+
+// demoRepo makes orbit in dir, and returns its git, to go on with.
+func demoRepo(t *testing.T, dir string) gitAs {
+	t.Helper()
+	day := time.Date(2026, 9, 20, 10, 13, 0, 0, time.Local)
+	git := teamGit(t, dir)
 	write := func(name, text string) {
 		t.Helper()
 		os.MkdirAll(filepath.Join(dir, filepath.Dir(name)), 0o755)
@@ -241,7 +250,7 @@ func demoRepo(t *testing.T, name string) (string, func(author string, at time.Ti
 	commit("Leo Park", day.Add(228*time.Hour), "Cache positions for a minute", map[string]string{"src/cache.ts": "export const ttl = 60_000\n"})
 	commit("Mia Chen", day.Add(231*time.Hour), "Document the configuration", map[string]string{"README.md": "# orbit\n\nTrack satellites as they pass.\n\n## Configuration\n"})
 	write("src/api.ts", "export async function fetchAll(tries = 3) {\n  for (let i = 1; ; i++) {\n    try {\n      return (await fetch('/positions')).json()\n    } catch (e) {\n      if (i === tries) throw e\n    }\n  }\n}\n")
-	return dir, git
+	return git
 }
 
 // TestDumpWelcome renders the welcome window into MYGIT_DUMP, 520×640 at
@@ -285,17 +294,9 @@ func TestDumpWelcome(t *testing.T) {
 // merge-base and merge-deleted show it after the magic wand, comparing
 // the base with the left, and a file the left deleted.
 func TestDumpMerge(t *testing.T) {
-	out := os.Getenv("MYGIT_DUMP")
-	if out == "" {
-		t.Skip()
-	}
-	lang := "zh"
-	if l := os.Getenv("MYGIT_LOCALE"); l != "" {
-		i18n.SetLocaleFunc(func() string { return l })
-		defer i18n.SetLocaleFunc(func() string { return "zh-Hans" })
-		lang = l
-	}
-	dir, run := demoRepo(t, "orbit")
+	sc := newShowcase(t)
+	dir := filepath.Join(t.TempDir(), "orbit")
+	run := demoRepo(t, dir)
 	day := time.Date(2026, 10, 2, 9, 40, 0, 0, time.Local)
 	theme := func(accent, trail, glow, draw string) string {
 		return "export const theme = {\n  dark: true,\n  accent: '" + accent + "',\n  orbit: 1.5," + trail +
@@ -335,27 +336,10 @@ func TestDumpMerge(t *testing.T) {
 	a := newApp(repo)
 	tt := &tester{a: a, queue: make(chan func(), 64)}
 	a.update = func(fn func()) { tt.queue <- fn }
-	tt.Tester = ui.NewTester(a.view, 1120, 746)
-	tt.SetDark(true)
-	tt.SetScale(1.4)
-	tt.SetTitleBar(ui.TitleBar{Left: 80, Height: titleBarHeight})
+	tt.Tester = sc.tester(a.view, 1120, 746)
 	a.start()
 	tt.settle()
-	shot := func(name string) {
-		t.Helper()
-		tt.Frame()
-		img := tt.Image()
-		// The traffic lights: 12 points across, 20 apart, from 16 by 13.
-		for i, c := range []color.RGBA{{255, 95, 87, 255}, {254, 188, 46, 255}, {40, 200, 64, 255}} {
-			disc(img, 1.4*float64(23+20*i), 1.4*20, 1.4*6, c)
-		}
-		f, err := os.Create(filepath.Join(out, name+"-"+lang+".png"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer f.Close()
-		png.Encode(f, img)
-	}
+	shot := func(name string) { sc.save(t, tt.Tester, name) }
 	tt.click(t, "theme.ts")
 	shot("merge")
 	m := a.detail.merge
@@ -368,17 +352,111 @@ func TestDumpMerge(t *testing.T) {
 	shot("merge-deleted")
 }
 
-// disc paints a disc of color c centered at x, y with radius r on img,
-// its edge smoothed.
+// showcase renders windows as the READMEs show them, into MYGIT_DUMP:
+// dark at 1.4×, named -zh, or -en with MYGIT_LOCALE=en, the window's
+// controls painted where the system draws them, macOS' traffic lights or,
+// for Windows, its caption buttons.
+type showcase struct {
+	out, lang string
+	windows   bool
+}
+
+// newShowcase skips the test unless MYGIT_DUMP says where to render.
+func newShowcase(t *testing.T) *showcase {
+	out := os.Getenv("MYGIT_DUMP")
+	if out == "" {
+		t.Skip()
+	}
+	sc := &showcase{out: out, lang: "zh"}
+	if l := os.Getenv("MYGIT_LOCALE"); l != "" {
+		i18n.SetLocaleFunc(func() string { return l })
+		t.Cleanup(func() { i18n.SetLocaleFunc(func() string { return "zh-Hans" }) })
+		sc.lang = l
+	}
+	return sc
+}
+
+// asWindows renders the windows after it as Windows': its caption buttons,
+// Ctrl in the shortcuts, the menus in the windows.
+func (sc *showcase) asWindows(t *testing.T) {
+	old := macOS
+	t.Cleanup(func() { macOS = old })
+	sc.windows, macOS = true, false
+}
+
+const showcaseScale = 1.4
+
+// tester renders view w×h points.
+func (sc *showcase) tester(view func(*ui.Context), w, h int) *ui.Tester {
+	tt := ui.NewTester(view, w, h)
+	tt.SetDark(true)
+	tt.SetScale(showcaseScale)
+	bar := ui.TitleBar{Left: 80, Height: titleBarHeight}
+	if sc.windows {
+		bar = ui.TitleBar{Right: 138, Height: titleBarHeight}
+	}
+	tt.SetTitleBar(bar)
+	return tt
+}
+
+// save writes the window as it is now.
+func (sc *showcase) save(t *testing.T, tt *ui.Tester, name string) {
+	t.Helper()
+	tt.Frame()
+	img := tt.Image()
+	pt := func(v float64) float64 { return v * showcaseScale }
+	if sc.windows {
+		// Windows 11's caption buttons, 46 points wide, their glyphs 10.
+		w, c := float64(img.Bounds().Dx())/showcaseScale, color.RGBA{220, 220, 220, 255}
+		y := float64(titleBarHeight) / 2
+		x := w - 138 + 23
+		line(img, pt(x-5), pt(y), pt(x+5), pt(y), pt(1), c)
+		x += 46
+		for _, e := range [][4]float64{{-5, -5, 5, -5}, {5, -5, 5, 5}, {5, 5, -5, 5}, {-5, 5, -5, -5}} {
+			line(img, pt(x+e[0]), pt(y+e[1]), pt(x+e[2]), pt(y+e[3]), pt(1), c)
+		}
+		x += 46
+		line(img, pt(x-5), pt(y-5), pt(x+5), pt(y+5), pt(1), c)
+		line(img, pt(x-5), pt(y+5), pt(x+5), pt(y-5), pt(1), c)
+	} else {
+		// The traffic lights: 12 points across, 20 apart, from 16 by 13.
+		for i, c := range []color.RGBA{{255, 95, 87, 255}, {254, 188, 46, 255}, {40, 200, 64, 255}} {
+			disc(img, pt(float64(23+20*i)), pt(20), pt(6), c)
+		}
+	}
+	f, err := os.Create(filepath.Join(sc.out, name+"-"+sc.lang+".png"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	png.Encode(f, img)
+}
+
+// disc paints a disc of color c centered at x, y with radius r.
 func disc(img *image.RGBA, x, y, r float64, c color.RGBA) {
-	for py := int(y - r - 1); py <= int(y+r+1); py++ {
-		for px := int(x - r - 1); px <= int(x+r+1); px++ {
-			// How much of the pixel the disc covers, by 4×4 samples.
+	cover(img, x-r, y-r, x+r, y+r, c, func(px, py float64) bool { return (px-x)*(px-x)+(py-y)*(py-y) <= r*r })
+}
+
+// line paints a line w wide from x0, y0 to x1, y1.
+func line(img *image.RGBA, x0, y0, x1, y1, w float64, c color.RGBA) {
+	dx, dy := x1-x0, y1-y0
+	n := dx*dx + dy*dy
+	cover(img, min(x0, x1)-w, min(y0, y1)-w, max(x0, x1)+w, max(y0, y1)+w, c, func(px, py float64) bool {
+		t := max(0, min(1, ((px-x0)*dx+(py-y0)*dy)/n)) // the nearest point of the line
+		qx, qy := x0+t*dx-px, y0+t*dy-py
+		return qx*qx+qy*qy <= w*w/4
+	})
+}
+
+// cover paints c on img where in says, in the box from x0, y0 to x1, y1,
+// its edges smoothed: as much of a pixel as its 4×4 samples are in.
+func cover(img *image.RGBA, x0, y0, x1, y1 float64, c color.RGBA, in func(x, y float64) bool) {
+	for py := int(y0 - 1); py <= int(y1+1); py++ {
+		for px := int(x0 - 1); px <= int(x1+1); px++ {
 			n := 0
 			for sy := range 4 {
 				for sx := range 4 {
-					dx, dy := float64(px)+(float64(sx)+0.5)/4-x, float64(py)+(float64(sy)+0.5)/4-y
-					if dx*dx+dy*dy <= r*r {
+					if in(float64(px)+(float64(sx)+0.5)/4, float64(py)+(float64(sy)+0.5)/4) {
 						n++
 					}
 				}
@@ -392,4 +470,105 @@ func disc(img *image.RGBA, x, y, r float64, c color.RGBA) {
 			img.SetRGBA(px, py, color.RGBA{mix(c.R, bg.R), mix(c.G, bg.G), mix(c.B, bg.B), 255})
 		}
 	}
+}
+
+// TestDumpShowcase renders, into MYGIT_DUMP, MyGit opening repositories on
+// other computers, to show it: over SSH from macOS, choosing the host
+// (ssh-connect), then a folder of it (ssh-folders), the folder of several
+// repositories open together (ssh-workspace) and one of them alone
+// (ssh-repo); and the same through WSL in Windows' windows (wsl-connect,
+// wsl-folders, wsl-workspace, wsl-repo). As newShowcase names and sizes
+// them.
+func TestDumpShowcase(t *testing.T) {
+	sc := newShowcase(t)
+	home := t.TempDir()
+	t.Setenv("HOME", home) // the welcome window's recent repositories
+	var recent []string
+	for _, name := range []string{"orbit", "atlas"} {
+		dir := filepath.Join(home, "Projects", name)
+		os.MkdirAll(dir, 0o755)
+		recent = append(recent, dir)
+	}
+
+	// mia's home: orbit, and two repositories of the team's beside it.
+	mia := filepath.Join(t.TempDir(), "mia")
+	demoRepo(t, filepath.Join(mia, "orbit"))
+	day := time.Date(2026, 10, 12, 9, 30, 0, 0, time.Local)
+	team := func(name string, commits [][3]string, work map[string]string) {
+		dir := filepath.Join(mia, name)
+		run := teamGit(t, dir)
+		run("Mia Chen", day, "init", "-q", "-b", "main")
+		run("Mia Chen", day, "config", "commit.gpgsign", "false")
+		for i, c := range commits { // author, message, file
+			at := day.Add(time.Duration(i*7) * time.Hour)
+			if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, c[2])), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(dir, c[2]), []byte("// "+c[1]+"\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			run(c[0], at, "add", ".")
+			run(c[0], at, "commit", "-q", "-m", c[1])
+		}
+		for name, text := range work {
+			if err := os.WriteFile(filepath.Join(dir, name), []byte(text), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	team("api-gateway", [][3]string{
+		{"Leo Park", "Route the positions through the gateway", "routes.ts"},
+		{"Noah Kim", "Check tokens before routing", "auth.ts"},
+		{"Leo Park", "Log the time each route takes", "log.ts"},
+	}, map[string]string{"routes.ts": "// Route the positions through the gateway\nexport const positions = '/v2/positions'\n", "limit.ts": "export const perMinute = 600\n"})
+	team("infra", [][3]string{
+		{"Ava Rossi", "Run the API on two zones", "deploy/api.tf"},
+		{"Mia Chen", "Back the database up nightly", "deploy/db.tf"},
+	}, map[string]string{"deploy/api.tf": "# Run the API on two zones\nzones = [\"a\", \"b\", \"c\"]\n"})
+	repos := func(host string) []*git.Repo {
+		var out []*git.Repo
+		for _, name := range []string{"api-gateway", "infra", "orbit"} {
+			out = append(out, helperRepo(t, host, filepath.Join(mia, name)))
+		}
+		return out
+	}
+	listing := helper.Listing{Dir: "/home/mia", Parent: "/home", Entries: []helper.Entry{
+		{Name: "api-gateway", Repo: true}, {Name: "dotfiles"}, {Name: "infra", Repo: true},
+		{Name: "notes"}, {Name: "orbit", Repo: true}, {Name: "scratch"},
+	}}
+
+	old := prefs.Remotes
+	t.Cleanup(func() { prefs.Remotes = old })
+	shoot := func(prefix, host string, hosts, distros []string) {
+		prefs.Remotes = []string{host + ":/home/mia/orbit"}
+		// Choosing the host, written or from ~/.ssh/config, or WSL's.
+		w := &welcome{recent: recent, ssh: connectPlan{open: true, hosts: hosts, distros: distros, host: host}}
+		sc.save(t, sc.tester(w.view, 1120, 746), prefix+"-connect")
+		// Its folders, the repositories marked.
+		w = &welcome{recent: recent, ssh: connectPlan{open: true, connected: host, listing: listing, path: listing.Dir}}
+		sc.save(t, sc.tester(w.view, 1120, 746), prefix+"-folders")
+		// The folder open: its repositories together, orbit's change shown.
+		ws, tt, settle := startWorkspace(&workspace{host: host, dir: mia, closed: map[string]bool{}}, repos(host),
+			func(view func(*ui.Context)) *ui.Tester { return sc.tester(view, 1120, 746) })
+		if err := tt.Click("api.ts"); err != nil {
+			t.Fatalf("%v: %q", err, tt.Texts())
+		}
+		settle()
+		if ws.apps[ws.active].repo.Name() != "orbit" {
+			t.Fatalf("active %s", ws.apps[ws.active].repo.Name())
+		}
+		sc.save(t, tt, prefix+"-workspace")
+		// orbit alone.
+		a := newApp(helperRepo(t, host, filepath.Join(mia, "orbit")))
+		at := &tester{a: a, queue: make(chan func(), 64)}
+		a.update = func(fn func()) { at.queue <- fn }
+		at.Tester = sc.tester(a.view, 1120, 746)
+		a.start()
+		at.settle()
+		at.click(t, "api.ts")
+		sc.save(t, at.Tester, prefix+"-repo")
+	}
+	shoot("ssh", "devbox", []string{"devbox", "gpu-box", "staging"}, nil)
+	sc.asWindows(t)
+	shoot("wsl", remote.WSLHost("Ubuntu-24.04"), []string{"devbox", "gpu-box"}, []string{"Ubuntu-24.04", "Debian"})
 }
