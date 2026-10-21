@@ -1920,6 +1920,56 @@ func (msgs Messages) TakeBoth() string {
 	return Catalog.Format(msgs.locale, "takeBoth", nil)
 }
 
+// ApplyChange says "Take this change"
+// in the language the app shows.
+func ApplyChange() string { return In(i18n.Locale()).ApplyChange() }
+
+// ApplyChange says "Take this change"
+// in the language of msgs.
+func (msgs Messages) ApplyChange() string {
+	return Catalog.Format(msgs.locale, "applyChange", nil)
+}
+
+// IgnoreChange says "Ignore this change"
+// in the language the app shows.
+func IgnoreChange() string { return In(i18n.Locale()).IgnoreChange() }
+
+// IgnoreChange says "Ignore this change"
+// in the language of msgs.
+func (msgs Messages) IgnoreChange() string {
+	return Catalog.Format(msgs.locale, "ignoreChange", nil)
+}
+
+// ResolveSimple says "Resolve Simple Conflicts"
+// in the language the app shows.
+func ResolveSimple() string { return In(i18n.Locale()).ResolveSimple() }
+
+// ResolveSimple says "Resolve Simple Conflicts"
+// in the language of msgs.
+func (msgs Messages) ResolveSimple() string {
+	return Catalog.Format(msgs.locale, "resolveSimple", nil)
+}
+
+// ResolveSimpleHint says "Merges the conflicts whose sides changed different words of the lines"
+// in the language the app shows.
+func ResolveSimpleHint() string { return In(i18n.Locale()).ResolveSimpleHint() }
+
+// ResolveSimpleHint says "Merges the conflicts whose sides changed different words of the lines"
+// in the language of msgs.
+func (msgs Messages) ResolveSimpleHint() string {
+	return Catalog.Format(msgs.locale, "resolveSimpleHint", nil)
+}
+
+// ResolvedSimple says "{count, plural, =0 {No conflict was simple enough} one {Resolved # conflict} other {Resolved # conflicts}}"
+// in the language the app shows.
+func ResolvedSimple(count int) string { return In(i18n.Locale()).ResolvedSimple(count) }
+
+// ResolvedSimple says "{count, plural, =0 {No conflict was simple enough} one {Resolved # conflict} other {Resolved # conflicts}}"
+// in the language of msgs.
+func (msgs Messages) ResolvedSimple(count int) string {
+	return Catalog.Format(msgs.locale, "resolvedSimple", map[string]any{"count": count})
+}
+
 // NoConflictsLeft says "No conflicts left"
 // in the language the app shows.
 func NoConflictsLeft() string { return In(i18n.Locale()).NoConflictsLeft() }
@@ -1990,11 +2040,11 @@ func (msgs Messages) ConflictsLeftTitle() string {
 	return Catalog.Format(msgs.locale, "conflictsLeftTitle", nil)
 }
 
-// ConflictsLeftMessage says "{count, plural, one {# conflict marker is} other {# conflict markers are}} left in the result. Save and mark it resol…"
+// ConflictsLeftMessage says "{count, plural, one {# conflict is} other {# conflicts are}} left unresolved in the result. Save and mark it resolved…"
 // in the language the app shows.
 func ConflictsLeftMessage(count int) string { return In(i18n.Locale()).ConflictsLeftMessage(count) }
 
-// ConflictsLeftMessage says "{count, plural, one {# conflict marker is} other {# conflict markers are}} left in the result. Save and mark it resol…"
+// ConflictsLeftMessage says "{count, plural, one {# conflict is} other {# conflicts are}} left unresolved in the result. Save and mark it resolved…"
 // in the language of msgs.
 func (msgs Messages) ConflictsLeftMessage(count int) string {
 	return Catalog.Format(msgs.locale, "conflictsLeftMessage", map[string]any{"count": count})

@@ -525,6 +525,18 @@
   "takeLeft": "Take Left",
   "takeRight": "Take Right",
   "takeBoth": "Take Both",
+  "applyChange": "Take this change",
+  "ignoreChange": "Ignore this change",
+  "resolveSimple": "Resolve Simple Conflicts",
+  "resolveSimpleHint": "Merges the conflicts whose sides changed different words of the lines",
+  "resolvedSimple": "{count, plural, =0 {No conflict was simple enough} one {Resolved # conflict} other {Resolved # conflicts}}",
+  "@resolvedSimple": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "noConflictsLeft": "No conflicts left",
   "wholeFile": "Whole File",
   "takeAllLeft": "Take All from Left ({side})",
@@ -546,7 +558,7 @@
   "saveResolved": "Save and Mark Resolved",
   "mergeResult": "Result",
   "conflictsLeftTitle": "Conflicts are left",
-  "conflictsLeftMessage": "{count, plural, one {# conflict marker is} other {# conflict markers are}} left in the result. Save and mark it resolved anyway?",
+  "conflictsLeftMessage": "{count, plural, one {# conflict is} other {# conflicts are}} left unresolved in the result. Save and mark it resolved anyway?",
   "@conflictsLeftMessage": {
     "placeholders": {
       "count": {

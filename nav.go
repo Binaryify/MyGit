@@ -48,6 +48,10 @@ func (a *app) changeNav(c *ui.Context) {
 // it first says so, and pressed again goes on to the next file, opened
 // at its first change, or going back the previous file, at its last.
 func (a *app) stepChange(back bool) {
+	if m := a.detail.merge; m != nil { // the conflicts left, in the merge window
+		m.step(back)
+		return
+	}
 	dir := 1
 	if back {
 		dir = -1

@@ -332,15 +332,16 @@ func TestConflictBar(t *testing.T) {
 	// Resolve it in the merge view with their side, and go on.
 	tt.click(t, "main.go")
 	m := tt.a.detail.merge
-	if m == nil || len(m.blocks) != 1 || !tt.HasText("冲突 1 / 1") {
+	if m == nil || m.model.Unresolved() != 1 || !tt.HasText("冲突 1 / 1") {
 		t.Fatalf("merge %+v, texts %q", m, tt.Texts())
 	}
-	if m.ours.Buffer.String() != "package mine\n" || m.theirs.Buffer.String() != "package other\n" {
-		t.Fatalf("sides %q, %q", m.ours.Buffer.String(), m.theirs.Buffer.String())
+	ours, result, theirs := m.panes[paneOurs].Buffer, m.panes[paneResult].Buffer, m.panes[paneTheirs].Buffer
+	if ours.String() != "package mine\n" || theirs.String() != "package other\n" || result.String() != "package main\n\nfunc main() {}\n" {
+		t.Fatalf("panes %q, %q, %q", ours.String(), result.String(), theirs.String())
 	}
 	tt.click(t, "采用右侧")
-	if m.result.Buffer.String() != "package other\n" || !tt.HasText("没有剩余冲突") {
-		t.Fatalf("result %q", m.result.Buffer.String())
+	if result.String() != "package other\n" || !tt.HasText("没有剩余冲突") {
+		t.Fatalf("result %q", result.String())
 	}
 	tt.click(t, "保存并标记为已解决")
 	if tt.a.errMsg != "" || len(tt.a.staged) != 1 || tt.HasText("main.go 有冲突") {

@@ -71,7 +71,7 @@ MyGit reads what `git` prints and lets `git` itself make every change, so a repo
   </tr>
   <tr>
     <td><b>Stage what you mean.</b> Stage files, changes or single lines, and edit the working tree right in the diff.</td>
-    <td><b>Resolve conflicts side by side.</b> Ours, the result and theirs, a conflict at a time.</td>
+    <td><b>Resolve conflicts side by side.</b> Ours, the result and theirs scrolling together, as IntelliJ's: changes of one side alone already in, each conflict taken with » or « or dismissed, simple ones resolved at once.</td>
   </tr>
   <tr>
     <td><img src="docs/images/branches-en.png" alt="Searching branches"></td>
@@ -89,7 +89,7 @@ MyGit reads what `git` prints and lets `git` itself make every change, so a repo
 - **History** — every branch, tag and remote with its graph, streamed as it loads; search by message, author or hash; filter by branch or path (file history)
 - **History tools** — branch, tag, check out, cherry-pick, revert, reset (soft / mixed / hard) and interactive rebase (reorder, reword, edit, squash, fixup, drop)
 - **Pull requests** — open a GitHub pull request, read and reply to its threads under their lines, resolve them, and submit a review: comment, approve or request changes
-- **Conflicts** — a three-pane merge view, and continue, skip or abort a merge, rebase, cherry-pick or revert
+- **Conflicts** — a three-pane merge view as IntelliJ's, merging from the base itself: no conflict markers, the panes aligned and scrolling together, » « ✕ by each change, and a magic wand for conflicts of different words; continue, skip or abort a merge, rebase, cherry-pick or revert
 - **Stash, blame and remotes** — stash with untracked files, blame a file line by line, manage remotes, pull (fast-forward, rebase or merge), preview a push, force with lease
 - **Sign-ins** — when git needs a username, token or passphrase, the window asks
 - **Workspaces** — open a folder of repositories, as an agent's working folder over a few of them, and each shows in the sidebar with its own message, sync and changes, as VS Code's source control has them
