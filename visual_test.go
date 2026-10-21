@@ -6,6 +6,7 @@ import (
 	"image/png"
 	"mygit/internal/git"
 	"mygit/internal/helper"
+	loc "mygit/locales"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -280,7 +281,9 @@ func TestDumpWelcome(t *testing.T) {
 // TestDumpMerge renders the merge window into MYGIT_DUMP as the READMEs
 // show it, merge-zh.png, or merge-en.png with MYGIT_LOCALE=en: orbit's
 // theme merged with a branch that changed it too, 1120×746 at 1.4×, the
-// traffic lights macOS draws painted where it draws them.
+// traffic lights macOS draws painted where it draws them. merge-wand,
+// merge-base and merge-deleted show it after the magic wand, comparing
+// the base with the left, and a file the left deleted.
 func TestDumpMerge(t *testing.T) {
 	out := os.Getenv("MYGIT_DUMP")
 	if out == "" {
@@ -306,11 +309,18 @@ func TestDumpMerge(t *testing.T) {
 		run(author, at, "commit", "-q", "-m", msg)
 	}
 	run("Mia Chen", day, "stash", "-q") // the change of the working tree
+	if err := os.WriteFile(filepath.Join(dir, "src/legacy.ts"), []byte("// The theme before the dark one.\nexport const light = true\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	commit("Mia Chen", day, "Add a dark theme", theme("#3b82f6", "", "0.4", "dot(s, 2, 'white')"))
 	run("Ava Rossi", day.Add(30*time.Hour), "switch", "-q", "-c", "feature/palette")
+	if err := os.WriteFile(filepath.Join(dir, "src/legacy.ts"), []byte("// The theme before the dark one.\nexport const light = true\nexport const sat = palette.sat\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	commit("Ava Rossi", day.Add(31*time.Hour), "Color satellites from the new palette",
 		theme("#a78bfa", "\n  trail: 8,", "0.4", "dot(s, 2, palette.sat)"))
 	run("Mia Chen", day.Add(32*time.Hour), "switch", "-q", "main")
+	run("Mia Chen", day.Add(33*time.Hour), "rm", "-q", "src/legacy.ts")
 	commit("Mia Chen", day.Add(33*time.Hour), "Brighten satellites in the dark theme", theme("#60a5fa", "", "0.8", "dot(s, 3, 'white')"))
 	cmd := exec.Command("git", "merge", "-q", "feature/palette")
 	cmd.Dir = dir
@@ -331,19 +341,31 @@ func TestDumpMerge(t *testing.T) {
 	tt.SetTitleBar(ui.TitleBar{Left: 80, Height: titleBarHeight})
 	a.start()
 	tt.settle()
+	shot := func(name string) {
+		t.Helper()
+		tt.Frame()
+		img := tt.Image()
+		// The traffic lights: 12 points across, 20 apart, from 16 by 13.
+		for i, c := range []color.RGBA{{255, 95, 87, 255}, {254, 188, 46, 255}, {40, 200, 64, 255}} {
+			disc(img, 1.4*float64(23+20*i), 1.4*20, 1.4*6, c)
+		}
+		f, err := os.Create(filepath.Join(out, name+"-"+lang+".png"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+		png.Encode(f, img)
+	}
 	tt.click(t, "theme.ts")
-	tt.Frame()
-	img := tt.Image()
-	// The traffic lights: 12 points across, 20 apart, from 16 by 13.
-	for i, c := range []color.RGBA{{255, 95, 87, 255}, {254, 188, 46, 255}, {40, 200, 64, 255}} {
-		disc(img, 1.4*float64(23+20*i), 1.4*20, 1.4*6, c)
-	}
-	f, err := os.Create(filepath.Join(out, "merge-"+lang+".png"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer f.Close()
-	png.Encode(f, img)
+	shot("merge")
+	m := a.detail.merge
+	m.resolveSimple()
+	shot("merge-wand")
+	m.compareBase(paneOurs, loc.CompareBaseLeft())
+	shot("merge-base")
+	m.compare = nil
+	tt.click(t, "legacy.ts")
+	shot("merge-deleted")
 }
 
 // disc paints a disc of color c centered at x, y with radius r on img,
