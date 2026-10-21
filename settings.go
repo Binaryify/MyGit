@@ -19,15 +19,16 @@ import (
 // settings are the choices kept between launches, shared by the windows,
 // in a JSON file.
 type settings struct {
-	Editor           string   `json:"editor"`   // the command opening files, "" for the system's app
-	Language         string   `json:"language"` // the language chosen, "" for the system's
-	Unified          bool     `json:"unified"`
-	IgnoreWhitespace bool     `json:"ignoreWhitespace"`
-	SidebarW         float32  `json:"sidebarW"`
-	LogH             float32  `json:"logH"`
-	FilesW           float32  `json:"filesW"`
-	Proxy            string   `json:"proxy,omitempty"`   // the downloads', "" for the system's
-	Remotes          []string `json:"remotes,omitempty"` // repositories on other computers opened lately, host:dir
+	Editor           string           `json:"editor"`          // the command opening files, "" for the system's app
+	Language         string           `json:"language"`        // the language chosen, "" for the system's
+	Theme            mygo.ThemeSource `json:"theme,omitempty"` // light or dark, "" for the system's
+	Unified          bool             `json:"unified"`
+	IgnoreWhitespace bool             `json:"ignoreWhitespace"`
+	SidebarW         float32          `json:"sidebarW"`
+	LogH             float32          `json:"logH"`
+	FilesW           float32          `json:"filesW"`
+	Proxy            string           `json:"proxy,omitempty"`   // the downloads', "" for the system's
+	Remotes          []string         `json:"remotes,omitempty"` // repositories on other computers opened lately, host:dir
 	path             string
 }
 
@@ -43,7 +44,12 @@ func loadSettings() {
 		_ = json.Unmarshal(data, prefs)
 	}
 	_ = sysproxy.Set(prefs.Proxy)
+	applyTheme(prefs.Theme) // the app starts in it
 }
+
+// applyTheme makes the app light, dark or the system's; tests replace it,
+// as it waits for the app's main thread.
+var applyTheme = mygo.Theme.SetSource
 
 func (s *settings) save() {
 	if s.path == "" {
@@ -88,60 +94,67 @@ func (d *settingsDialog) view(c *ui.Context, withShortcuts bool, closed func()) 
 	}
 	t := c.Theme()
 	if ui.Modal(c, &d.open, func() {
+		// The title and Done stay in view, the settings between scrolling
+		// in a window too short for them all.
+		_, h := c.Size()
 		ui.Column(c).Gap(12).Width(dialogWidth(c, 440)).Children(func() {
 			ui.Text(c, loc.Settings()).Bold().FontSize(15)
-			ui.Text(c, loc.ExternalEditor()).Bold().TextColor(t.TextMuted)
-			choices := editorChoices()
-			choice := prefs.Editor
-			switch choice {
-			case "":
-				choice = choices[0]
-			case "code", "cursor", "zed", "subl", "idea":
-			default:
-				choice = choices[len(choices)-1]
-			}
-			if ui.Select(c, &choice, choices).Label(loc.ExternalEditor()).Changed() {
+			ui.Scroll(c).MaxHeight(h - t.Space(40)).Gap(12).Children(func() {
+				ui.Text(c, loc.ExternalEditor()).Bold().TextColor(t.TextMuted)
+				choices := editorChoices()
+				choice := prefs.Editor
 				switch choice {
-				case choices[0]:
-					prefs.Editor = ""
-				case choices[len(choices)-1]:
-					prefs.Editor = " " // typed below
+				case "":
+					choice = choices[0]
+				case "code", "cursor", "zed", "subl", "idea":
 				default:
-					prefs.Editor = choice
+					choice = choices[len(choices)-1]
 				}
-			}
-			if choice == choices[len(choices)-1] {
-				ui.TextInput(c, &prefs.Editor).Placeholder(loc.EditorCommandPlaceholder()).Label(loc.EditorCommand())
-			}
-			ui.Text(c, loc.EditorLineHint()).FontSize(11).TextColor(t.TextMuted)
-			ui.Text(c, loc.Language()).Bold().TextColor(t.TextMuted)
-			languageSelect(c)
-			ui.Text(c, loc.DiffSection()).Bold().TextColor(t.TextMuted)
-			ui.Checkbox(c, &prefs.Unified, loc.DiffUnified())
-			ui.Checkbox(c, &prefs.IgnoreWhitespace, loc.IgnoreWhitespace())
-			ui.Text(c, loc.NetworkSection()).Bold().TextColor(t.TextMuted)
-			if ui.TextInput(c, &prefs.Proxy).Placeholder(loc.ProxyPlaceholder()).Label(loc.Proxy()).Changed() {
-				d.proxyErr = ""
-				if err := sysproxy.Set(prefs.Proxy); err != nil {
-					d.proxyErr = loc.ProxyInvalid()
-				}
-			}
-			if d.proxyErr != "" {
-				ui.Text(c, d.proxyErr).FontSize(11).TextColor(t.Danger)
-			} else {
-				ui.Text(c, loc.ProxyHint()).FontSize(11).TextColor(t.TextMuted).Wrap()
-			}
-			if withShortcuts {
-				ui.Text(c, loc.Shortcuts()).Bold().TextColor(t.TextMuted)
-				ui.Column(c).Gap(6).Children(func() {
-					for _, k := range shortcuts() {
-						ui.Row(c.Key(k.keys)).Gap(12).Children(func() {
-							ui.Text(c, k.keys).Font("monospace").FontSize(12).Width(96)
-							ui.Text(c, k.does).FontSize(12).TextColor(t.TextMuted).Grow(1).Basis(0)
-						})
+				if ui.Select(c, &choice, choices).Label(loc.ExternalEditor()).Changed() {
+					switch choice {
+					case choices[0]:
+						prefs.Editor = ""
+					case choices[len(choices)-1]:
+						prefs.Editor = " " // typed below
+					default:
+						prefs.Editor = choice
 					}
-				})
-			}
+				}
+				if choice == choices[len(choices)-1] {
+					ui.TextInput(c, &prefs.Editor).Placeholder(loc.EditorCommandPlaceholder()).Label(loc.EditorCommand())
+				}
+				ui.Text(c, loc.EditorLineHint()).FontSize(11).TextColor(t.TextMuted)
+				ui.Text(c, loc.Language()).Bold().TextColor(t.TextMuted)
+				languageSelect(c)
+				ui.Text(c, loc.Appearance()).Bold().TextColor(t.TextMuted)
+				themeSelect(c)
+				ui.Text(c, loc.DiffSection()).Bold().TextColor(t.TextMuted)
+				ui.Checkbox(c, &prefs.Unified, loc.DiffUnified())
+				ui.Checkbox(c, &prefs.IgnoreWhitespace, loc.IgnoreWhitespace())
+				ui.Text(c, loc.NetworkSection()).Bold().TextColor(t.TextMuted)
+				if ui.TextInput(c, &prefs.Proxy).Placeholder(loc.ProxyPlaceholder()).Label(loc.Proxy()).Changed() {
+					d.proxyErr = ""
+					if err := sysproxy.Set(prefs.Proxy); err != nil {
+						d.proxyErr = loc.ProxyInvalid()
+					}
+				}
+				if d.proxyErr != "" {
+					ui.Text(c, d.proxyErr).FontSize(11).TextColor(t.Danger)
+				} else {
+					ui.Text(c, loc.ProxyHint()).FontSize(11).TextColor(t.TextMuted).Wrap()
+				}
+				if withShortcuts {
+					ui.Text(c, loc.Shortcuts()).Bold().TextColor(t.TextMuted)
+					ui.Column(c).Gap(6).Children(func() {
+						for _, k := range shortcuts() {
+							ui.Row(c.Key(k.keys)).Gap(12).Children(func() {
+								ui.Text(c, k.keys).Font("monospace").FontSize(12).Width(96)
+								ui.Text(c, k.does).FontSize(12).TextColor(t.TextMuted).Grow(1).Basis(0)
+							})
+						}
+					})
+				}
+			})
 			ui.Row(c).Justify(ui.End).Children(func() {
 				if ui.PrimaryButton(c, loc.Done()).Clicked() {
 					d.open = false
@@ -177,6 +190,22 @@ func shortcuts() []keyBinding {
 		{loc.ShortcutSpace(), loc.ShortcutStage()},
 		{loc.ShortcutDelete(), loc.ShortcutDiscard()},
 		{shortcut(loc.ShortcutClick()), loc.ShortcutCompare()},
+	}
+}
+
+// themeSelect picks the app's appearance: the system's, light or dark,
+// for every window at once.
+func themeSelect(c *ui.Context) {
+	sources := []mygo.ThemeSource{mygo.ThemeSystem, mygo.ThemeLight, mygo.ThemeDark}
+	labels := []string{loc.ThemeSystem(), loc.ThemeLight(), loc.ThemeDark()}
+	choice := labels[max(slices.Index(sources, prefs.Theme), 0)]
+	if ui.Select(c.Key("theme"), &choice, labels).Label(loc.Appearance()).Changed() {
+		prefs.Theme = sources[slices.Index(labels, choice)]
+		if prefs.Theme == mygo.ThemeSystem {
+			prefs.Theme = ""
+		}
+		prefs.save()
+		applyTheme(prefs.Theme)
 	}
 }
 

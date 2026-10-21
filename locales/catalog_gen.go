@@ -2320,6 +2320,46 @@ func (msgs Messages) Language() string {
 	return Catalog.Format(msgs.locale, "language", nil)
 }
 
+// Appearance says "Appearance"
+// in the language the app shows.
+func Appearance() string { return In(i18n.Locale()).Appearance() }
+
+// Appearance says "Appearance"
+// in the language of msgs.
+func (msgs Messages) Appearance() string {
+	return Catalog.Format(msgs.locale, "appearance", nil)
+}
+
+// ThemeSystem says "System"
+// in the language the app shows.
+func ThemeSystem() string { return In(i18n.Locale()).ThemeSystem() }
+
+// ThemeSystem says "System"
+// in the language of msgs.
+func (msgs Messages) ThemeSystem() string {
+	return Catalog.Format(msgs.locale, "themeSystem", nil)
+}
+
+// ThemeLight says "Light"
+// in the language the app shows.
+func ThemeLight() string { return In(i18n.Locale()).ThemeLight() }
+
+// ThemeLight says "Light"
+// in the language of msgs.
+func (msgs Messages) ThemeLight() string {
+	return Catalog.Format(msgs.locale, "themeLight", nil)
+}
+
+// ThemeDark says "Dark"
+// in the language the app shows.
+func ThemeDark() string { return In(i18n.Locale()).ThemeDark() }
+
+// ThemeDark says "Dark"
+// in the language of msgs.
+func (msgs Messages) ThemeDark() string {
+	return Catalog.Format(msgs.locale, "themeDark", nil)
+}
+
 // ChangesTab says "Changes"
 // in the language the app shows.
 func ChangesTab() string { return In(i18n.Locale()).ChangesTab() }

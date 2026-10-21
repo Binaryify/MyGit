@@ -134,3 +134,41 @@ func TestWelcomeAppMenu(t *testing.T) {
 		t.Error("the welcome window carries a menu beside macOS' menu bar")
 	}
 }
+
+// The appearance chosen in the settings applies at once and is kept;
+// following the system again keeps nothing.
+func TestThemeSetting(t *testing.T) {
+	old, oldLang, oldApply := prefs.Theme, prefs.Language, applyTheme
+	defer func() { prefs.Theme, prefs.Language, applyTheme = old, oldLang, oldApply }()
+	prefs.Language = "en" // its select shows English, not 跟随系统 as the appearance's can
+	var applied []mygo.ThemeSource
+	applyTheme = func(s mygo.ThemeSource) { applied = append(applied, s) }
+	prefs.Theme = mygo.ThemeDark
+	tt := newTester(t)
+	tt.a.settings.open = true
+	tt.Frame()
+	if !tt.HasText("外观") {
+		t.Fatalf("no appearance in %q", tt.Texts())
+	}
+	choose := func(from, to string) {
+		t.Helper()
+		if err := tt.Click(from); err != nil {
+			t.Fatal(err)
+		}
+		tt.Frame()
+		if err := tt.ChooseMenuItem(to); err != nil {
+			if err := tt.Click(to); err != nil {
+				t.Fatalf("choosing %q: %v; menu %q, texts %q", to, err, tt.Menu(), tt.Texts())
+			}
+		}
+		tt.Frame()
+	}
+	choose("深色", "浅色")
+	if prefs.Theme != mygo.ThemeLight || len(applied) != 1 || applied[0] != mygo.ThemeLight {
+		t.Fatalf("after light: theme %q, applied %v", prefs.Theme, applied)
+	}
+	choose("浅色", "跟随系统")
+	if prefs.Theme != "" || len(applied) != 2 || applied[1] != "" {
+		t.Fatalf("after the system's: theme %q, applied %v", prefs.Theme, applied)
+	}
+}

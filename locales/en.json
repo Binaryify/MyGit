@@ -600,6 +600,10 @@
   "diffUnified": "One above the other (else side by side)",
   "ignoreWhitespace": "Ignore whitespace changes",
   "language": "Language",
+  "appearance": "Appearance",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
   "changesTab": "Changes",
   "stashTab": "Stash ({count})",
   "@stashTab": {
