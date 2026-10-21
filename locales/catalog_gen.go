@@ -2330,6 +2330,46 @@ func (msgs Messages) Language() string {
 	return Catalog.Format(msgs.locale, "language", nil)
 }
 
+// Appearance says "Appearance"
+// in the language the app shows.
+func Appearance() string { return In(i18n.Locale()).Appearance() }
+
+// Appearance says "Appearance"
+// in the language of msgs.
+func (msgs Messages) Appearance() string {
+	return Catalog.Format(msgs.locale, "appearance", nil)
+}
+
+// AppearanceAuto says "Match the System"
+// in the language the app shows.
+func AppearanceAuto() string { return In(i18n.Locale()).AppearanceAuto() }
+
+// AppearanceAuto says "Match the System"
+// in the language of msgs.
+func (msgs Messages) AppearanceAuto() string {
+	return Catalog.Format(msgs.locale, "appearanceAuto", nil)
+}
+
+// AppearanceLight says "Light"
+// in the language the app shows.
+func AppearanceLight() string { return In(i18n.Locale()).AppearanceLight() }
+
+// AppearanceLight says "Light"
+// in the language of msgs.
+func (msgs Messages) AppearanceLight() string {
+	return Catalog.Format(msgs.locale, "appearanceLight", nil)
+}
+
+// AppearanceDark says "Dark"
+// in the language the app shows.
+func AppearanceDark() string { return In(i18n.Locale()).AppearanceDark() }
+
+// AppearanceDark says "Dark"
+// in the language of msgs.
+func (msgs Messages) AppearanceDark() string {
+	return Catalog.Format(msgs.locale, "appearanceDark", nil)
+}
+
 // ChangesTab says "Changes"
 // in the language the app shows.
 func ChangesTab() string { return In(i18n.Locale()).ChangesTab() }

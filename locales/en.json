@@ -601,6 +601,10 @@
   "diffUnified": "One above the other (else side by side)",
   "ignoreWhitespace": "Ignore whitespace changes",
   "language": "Language",
+  "appearance": "Appearance",
+  "appearanceAuto": "Match the System",
+  "appearanceLight": "Light",
+  "appearanceDark": "Dark",
   "changesTab": "Changes",
   "stashTab": "Stash ({count})",
   "@stashTab": {

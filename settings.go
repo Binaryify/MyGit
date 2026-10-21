@@ -19,8 +19,9 @@ import (
 // settings are the choices kept between launches, shared by the windows,
 // in a JSON file.
 type settings struct {
-	Editor           string   `json:"editor"`   // the command opening files, "" for the system's app
-	Language         string   `json:"language"` // the language chosen, "" for the system's
+	Editor           string   `json:"editor"`          // the command opening files, "" for the system's app
+	Language         string   `json:"language"`        // the language chosen, "" for the system's
+	Theme            string   `json:"theme,omitempty"` // the appearance chosen, "" for the system's: light or dark
 	Unified          bool     `json:"unified"`
 	IgnoreWhitespace bool     `json:"ignoreWhitespace"`
 	SidebarW         float32  `json:"sidebarW"`
@@ -116,6 +117,8 @@ func (d *settingsDialog) view(c *ui.Context, withShortcuts bool, closed func()) 
 			ui.Text(c, loc.EditorLineHint()).FontSize(11).TextColor(t.TextMuted)
 			ui.Text(c, loc.Language()).Bold().TextColor(t.TextMuted)
 			languageSelect(c)
+			ui.Text(c, loc.Appearance()).Bold().TextColor(t.TextMuted)
+			appearanceSelect(c)
 			ui.Text(c, loc.DiffSection()).Bold().TextColor(t.TextMuted)
 			ui.Checkbox(c, &prefs.Unified, loc.DiffUnified())
 			ui.Checkbox(c, &prefs.IgnoreWhitespace, loc.IgnoreWhitespace())
@@ -200,5 +203,42 @@ func languageSelect(c *ui.Context) {
 		prefs.Language = tag
 		prefs.save()
 		mygo.App.SetLocale(tag)
+	}
+}
+
+// appearanceSelect picks the appearance the app shows: the system's, or
+// light or dark whatever it is.
+func appearanceSelect(c *ui.Context) {
+	labels := []string{loc.AppearanceAuto(), loc.AppearanceLight(), loc.AppearanceDark()}
+	values := []string{"", "light", "dark"}
+	choice := labels[max(slices.Index(values, prefs.Theme), 0)]
+	if ui.Select(c.Key("appearance"), &choice, labels).Label(loc.Appearance()).Changed() {
+		prefs.Theme = values[slices.Index(labels, choice)]
+		prefs.save()
+		invalidateAllWindows()
+	}
+}
+
+// applyTheme makes the window the appearance set, when one is, instead of
+// the system's. Call it before building any widget.
+func applyTheme(c *ui.Context) {
+	switch prefs.Theme {
+	case "light":
+		c.SetTheme(ui.LightTheme())
+	case "dark":
+		c.SetTheme(ui.DarkTheme())
+	}
+}
+
+// invalidateAllWindows redraws every window, as a choice that changes
+// them all was made.
+func invalidateAllWindows() {
+	for _, a := range allApps() {
+		a.win.Invalidate()
+	}
+	for _, w := range []*welcome{welcomeWin, credAsker} {
+		if w != nil && w.win != nil {
+			w.win.Invalidate()
+		}
 	}
 }

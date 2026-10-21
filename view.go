@@ -19,6 +19,7 @@ import (
 const rowHeight = 26
 
 func (a *app) view(c *ui.Context) {
+	applyTheme(c)
 	t := c.Theme()
 	root := ui.Column(c).Fill().FontSize(12)
 	root.Children(func() {
