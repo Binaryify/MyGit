@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -116,6 +117,44 @@ func sshDialer() remote.SSH {
 			return askUser(git.Location(host, dir), prompt)
 		},
 	}
+}
+
+// gitSSHCommand is ssh trying the keys set for git's remote operations,
+// the default one first; "" when none is set, leaving git to its own.
+func gitSSHCommand() string {
+	keys := orderedSSHKeys()
+	if len(keys) == 0 {
+		return ""
+	}
+	args := []string{"ssh"}
+	for _, k := range keys {
+		args = append(args, "-i", strconv.Quote(k))
+	}
+	return strings.Join(args, " ")
+}
+
+// orderedSSHKeys is the keys set with the default one first.
+func orderedSSHKeys() []string {
+	keys := slices.Clone(prefs.SSHKeys)
+	if i := slices.Index(keys, prefs.SSHDefault); i > 0 {
+		def := keys[i]
+		keys = append(keys[:i], keys[i+1:]...)
+		keys = append([]string{def}, keys...)
+	}
+	return keys
+}
+
+// gitEnv adds to the environment of git run here: the askpass's, and the
+// ssh command trying the keys set.
+func gitEnv(dir string) []string {
+	var env []string
+	if askServer != nil {
+		env = append(env, askServer.Env(dir)...)
+	}
+	if cmd := gitSSHCommand(); cmd != "" {
+		env = append(env, "GIT_SSH_COMMAND="+cmd)
+	}
+	return env
 }
 
 // remoteHost runs git on another computer through its helper, starting it

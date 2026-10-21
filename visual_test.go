@@ -3,6 +3,7 @@ package main
 import (
 	"image/color"
 	"image/png"
+	"mygit/internal/git"
 	"mygit/internal/helper"
 	"os"
 	"os/exec"
@@ -173,6 +174,15 @@ func TestDumpSSH(t *testing.T) {
 	if r, ok := at.Find("SSH · devbox"); ok {
 		t.Logf("the badge at %v (×1.4)", r)
 	}
+}
+
+// helperRepo is the repository in dir, as one opened on host.
+func helperRepo(t *testing.T, host, dir string) *git.Repo {
+	r, err := git.OpenOn(remoteHost{host}, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return r
 }
 
 // orbitRepo makes the film's demo repository: orbit, a satellite tracker,

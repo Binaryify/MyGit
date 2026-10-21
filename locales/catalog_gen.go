@@ -2370,6 +2370,76 @@ func (msgs Messages) AppearanceDark() string {
 	return Catalog.Format(msgs.locale, "appearanceDark", nil)
 }
 
+// SshKeys says "SSH Keys"
+// in the language the app shows.
+func SshKeys() string { return In(i18n.Locale()).SshKeys() }
+
+// SshKeys says "SSH Keys"
+// in the language of msgs.
+func (msgs Messages) SshKeys() string {
+	return Catalog.Format(msgs.locale, "sshKeys", nil)
+}
+
+// SshKeysHint says "Git tries these keys in order over SSH, the default first."
+// in the language the app shows.
+func SshKeysHint() string { return In(i18n.Locale()).SshKeysHint() }
+
+// SshKeysHint says "Git tries these keys in order over SSH, the default first."
+// in the language of msgs.
+func (msgs Messages) SshKeysHint() string {
+	return Catalog.Format(msgs.locale, "sshKeysHint", nil)
+}
+
+// SshDefault says "Default"
+// in the language the app shows.
+func SshDefault() string { return In(i18n.Locale()).SshDefault() }
+
+// SshDefault says "Default"
+// in the language of msgs.
+func (msgs Messages) SshDefault() string {
+	return Catalog.Format(msgs.locale, "sshDefault", nil)
+}
+
+// SshLoadHome says "Load from ~/.ssh"
+// in the language the app shows.
+func SshLoadHome() string { return In(i18n.Locale()).SshLoadHome() }
+
+// SshLoadHome says "Load from ~/.ssh"
+// in the language of msgs.
+func (msgs Messages) SshLoadHome() string {
+	return Catalog.Format(msgs.locale, "sshLoadHome", nil)
+}
+
+// SshAddKey says "Add Key…"
+// in the language the app shows.
+func SshAddKey() string { return In(i18n.Locale()).SshAddKey() }
+
+// SshAddKey says "Add Key…"
+// in the language of msgs.
+func (msgs Messages) SshAddKey() string {
+	return Catalog.Format(msgs.locale, "sshAddKey", nil)
+}
+
+// SshKeyRemove says "Remove"
+// in the language the app shows.
+func SshKeyRemove() string { return In(i18n.Locale()).SshKeyRemove() }
+
+// SshKeyRemove says "Remove"
+// in the language of msgs.
+func (msgs Messages) SshKeyRemove() string {
+	return Catalog.Format(msgs.locale, "sshKeyRemove", nil)
+}
+
+// SshKeyDialog says "Choose a Private Key"
+// in the language the app shows.
+func SshKeyDialog() string { return In(i18n.Locale()).SshKeyDialog() }
+
+// SshKeyDialog says "Choose a Private Key"
+// in the language of msgs.
+func (msgs Messages) SshKeyDialog() string {
+	return Catalog.Format(msgs.locale, "sshKeyDialog", nil)
+}
+
 // ChangesTab says "Changes"
 // in the language the app shows.
 func ChangesTab() string { return In(i18n.Locale()).ChangesTab() }

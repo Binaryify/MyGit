@@ -605,6 +605,13 @@
   "appearanceAuto": "Match the System",
   "appearanceLight": "Light",
   "appearanceDark": "Dark",
+  "sshKeys": "SSH Keys",
+  "sshKeysHint": "Git tries these keys in order over SSH, the default first.",
+  "sshDefault": "Default",
+  "sshLoadHome": "Load from ~/.ssh",
+  "sshAddKey": "Add Key…",
+  "sshKeyRemove": "Remove",
+  "sshKeyDialog": "Choose a Private Key",
   "changesTab": "Changes",
   "stashTab": "Stash ({count})",
   "@stashTab": {

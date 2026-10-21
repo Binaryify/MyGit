@@ -27,8 +27,10 @@ type settings struct {
 	SidebarW         float32  `json:"sidebarW"`
 	LogH             float32  `json:"logH"`
 	FilesW           float32  `json:"filesW"`
-	Proxy            string   `json:"proxy,omitempty"`   // the downloads', "" for the system's
-	Remotes          []string `json:"remotes,omitempty"` // repositories on other computers opened lately, host:dir
+	Proxy            string   `json:"proxy,omitempty"`      // the downloads', "" for the system's
+	Remotes          []string `json:"remotes,omitempty"`    // repositories on other computers opened lately, host:dir
+	SSHKeys          []string `json:"sshKeys,omitempty"`    // private keys tried for git's remote operations
+	SSHDefault       string   `json:"sshDefault,omitempty"` // the key tried first, one of sshKeys
 	path             string
 }
 
@@ -122,6 +124,27 @@ func (d *settingsDialog) view(c *ui.Context, withShortcuts bool, closed func()) 
 			ui.Text(c, loc.DiffSection()).Bold().TextColor(t.TextMuted)
 			ui.Checkbox(c, &prefs.Unified, loc.DiffUnified())
 			ui.Checkbox(c, &prefs.IgnoreWhitespace, loc.IgnoreWhitespace())
+			ui.Text(c, loc.SshKeys()).Bold().TextColor(t.TextMuted)
+			ui.Text(c, loc.SshKeysHint()).FontSize(11).TextColor(t.TextMuted).Wrap()
+			for _, k := range prefs.SSHKeys {
+				key := k
+				ui.Row(c.Key(key)).Gap(8).AlignItems(ui.Center).Children(func() {
+					ui.Radio(c, &prefs.SSHDefault, key, filepath.Base(key))
+					ui.Text(c, key).FontSize(11).TextColor(t.TextMuted).Grow(1).Basis(0)
+					if prefs.SSHDefault == key {
+						ui.Badge(c, loc.SshDefault())
+					}
+					ui.Button(c, loc.SshKeyRemove()).OnClick(func() { removeSSHKey(key) })
+				})
+			}
+			ui.Row(c).Gap(8).Children(func() {
+				if ui.Button(c, loc.SshLoadHome()).Clicked() {
+					loadHomeKeys()
+				}
+				if ui.Button(c, loc.SshAddKey()).Clicked() {
+					addSSHKeyFile()
+				}
+			})
 			ui.Text(c, loc.NetworkSection()).Bold().TextColor(t.TextMuted)
 			if ui.TextInput(c, &prefs.Proxy).Placeholder(loc.ProxyPlaceholder()).Label(loc.Proxy()).Changed() {
 				d.proxyErr = ""
@@ -241,4 +264,77 @@ func invalidateAllWindows() {
 			w.win.Invalidate()
 		}
 	}
+}
+
+// loadHomeKeys adds the private keys of ~/.ssh not set yet, by name.
+func loadHomeKeys() {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+	var found []string
+	entries, err := os.ReadDir(filepath.Join(home, ".ssh"))
+	if err == nil {
+		for _, e := range entries {
+			name := e.Name()
+			if !e.Type().IsRegular() || strings.HasSuffix(name, ".pub") ||
+				strings.HasPrefix(name, "known_hosts") || strings.HasPrefix(name, "authorized_keys") || name == "config" {
+				continue
+			}
+			if p := filepath.Join(home, ".ssh", name); privateKeyFile(p) {
+				found = append(found, p)
+			}
+		}
+	}
+	slices.Sort(found)
+	addSSHKeys(found)
+}
+
+// privateKeyFile says whether p holds a private key, as its head shows.
+func privateKeyFile(p string) bool {
+	f, err := os.Open(p)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+	head := make([]byte, 64)
+	n, _ := f.Read(head)
+	return strings.Contains(string(head[:n]), "PRIVATE KEY")
+}
+
+// addSSHKeyFile adds a private key chosen, as one to try.
+func addSSHKeyFile() {
+	home, _ := os.UserHomeDir()
+	paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
+		Title:       loc.SshKeyDialog(),
+		DefaultPath: filepath.Join(home, ".ssh"),
+	})
+	if err == nil {
+		addSSHKeys(paths)
+	}
+}
+
+// addSSHKeys adds keys not set yet; the first is the default when none is.
+func addSSHKeys(paths []string) {
+	for _, p := range paths {
+		if !slices.Contains(prefs.SSHKeys, p) {
+			prefs.SSHKeys = append(prefs.SSHKeys, p)
+		}
+	}
+	if prefs.SSHDefault == "" && len(prefs.SSHKeys) > 0 {
+		prefs.SSHDefault = prefs.SSHKeys[0]
+	}
+	prefs.save()
+}
+
+// removeSSHKey drops a key; the first is the default when it was.
+func removeSSHKey(key string) {
+	prefs.SSHKeys = slices.DeleteFunc(prefs.SSHKeys, func(k string) bool { return k == key })
+	if prefs.SSHDefault == key {
+		prefs.SSHDefault = ""
+		if len(prefs.SSHKeys) > 0 {
+			prefs.SSHDefault = prefs.SSHKeys[0]
+		}
+	}
+	prefs.save()
 }

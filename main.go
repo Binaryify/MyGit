@@ -64,9 +64,9 @@ func main() {
 		mygo.App.OnLocaleChanged(func(string) { mygo.App.SetMenu(appMenu()) }) // its labels, in the new language
 		if s, err := askpass.Listen(askUser); err == nil {
 			askServer = s
-			git.Env = func(dir string) []string { return s.Env(dir) }
 			mygo.App.OnQuit(func() { s.Close() })
 		}
+		git.Env = gitEnv
 		mygo.App.OnQuit(closeHosts)
 		// Quitting with a file edited and not saved asks, in its window,
 		// a window at a time; quitting goes on once each is saved or given up.
