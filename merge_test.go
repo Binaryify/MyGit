@@ -84,6 +84,11 @@ func TestMergeWindow(t *testing.T) {
 	if result.String() != want || m.model.Unresolved() != 2 || !tt.HasText("冲突 1 / 2") {
 		t.Fatalf("result %q, chunks %+v, texts %q", result.String(), m.model.Chunks, tt.Texts())
 	}
+	// It opens at the first conflict, the second line, as near the top as
+	// it goes.
+	if m.opening || m.scroll[paneResult].Y != 0 {
+		t.Fatalf("opening %v, scrolled to %v", m.opening, m.scroll[paneResult].Y)
+	}
 
 	tt.click(t, "自动解决简单冲突")
 	want = numbered(200, map[int]string{100: "call(x, y)\n", 150: "ours only\n", 180: ""})

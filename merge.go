@@ -33,6 +33,7 @@ type merger struct {
 	path           string
 	model          *conflict.Merge
 	panes          [3]*editor.State
+	focus          ui.Handle // the result editor, to give the keyboard back to after a button
 	scroll         [3]ui.ScrollState
 	shown          [3]float32 // the scroll each pane was given, to tell the one scrolled
 	viewH          float32    // the panes' height
@@ -40,6 +41,7 @@ type merger struct {
 	version        uint64     // the result's, that the model has
 	caret          int        // the result's, to scroll it into view as it moves
 	cur            int        // the chunk shown
+	opening        bool       // to go to the first chunk once the panes are laid out
 	note           string     // what the magic wand did
 	split1, split2 float32
 }
@@ -81,8 +83,8 @@ func newMerger(path string, t mergeTexts) *merger {
 		m.panes[paneResult].Buffer.SetLineEnding("\r\n")
 	}
 	m.version = m.panes[paneResult].Buffer.Version()
-	m.cur = -1
-	m.goTo(m.next(-1, 1))
+	m.cur = m.next(-1, 1)
+	m.opening = true
 	return m
 }
 
@@ -136,14 +138,23 @@ func (m *merger) step(back bool) {
 	m.goTo(m.next(m.cur, dir))
 }
 
-// goTo shows chunk i in the middle of the result, the sides following.
+// goTo shows chunk i a third down the panes, each pane's lines of it at
+// the same height.
 func (m *merger) goTo(i int) {
 	if i < 0 {
 		return
 	}
 	m.cur = i
-	r := m.model.Chunks[i].Result
-	m.scroll[paneResult].Y = max(0, float32(r.Start)*m.lh-m.viewH/3)
+	ch := &m.model.Chunks[i]
+	for p := range m.scroll {
+		y := float32(rangeIn(ch, p).Start)*m.lh - m.viewH/3
+		if p != paneResult {
+			y = min(y, m.scroll[p].MaxY)
+		}
+		m.scroll[p].Y = max(0, y)
+		m.shown[p] = m.scroll[p].Y // not scrolled by the user, to follow
+	}
+	r := ch.Result
 	ed := m.panes[paneResult]
 	off := ed.Buffer.Offset(editor.Pos{Line: r.Start})
 	ed.Select(off, off)
@@ -155,6 +166,7 @@ func (m *merger) apply(i int, s conflict.Side) {
 	m.sync()
 	m.edit(m.model.Apply(i, s))
 	m.cur = i
+	m.focus.Focus() // for ⌘Z to undo it
 }
 
 // ignore dismisses a side's change to chunk i.
@@ -198,10 +210,17 @@ func (m *merger) resolveSimple() {
 // followScroll scrolls the panes with the one scrolled, by the line in
 // their middle, and the result to its caret as it moves.
 func (m *merger) followScroll() {
+	if m.opening && m.viewH > 0 { // scrolled before, it would land anywhere
+		m.opening = false
+		m.goTo(m.cur)
+	}
 	if caret := m.panes[paneResult].Cursor(); caret != m.caret {
+		// From where the result was: focusing the editor scrolls it whole
+		// into view, which isn't where its caret is.
 		m.caret = caret
 		top := float32(m.panes[paneResult].Buffer.Pos(caret).Line) * m.lh
 		s := &m.scroll[paneResult]
+		s.Y = m.shown[paneResult]
 		if top < s.Y {
 			s.Y = top
 		} else if top+2*m.lh > s.Y+m.viewH {
@@ -306,6 +325,9 @@ func (a *app) mergeView(c *ui.Context, m *merger) {
 	ct := editor.DefaultTheme(t)
 	m.sync()
 	m.followScroll()
+	if m.opening {
+		c.Invalidate() // a frame more, laid out, to go to the first chunk
+	}
 	left, right := loc.MergeOurs(), loc.MergeTheirs()
 	if a.op == git.Rebasing { // rebasing, HEAD is the branch rebased onto
 		left, right = loc.MergeUpstream(), loc.MergeYours()
@@ -415,7 +437,10 @@ func (m *merger) paneView(c *ui.Context, p int) {
 			}
 		}
 	}).Children(func() {
-		editor.View(c.Key("editor"), m.panes[p]).FillWidth()
+		ed := editor.View(c.Key("editor"), m.panes[p]).FillWidth()
+		if p == paneResult {
+			ed.Bind(&m.focus)
+		}
 	})
 }
 
