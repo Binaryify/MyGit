@@ -88,7 +88,7 @@ func newWorkspace(t *testing.T, dir string) (*workspace, *ui.Tester, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ws := &workspace{dir: whole, closed: map[string]bool{}}
+	ws := &workspace{dir: whole, opened: map[string]bool{}}
 	queue := make(chan func(), 256)
 	for _, r := range repos {
 		a := newApp(r)
@@ -128,12 +128,19 @@ func TestWorkspace(t *testing.T) {
 	if len(ws.apps) != 3 {
 		t.Fatalf("%d repositories", len(ws.apps))
 	}
-	for _, s := range []string{"crafts /", "artcraft", "filmcraft", "printcraft", "brush.ts", "page.ts"} {
+	// Folded until opened: the names and branches show, the changes don't.
+	for _, s := range []string{"crafts /", "artcraft", "filmcraft", "printcraft"} {
 		if !tt.HasText(s) {
 			t.Fatalf("no %q in %q", s, tt.Texts())
 		}
 	}
-	// Working in a repository shows its history.
+	if tt.HasText("brush.ts") || tt.HasText("page.ts") {
+		t.Fatalf("a folded repository's changes show: %q", tt.Texts())
+	}
+	// Unfolded, its changes show, and working in it shows its history.
+	printIdx := slices.IndexFunc(ws.apps, func(a *app) bool { return a.repo.Name() == "printcraft" })
+	ws.opened[ws.apps[printIdx].repo.Dir] = true
+	tt.Frame()
 	if err := tt.Click("page.ts"); err != nil {
 		t.Fatal(err)
 	}
@@ -154,9 +161,14 @@ func TestWorkspace(t *testing.T) {
 	if !tt.HasText("Add the page") || len(active.staged) != 0 {
 		t.Errorf("not committed: %q", tt.Texts())
 	}
-	// Folded away, its changes don't show; the count does.
+	// Folded away, its changes don't show.
 	art := ws.apps[slices.IndexFunc(ws.apps, func(a *app) bool { return a.repo.Name() == "artcraft" })]
-	ws.closed[art.repo.Dir] = true
+	ws.opened[art.repo.Dir] = true
+	tt.Frame()
+	if !tt.HasText("brush.ts") {
+		t.Fatal("an unfolded repository's changes don't show")
+	}
+	delete(ws.opened, art.repo.Dir)
 	tt.Frame()
 	if tt.HasText("brush.ts") {
 		t.Error("a folded repository's changes show")

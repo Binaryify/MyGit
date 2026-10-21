@@ -25,7 +25,7 @@ type workspace struct {
 	host, dir string // the folder, on host, "" for this computer
 	apps      []*app // a repository each
 	active    int
-	closed    map[string]bool // the repositories folded away, by folder
+	opened    map[string]bool // the repositories unfolded, by folder; folded until opened
 	win       *mygo.Window
 }
 
@@ -261,7 +261,7 @@ func openWorkspace(host, dir string, repos []*git.Repo) {
 		addRemoteRecent(key)
 		title = name + " — " + host
 	}
-	ws := &workspace{host: host, dir: dir, closed: map[string]bool{}}
+	ws := &workspace{host: host, dir: dir, opened: map[string]bool{}}
 	for _, r := range repos {
 		a := newApp(r)
 		a.ws = ws
@@ -332,7 +332,7 @@ func (ws *workspace) section(c *ui.Context, i int, a *app) {
 	t := c.Theme()
 	st := a.status
 	dir := a.repo.Dir
-	open := !ws.closed[dir]
+	open := ws.opened[dir]
 	sec := ui.Column(c.Key(dir)).BorderWidth(0, 0, 1, 0).BorderColor(t.Border)
 	sec.Children(func() {
 		head := ui.Row(c).Height(30).Padding(0, 6, 0, 4).Gap(5).AlignItems(ui.Center)
@@ -345,7 +345,7 @@ func (ws *workspace) section(c *ui.Context, i int, a *app) {
 				chevron = "chevron-down"
 			}
 			if iconButton(c, chevron, a.repo.Name()) {
-				ws.closed[dir] = open
+				ws.opened[dir] = !open
 			}
 			ui.Icon(c, icons["repo"]).Size(13, 13)
 			ui.Text(c, a.repo.Name()).Bold().SingleLine().Shrink(0).Tooltip(a.repo.Location())
