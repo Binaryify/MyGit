@@ -77,7 +77,7 @@ func newMerger(path string, t mergeTexts) *merger {
 		if lang != nil {
 			b.SetLanguage(lang)
 		}
-		m.panes[i] = &editor.State{Buffer: b, ReadOnly: i != paneResult, FitContent: true, NoFolding: true}
+		m.panes[i] = &editor.State{Buffer: b, ReadOnly: i != paneResult, NoActiveLine: i != paneResult, FitContent: true, NoFolding: true}
 	}
 	if strings.Contains(t.ours, "\r\n") { // the result's lines end as the file's did
 		m.panes[paneResult].Buffer.SetLineEnding("\r\n")
@@ -345,7 +345,7 @@ func (a *app) mergeView(c *ui.Context, m *merger) {
 	unresolved := m.model.Unresolved()
 	ui.Column(c).Fill().Children(func() {
 		ui.Row(c).Padding(6, 12).Gap(6).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
-			ui.Text(c, m.path).Bold().SingleLine()
+			ui.Text(c, m.path).Bold().SingleLine().Shrink(0)
 			if unresolved > 0 {
 				n := 0
 				for i := range min(m.cur+1, len(m.model.Chunks)) {
@@ -353,7 +353,7 @@ func (a *app) mergeView(c *ui.Context, m *merger) {
 						n++
 					}
 				}
-				ui.Text(c, loc.ConflictOf(max(n, 1), unresolved)).TextColor(t.TextMuted)
+				ui.Text(c, loc.ConflictOf(max(n, 1), unresolved)).TextColor(t.TextMuted).SingleLine().Shrink(0)
 				if iconButton(c, "up", loc.PrevConflict()+" "+shiftKey("F7")) {
 					m.step(true)
 				}
@@ -369,7 +369,7 @@ func (a *app) mergeView(c *ui.Context, m *merger) {
 				if ui.Button(c, loc.TakeBoth()).Clicked() {
 					m.take(conflict.Ours, conflict.Theirs)
 				}
-				if ui.Button(c, "✨ "+loc.ResolveSimple()).Label(loc.ResolveSimple()).Tooltip(loc.ResolveSimpleHint()).Clicked() {
+				if ui.Button(c, "✨").Label(loc.ResolveSimple()).Tooltip(loc.ResolveSimple() + ": " + loc.ResolveSimpleHint()).Clicked() {
 					m.resolveSimple()
 				}
 			} else {
@@ -379,7 +379,7 @@ func (a *app) mergeView(c *ui.Context, m *merger) {
 				ui.Text(c, m.note).TextColor(t.TextMuted).SingleLine()
 			}
 			ui.Box(c).Grow(1)
-			ui.Button(c, loc.WholeFile()+" ▾").Label(loc.WholeFile()).Menu(func(menu *ui.Menu) {
+			iconMenu(c, "more", loc.WholeFile(), func(menu *ui.Menu) {
 				if menu.Item(loc.TakeAllLeft(left)).Chosen() {
 					a.takeSide(m.path, git.OursStage)
 				}

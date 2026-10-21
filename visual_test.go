@@ -1,8 +1,10 @@
 package main
 
 import (
+	"image"
 	"image/color"
 	"image/png"
+	"mygit/internal/git"
 	"mygit/internal/helper"
 	"os"
 	"os/exec"
@@ -179,7 +181,15 @@ func TestDumpSSH(t *testing.T) {
 // its history by four people and a change of the working tree.
 func orbitRepo(t *testing.T) string {
 	t.Helper()
-	dir := filepath.Join(t.TempDir(), "orbit")
+	dir, _ := demoRepo(t, "orbit")
+	return dir
+}
+
+// demoRepo makes orbit in a folder named name, and returns it with its
+// git, to go on with.
+func demoRepo(t *testing.T, name string) (string, func(author string, at time.Time, args ...string)) {
+	t.Helper()
+	dir := filepath.Join(t.TempDir(), name)
 	if err := os.Mkdir(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -230,7 +240,7 @@ func orbitRepo(t *testing.T) string {
 	commit("Leo Park", day.Add(228*time.Hour), "Cache positions for a minute", map[string]string{"src/cache.ts": "export const ttl = 60_000\n"})
 	commit("Mia Chen", day.Add(231*time.Hour), "Document the configuration", map[string]string{"README.md": "# orbit\n\nTrack satellites as they pass.\n\n## Configuration\n"})
 	write("src/api.ts", "export async function fetchAll(tries = 3) {\n  for (let i = 1; ; i++) {\n    try {\n      return (await fetch('/positions')).json()\n    } catch (e) {\n      if (i === tries) throw e\n    }\n  }\n}\n")
-	return dir
+	return dir, git
 }
 
 // TestDumpWelcome renders the welcome window into MYGIT_DUMP, 520×640 at
@@ -265,4 +275,99 @@ func TestDumpWelcome(t *testing.T) {
 	f, _ := os.Create(out + "/welcome.png")
 	png.Encode(f, tt.Image())
 	f.Close()
+}
+
+// TestDumpMerge renders the merge window into MYGIT_DUMP as the READMEs
+// show it, merge-zh.png, or merge-en.png with MYGIT_LOCALE=en: orbit's
+// theme merged with a branch that changed it too, 1120×746 at 1.4×, the
+// traffic lights macOS draws painted where it draws them.
+func TestDumpMerge(t *testing.T) {
+	out := os.Getenv("MYGIT_DUMP")
+	if out == "" {
+		t.Skip()
+	}
+	lang := "zh"
+	if l := os.Getenv("MYGIT_LOCALE"); l != "" {
+		i18n.SetLocaleFunc(func() string { return l })
+		defer i18n.SetLocaleFunc(func() string { return "zh-Hans" })
+		lang = l
+	}
+	dir, run := demoRepo(t, "orbit")
+	day := time.Date(2026, 10, 2, 9, 40, 0, 0, time.Local)
+	theme := func(accent, trail, glow, draw string) string {
+		return "export const theme = {\n  dark: true,\n  accent: '" + accent + "',\n  orbit: 1.5," + trail +
+			"\n  label: 12,\n  glow: " + glow + ",\n}\n\nexport function paint(s) {\n  ring(s, theme.orbit)\n  " + draw + "\n}\n"
+	}
+	commit := func(author string, at time.Time, msg, text string) {
+		if err := os.WriteFile(filepath.Join(dir, "src/theme.ts"), []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		run(author, at, "add", ".")
+		run(author, at, "commit", "-q", "-m", msg)
+	}
+	run("Mia Chen", day, "stash", "-q") // the change of the working tree
+	commit("Mia Chen", day, "Add a dark theme", theme("#3b82f6", "", "0.4", "dot(s, 2, 'white')"))
+	run("Ava Rossi", day.Add(30*time.Hour), "switch", "-q", "-c", "feature/palette")
+	commit("Ava Rossi", day.Add(31*time.Hour), "Color satellites from the new palette",
+		theme("#a78bfa", "\n  trail: 8,", "0.4", "dot(s, 2, palette.sat)"))
+	run("Mia Chen", day.Add(32*time.Hour), "switch", "-q", "main")
+	commit("Mia Chen", day.Add(33*time.Hour), "Brighten satellites in the dark theme", theme("#60a5fa", "", "0.8", "dot(s, 3, 'white')"))
+	cmd := exec.Command("git", "merge", "-q", "feature/palette")
+	cmd.Dir = dir
+	if err := cmd.Run(); err == nil {
+		t.Fatal("merged without a conflict")
+	}
+
+	repo, err := git.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := newApp(repo)
+	tt := &tester{a: a, queue: make(chan func(), 64)}
+	a.update = func(fn func()) { tt.queue <- fn }
+	tt.Tester = ui.NewTester(a.view, 1120, 746)
+	tt.SetDark(true)
+	tt.SetScale(1.4)
+	tt.SetTitleBar(ui.TitleBar{Left: 80, Height: titleBarHeight})
+	a.start()
+	tt.settle()
+	tt.click(t, "theme.ts")
+	tt.Frame()
+	img := tt.Image()
+	// The traffic lights: 12 points across, 20 apart, from 16 by 13.
+	for i, c := range []color.RGBA{{255, 95, 87, 255}, {254, 188, 46, 255}, {40, 200, 64, 255}} {
+		disc(img, 1.4*float64(23+20*i), 1.4*20, 1.4*6, c)
+	}
+	f, err := os.Create(filepath.Join(out, "merge-"+lang+".png"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	png.Encode(f, img)
+}
+
+// disc paints a disc of color c centered at x, y with radius r on img,
+// its edge smoothed.
+func disc(img *image.RGBA, x, y, r float64, c color.RGBA) {
+	for py := int(y - r - 1); py <= int(y+r+1); py++ {
+		for px := int(x - r - 1); px <= int(x+r+1); px++ {
+			// How much of the pixel the disc covers, by 4×4 samples.
+			n := 0
+			for sy := range 4 {
+				for sx := range 4 {
+					dx, dy := float64(px)+(float64(sx)+0.5)/4-x, float64(py)+(float64(sy)+0.5)/4-y
+					if dx*dx+dy*dy <= r*r {
+						n++
+					}
+				}
+			}
+			if n == 0 {
+				continue
+			}
+			a := float64(n) / 16
+			bg := img.RGBAAt(px, py)
+			mix := func(f, b uint8) uint8 { return uint8(float64(f)*a + float64(b)*(1-a) + 0.5) }
+			img.SetRGBA(px, py, color.RGBA{mix(c.R, bg.R), mix(c.G, bg.G), mix(c.B, bg.B), 255})
+		}
+	}
 }
