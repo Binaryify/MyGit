@@ -4336,6 +4336,16 @@ func (msgs Messages) SshHosts() string {
 	return Catalog.Format(msgs.locale, "sshHosts", nil)
 }
 
+// WslDistros says "WSL"
+// in the language the app shows.
+func WslDistros() string { return In(i18n.Locale()).WslDistros() }
+
+// WslDistros says "WSL"
+// in the language of msgs.
+func (msgs Messages) WslDistros() string {
+	return Catalog.Format(msgs.locale, "wslDistros", nil)
+}
+
 // SshHost says "Host"
 // in the language the app shows.
 func SshHost() string { return In(i18n.Locale()).SshHost() }
@@ -4424,6 +4434,18 @@ func RemoteBadge(host string, dir string) string { return In(i18n.Locale()).Remo
 // in the language of msgs.
 func (msgs Messages) RemoteBadge(host string, dir string) string {
 	return Catalog.Format(msgs.locale, "remoteBadge", map[string]any{"host": host, "dir": dir})
+}
+
+// RemoteBadgeWsl says "{dir} in WSL's {distro}"
+// in the language the app shows.
+func RemoteBadgeWsl(distro string, dir string) string {
+	return In(i18n.Locale()).RemoteBadgeWsl(distro, dir)
+}
+
+// RemoteBadgeWsl says "{dir} in WSL's {distro}"
+// in the language of msgs.
+func (msgs Messages) RemoteBadgeWsl(distro string, dir string) string {
+	return Catalog.Format(msgs.locale, "remoteBadgeWsl", map[string]any{"distro": distro, "dir": dir})
 }
 
 // NetworkSection says "Network proxy"

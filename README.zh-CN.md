@@ -93,7 +93,7 @@ MyGit 读取靠解析 `git` 的输出，所有改动都交给 `git` 命令本身
 - **Stash、Blame 和远程**：stash（可包括未跟踪文件）、逐行追溯、远程管理、拉取（快进 / 变基 / 合并）、推送前预览、force-with-lease
 - **登录**：git 需要用户名、令牌或口令时，在窗口里询问
 - **工作区**：打开包含多个仓库的文件夹（比如 agent 同时改几个仓库时的父目录），侧边栏像 VS Code 源代码管理那样列出每个仓库，各自有提交框、同步和改动列表
-- **SSH 远程**：打开另一台电脑上的仓库（`host:/path/to/repo`，Linux、macOS、Windows 都行），沿用本机的 ssh 配置和密钥；MyGit 会在对方的 `~/.mygit` 里放一个小的辅助程序，对方只要有 git
+- **SSH 远程**：打开另一台电脑上的仓库（`host:/path/to/repo`，Linux、macOS、Windows 都行），沿用本机的 ssh 配置和密钥；MyGit 会在对方的 `~/.mygit` 里放一个小的辅助程序，对方只要有 git。Windows 上 WSL 的发行版也能这样打开，不用配 sshd（`wsl+Ubuntu:~/repo`）
 - **随处可用**：每个仓库一个窗口、拖入文件夹打开、终端里 `mygit .`、自定义标题栏、深浅色（跟随系统，或在设置里指定）、English 和简体中文、签名的自动更新
 
 ## 安装

@@ -93,7 +93,7 @@ MyGit reads what `git` prints and lets `git` itself make every change, so a repo
 - **Stash, blame and remotes** — stash with untracked files, blame a file line by line, manage remotes, pull (fast-forward, rebase or merge), preview a push, force with lease
 - **Sign-ins** — when git needs a username, token or passphrase, the window asks
 - **Workspaces** — open a folder of repositories, as an agent's working folder over a few of them, and each shows in the sidebar with its own message, sync and changes, as VS Code's source control has them
-- **Over SSH** — open a repository on another computer (`host:/path/to/repo`, Linux, macOS or Windows) with your ssh config and keys; MyGit runs a small helper there, in `~/.mygit`, and needs only git on it
+- **Over SSH** — open a repository on another computer (`host:/path/to/repo`, Linux, macOS or Windows) with your ssh config and keys; MyGit runs a small helper there, in `~/.mygit`, and needs only git on it. On Windows, the distributions of WSL open the same way, without sshd (`wsl+Ubuntu:~/repo`)
 - **Everywhere** — a window per repository, drag folders in, `mygit .` from a terminal, custom title bars, light and dark (the system's or chosen in Settings), English and 简体中文, signed auto-updates
 
 ## Install
