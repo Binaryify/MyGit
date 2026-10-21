@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -476,5 +477,34 @@ func TestTrustOn(t *testing.T) {
 	out, err := git(context.Background(), Local, r.Dir, "", nil, "config", "--global", "--get-all", "safe.directory")
 	if err != nil || !strings.Contains(out, filepath.ToSlash(r.Dir)) {
 		t.Errorf("safe.directory %q, %v", out, err)
+	}
+}
+
+// Thousands of paths go to git in runs short enough for a command line,
+// each path once, in order.
+func TestInBatches(t *testing.T) {
+	var paths []string
+	for i := range 3000 {
+		paths = append(paths, fmt.Sprintf("some/folder/deep/down/file-%04d.txt", i))
+	}
+	var got []string
+	runs := 0
+	err := inBatches(paths, func(batch []string) error {
+		runs++
+		size := 0
+		for _, p := range batch {
+			size += len(p) + 3
+		}
+		if size > 16<<10 && len(batch) > 1 {
+			t.Fatalf("a run of %d bytes", size)
+		}
+		got = append(got, batch...)
+		return nil
+	})
+	if err != nil || runs < 2 || !slices.Equal(got, paths) {
+		t.Fatalf("runs %d, %d paths back, err %v", runs, len(got), err)
+	}
+	if err := inBatches(nil, func([]string) error { t.Fatal("ran for no paths"); return nil }); err != nil {
+		t.Fatal(err)
 	}
 }

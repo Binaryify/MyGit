@@ -13,6 +13,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"mygit/internal/git"
+	loc "mygit/locales"
 )
 
 // These walk through what people do, a step at a time, looking at what
@@ -523,4 +524,55 @@ func TestScenarioStepAcrossFiles(t *testing.T) {
 
 	tt.click(t, "Change both")
 	walk(steps, want)
+}
+
+// The filter shows the changes whose paths have its text, counts them
+// out of all, chooses the one clicked, and staging all stages only those.
+func TestScenarioFilterChanges(t *testing.T) {
+	tt := newTester(t)
+	tt.write(t, map[string]string{"src/a.go": "a\n", "src/b.go": "b\n", "docs/c.md": "c\n"})
+	if len(tt.a.unstaged) != 4 { // notes.txt too
+		t.Fatalf("changes %v", tt.a.unstaged)
+	}
+	tt.click(t, "按路径筛选更改")
+	tt.Type("SRC/")
+	tt.Frame()
+	if !tt.HasText("2/4") || !tt.HasText("a.go") || tt.HasText("c.md") || tt.HasText("notes.txt") {
+		t.Fatalf("filtered: %q", tt.Texts())
+	}
+	tt.click(t, "b.go")
+	if tt.shown() != "src/b.go" {
+		t.Fatalf("shown %q, chosen %d", tt.shown(), tt.a.unstagedSel)
+	}
+	tt.a.stageAll()
+	tt.settle()
+	var staged []string
+	for _, c := range tt.a.staged {
+		staged = append(staged, c.Path)
+	}
+	if strings.Join(staged, " ") != "src/a.go src/b.go" || len(tt.a.unstaged) != 2 {
+		t.Fatalf("staged %v, unstaged %v", staged, tt.a.unstaged)
+	}
+	// The filter keeps to the new lists, and clearing it shows them all.
+	if !tt.HasText("2/2") || !tt.HasText("0/2") {
+		t.Fatalf("after staging: %q", tt.Texts())
+	}
+	tt.click(t, "清除搜索")
+	if tt.a.filter.query != "" || !tt.HasText("c.md") || !tt.HasText("notes.txt") {
+		t.Fatalf("cleared: %q", tt.Texts())
+	}
+	// The line between the staged changes and the others drags.
+	head, ok := tt.Find(loc.StageAll()) // the button in the changes' header
+	if !ok {
+		t.Fatalf("no header of the changes: %q", tt.Texts())
+	}
+	before := tt.a.stagedPct
+	y := head.Y - 6 // the split's line, just above the header
+	tt.Press(100, y)
+	tt.Move(100, y+120)
+	tt.Release(100, y+120)
+	tt.Frame()
+	if tt.a.stagedPct <= before {
+		t.Fatalf("dragged down, the staged changes take %v%%, from %v%%", tt.a.stagedPct, before)
+	}
 }

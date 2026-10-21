@@ -309,7 +309,7 @@ func (ws *workspace) activate(i int) {
 		return
 	}
 	from, to := ws.apps[ws.active], ws.apps[i]
-	to.sidebarW, to.logH, to.filesW = from.sidebarW, from.logH, from.filesW
+	to.sidebarW, to.logH, to.filesW, to.stagedPct = from.sidebarW, from.logH, from.filesW, from.stagedPct
 	ws.active = i
 }
 

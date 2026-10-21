@@ -184,34 +184,53 @@ func (a *app) changesPanel(c *ui.Context) {
 				}
 			})
 		})
-		a.changeSection(c, loc.Staged(), true, true)
-		a.changeSection(c, loc.Changes(), false, true)
+		if len(a.staged)+len(a.unstaged) > 0 || a.filter.query != "" {
+			a.filterField(c)
+		}
+		// Dragged as the room the staged changes need, few or thousands.
+		ui.SplitVerticalPercent(c.Key("changes"), &a.stagedPct, func() {
+			ui.Column(c).Fill().Children(func() { a.changeSection(c, loc.Staged(), true, true) })
+		}, func() {
+			ui.Column(c).Fill().Children(func() { a.changeSection(c, loc.Changes(), false, true) })
+		}).Grow(1).Basis(0)
 	})
 	c.OnShortcut(ui.Cmd, ui.KeyEnter, a.commit)
 }
 
-// changeSection lists the staged changes or the others, filling the room
-// left when fill, else as tall as its rows, as a workspace's repositories
-// stack them.
+// changeSection lists the staged changes or the others, those the filter
+// shows, filling the room left when fill, else as tall as its rows, as a
+// workspace's repositories stack them.
 func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 	t := c.Theme()
 	changes := a.changes(staged)
-	list, sel := &a.unstagedList, &a.unstagedSel
+	list, sel, row := &a.unstagedList, &a.unstagedSel, &a.unstagedRow
 	if staged {
-		list, sel = &a.stagedList, &a.stagedSel
+		list, sel, row = &a.stagedList, &a.stagedSel, &a.stagedRow
 	}
+	// The list chooses rows; the app, changes, by their indices.
+	rows := a.shownRows(staged)
+	n, at := len(changes), func(r int) int { return r }
+	if rows != nil {
+		n, at = len(rows), func(r int) int { return rows[r] }
+	}
+	*row = rowOf(rows, *sel)
 	// A fixed height, so the header doesn't move as its button comes and
 	// goes; the button stays while git runs, doing nothing then.
 	head := ui.Row(c).Height(32).Padding(4, 8, 0, 10).Gap(6).AlignItems(ui.Center)
-	if !staged && (fill || len(a.staged) > 0) {
-		// A line between the staged changes above and these.
+	if !staged && !fill && len(a.staged) > 0 {
+		// A line between the staged changes above and these, as a split
+		// draws one between them filled.
 		head.BorderWidth(1, 0, 0, 0).BorderColor(t.Border)
 	}
 	head.Children(func() {
 		ui.Text(c, title).Bold().TextColor(t.TextMuted)
-		ui.Badge(c, fmt.Sprint(len(changes)))
+		count := fmt.Sprint(len(changes))
+		if rows != nil {
+			count = fmt.Sprintf("%d/%d", n, len(changes))
+		}
+		ui.Badge(c, count)
 		ui.Box(c).Grow(1)
-		if len(changes) > 0 {
+		if n > 0 {
 			idle := a.busy == ""
 			if staged {
 				if iconButton(c, "minus", loc.UnstageAll()) && idle {
@@ -222,9 +241,9 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 			}
 		}
 	})
-	l := ui.List(c.Key(title), list, len(changes), func(i int) {
-		ch := changes[i]
-		chosen := i == *sel
+	l := ui.List(c.Key(title), list, n, func(i int) {
+		ch := changes[at(i)]
+		chosen := i == *row
 		// As VS Code's: the name, its folder, the actions while the
 		// pointer is over the row, and the change's letter at the end.
 		row := ui.Row(c).Height(24).Padding(0, 8, 0, 10).Gap(6).AlignItems(ui.Center)
@@ -290,14 +309,14 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 	if fill {
 		l.Grow(1).Basis(0)
 	} else {
-		l.Height(float32(len(changes) * 24))
+		l.Height(float32(n * 24))
 	}
-	if l.Changed() && *sel >= 0 && *sel < len(changes) {
+	if l.Changed() && *row >= 0 && *row < n {
 		// One change is chosen at a time, of both lists.
-		a.chooseChange(*sel, staged)
+		a.chooseChange(at(*row), staged)
 	}
-	if l.Submitted() && *sel >= 0 && *sel < len(changes) {
-		a.toggleStage(changes[*sel], staged)
+	if l.Submitted() && *row >= 0 && *row < n {
+		a.toggleStage(changes[at(*row)], staged)
 	}
 	// The keys of VS Code's and Finder's lists: space stages or unstages
 	// the change chosen, delete discards it, asking first.

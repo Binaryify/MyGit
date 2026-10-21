@@ -134,19 +134,42 @@ func (r *Repo) Remove(ctx context.Context, path string) error {
 
 // Stage adds the files' changes to the index, deletions included.
 func (r *Repo) Stage(ctx context.Context, paths ...string) error {
-	_, err := r.Git(ctx, append([]string{"add", "--all", "--"}, paths...)...)
-	return err
+	return inBatches(paths, func(batch []string) error {
+		_, err := r.Git(ctx, append([]string{"add", "--all", "--"}, batch...)...)
+		return err
+	})
 }
 
 // Unstage takes the files' changes out of the index, leaving the working
 // tree as it is.
 func (r *Repo) Unstage(ctx context.Context, paths ...string) error {
+	args := []string{"restore", "--staged", "--"}
 	if _, err := r.Git(ctx, "rev-parse", "--verify", "-q", "HEAD"); err != nil {
-		_, err := r.Git(ctx, append([]string{"rm", "--cached", "-q", "-r", "--"}, paths...)...) // no commit yet
-		return err
+		args = []string{"rm", "--cached", "-q", "-r", "--"} // no commit yet
 	}
-	_, err := r.Git(ctx, append([]string{"restore", "--staged", "--"}, paths...)...)
-	return err
+	return inBatches(paths, func(batch []string) error {
+		_, err := r.Git(ctx, append(args, batch...)...)
+		return err
+	})
+}
+
+// inBatches runs fn on runs of paths short enough for a command line,
+// Windows' the shortest, as thousands of files filtered are staged at
+// once; git versions of any age take them so.
+func inBatches(paths []string, fn func(batch []string) error) error {
+	const most = 16 << 10 // bytes, of Windows' 32K characters
+	for len(paths) > 0 {
+		n, size := 0, 0
+		for n < len(paths) && (n == 0 || size+len(paths[n])+3 <= most) {
+			size += len(paths[n]) + 3 // a space, and quotes it may need
+			n++
+		}
+		if err := fn(paths[:n]); err != nil {
+			return err
+		}
+		paths = paths[n:]
+	}
+	return nil
 }
 
 // Commit commits the index.

@@ -233,6 +233,13 @@ func watch(ctx context.Context, root string, changed func()) error {
 			if !ok {
 				return nil
 			}
+			// Attributes only, as kqueue says of a file git merely read, as
+			// the refresh a change brings reads the index: else each refresh
+			// brings another, a few a second. A mode changed alone shows as
+			// the window is focused.
+			if e.Op == fsnotify.Chmod {
+				continue
+			}
 			if e.Has(fsnotify.Create) {
 				if fi, err := os.Stat(e.Name); err == nil && fi.IsDir() && !skip(e.Name) {
 					add(e.Name)
