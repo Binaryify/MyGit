@@ -95,7 +95,7 @@ func TestLines(t *testing.T) {
 
 func TestNew(t *testing.T) {
 	base := "1\n2\n3\n4\n5\n6\n7\n"
-	m := New(base, "1\nTWO\n3\n4\n5\n6\n7\nours\n", "1\n2\n3\n4\nfive\n6\n7\n")
+	m := New(base, "1\nTWO\n3\n4\n5\n6\n7\nours\n", "1\n2\n3\n4\nfive\n6\n7\n", false)
 	if got := m.Result(); got != "1\nTWO\n3\n4\nfive\n6\n7\nours\n" || m.Unresolved() != 0 || len(m.Chunks) != 3 {
 		t.Fatalf("result %q, chunks %+v", got, m.Chunks)
 	}
@@ -104,7 +104,7 @@ func TestNew(t *testing.T) {
 	}
 
 	// A conflict shows as the base has it, between the changes taken.
-	m = New(base, "1\n2\nours\n4\n5\n6\n7\n", "1\n2\ntheirs\n4\n5\n6\nseven\n")
+	m = New(base, "1\n2\nours\n4\n5\n6\n7\n", "1\n2\ntheirs\n4\n5\n6\nseven\n", false)
 	if got := m.Result(); got != "1\n2\n3\n4\n5\n6\nseven\n" || m.Unresolved() != 1 {
 		t.Fatalf("result %q, chunks %+v", got, m.Chunks)
 	}
@@ -115,24 +115,24 @@ func TestNew(t *testing.T) {
 
 	// Changes alike are no conflict; changes touching are one, as git
 	// has them.
-	m = New(base, "1\nx\n3\n4\n5\n6\n7\n", "1\nx\n3\n4\n5\n6\n7\n")
+	m = New(base, "1\nx\n3\n4\n5\n6\n7\n", "1\nx\n3\n4\n5\n6\n7\n", false)
 	if m.Unresolved() != 0 || m.Result() != "1\nx\n3\n4\n5\n6\n7\n" || m.Chunks[0].State != [2]State{Applied, Applied} {
 		t.Fatalf("alike: %q, %+v", m.Result(), m.Chunks)
 	}
-	m = New(base, "1\nx\n3\n4\n5\n6\n7\n", "1\n2\ny\n4\n5\n6\n7\n")
+	m = New(base, "1\nx\n3\n4\n5\n6\n7\n", "1\n2\ny\n4\n5\n6\n7\n", false)
 	if m.Unresolved() != 1 || m.Chunks[0].Base != (Range{1, 3}) || m.Result() != base {
 		t.Fatalf("touching: %q, %+v", m.Result(), m.Chunks)
 	}
 
 	// Each side removing one of the same alike lines removes the same
 	// one, not two.
-	m = New("a\nz\nb\nb\nb\nc\n", "a\nz\nb\nb\nc\n", "x\nz\nb\nb\nc\n")
+	m = New("a\nz\nb\nb\nb\nc\n", "a\nz\nb\nb\nc\n", "x\nz\nb\nb\nc\n", false)
 	if m.Unresolved() != 0 || m.Result() != "x\nz\nb\nb\nc\n" {
 		t.Fatalf("alike lines: %q, %+v", m.Result(), m.Chunks)
 	}
 
 	// No base, as two files added.
-	m = New("", "a\n", "b\n")
+	m = New("", "a\n", "b\n", false)
 	if m.Unresolved() != 1 || m.Result() != "" || m.Chunks[0].Sides != [2]Range{{0, 1}, {0, 1}} {
 		t.Fatalf("added: %q, %+v", m.Result(), m.Chunks)
 	}
@@ -146,13 +146,13 @@ func TestNewRandom(t *testing.T) {
 	for range 2000 {
 		base, ours, theirs := randomLines(r, r.IntN(10)), randomLines(r, r.IntN(10)), randomLines(r, r.IntN(10))
 		join := func(l []string) string { return strings.Join(l, "") }
-		if m := New(join(base), join(ours), join(base)); m.Result() != join(ours) || m.Unresolved() != 0 {
+		if m := New(join(base), join(ours), join(base), false); m.Result() != join(ours) || m.Unresolved() != 0 {
 			t.Fatalf("theirs unchanged: %q, %q: %q", base, ours, m.Result())
 		}
-		if m := New(join(base), join(ours), join(ours)); m.Result() != join(ours) || m.Unresolved() != 0 {
+		if m := New(join(base), join(ours), join(ours), false); m.Result() != join(ours) || m.Unresolved() != 0 {
 			t.Fatalf("alike: %q, %q: %q", base, ours, m.Result())
 		}
-		m := New(join(base), join(ours), join(theirs))
+		m := New(join(base), join(ours), join(theirs), false)
 		for i := range m.Chunks {
 			e := m.Apply(i, Ours)
 			m.Ignore(i, Theirs)
@@ -172,7 +172,7 @@ func TestNewRandom(t *testing.T) {
 }
 
 func TestApply(t *testing.T) {
-	m := New("a\nb\nc\n", "a\nours\nc\n", "a\ntheirs\nc\n")
+	m := New("a\nb\nc\n", "a\nours\nc\n", "a\ntheirs\nc\n", false)
 	e := m.Apply(0, Theirs)
 	if e != (Edit{Start: 2, End: 4, Text: "theirs\n"}) || m.Result() != "a\ntheirs\nc\n" || m.Chunks[0].Resolved() {
 		t.Fatalf("edit %+v, result %q, %+v", e, m.Result(), m.Chunks[0])
@@ -186,7 +186,7 @@ func TestApply(t *testing.T) {
 		t.Fatal("applied twice")
 	}
 
-	m = New("a\nb\nc\n", "a\nours\nc\n", "a\ntheirs\nc\n")
+	m = New("a\nb\nc\n", "a\nours\nc\n", "a\ntheirs\nc\n", false)
 	m.Ignore(0, Ours)
 	if m.Chunks[0].Resolved() || m.Result() != "a\nb\nc\n" {
 		t.Fatalf("%+v", m.Chunks[0])
@@ -200,7 +200,7 @@ func TestApply(t *testing.T) {
 // Chunks move with the lines edited around them; one edited is what its
 // text is, so undoing a side taken makes it pending again.
 func TestSync(t *testing.T) {
-	m := New("a\nb\nc\nd\ne\n", "a\nB1\nc\nd\nE\n", "a\nB2\nc\nd\ne\n")
+	m := New("a\nb\nc\nd\ne\n", "a\nB1\nc\nd\nE\n", "a\nB2\nc\nd\ne\n", false)
 	m.Sync("new\na\nb\nc\nd\nE\n")
 	if m.Chunks[0].Result != (Range{2, 3}) || m.Chunks[1].Result != (Range{5, 6}) || m.Unresolved() != 1 {
 		t.Fatalf("lines added above: %+v", m.Chunks)
@@ -223,7 +223,7 @@ func TestSync(t *testing.T) {
 	}
 
 	// Lines typed into a chunk that is empty in the result are its.
-	m = New("a\nb\nc\n", "a\nc\n", "a\nB\nc\n")
+	m = New("a\nb\nc\n", "a\nc\n", "a\nB\nc\n", false)
 	if c := m.Chunks[0]; c.Result != (Range{1, 2}) {
 		t.Fatalf("%+v", c)
 	}
@@ -254,7 +254,7 @@ func TestMapLine(t *testing.T) {
 }
 
 func TestResolveSimple(t *testing.T) {
-	m := New("call(a, b)\n", "call(x, b)\n", "call(a, y)\n")
+	m := New("call(a, b)\n", "call(x, b)\n", "call(a, y)\n", false)
 	if m.Unresolved() != 1 {
 		t.Fatalf("%+v", m.Chunks)
 	}
@@ -262,12 +262,12 @@ func TestResolveSimple(t *testing.T) {
 	if !ok || e.Text != "call(x, y)\n" || m.Result() != "call(x, y)\n" || m.Unresolved() != 0 {
 		t.Fatalf("%v %+v %q", ok, e, m.Result())
 	}
-	m = New("call(a, b)\n", "call(x, b)\n", "call(z, b)\n")
+	m = New("call(a, b)\n", "call(x, b)\n", "call(z, b)\n", false)
 	if _, ok := m.ResolveSimple(0); ok || m.Unresolved() != 1 {
 		t.Fatal("resolved a real conflict")
 	}
 	// Lines added on both sides of a line changed.
-	m = New("a\nb\n", "top\na\nb\n", "a\nb\nbottom\n")
+	m = New("a\nb\n", "top\na\nb\n", "a\nb\nbottom\n", false)
 	if m.Unresolved() != 0 || m.Result() != "top\na\nb\nbottom\n" {
 		t.Fatalf("%q", m.Result())
 	}
@@ -278,5 +278,31 @@ func TestWords(t *testing.T) {
 	want := []string{"foo_1", "(", "bar", ",", "  ", "baz", ")", "\n", "\t", "世界", "!"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("%q", got)
+	}
+}
+
+// Ignoring spaces, a side changing only spaces changes nothing, and the
+// lines keep our spaces.
+func TestIgnoreSpace(t *testing.T) {
+	base, ours, theirs := "a\n  b\nc\n", "a\n\tb\nc\n", "a\n  b \nC\n"
+	if m := New(base, ours, theirs, false); m.Unresolved() != 1 {
+		t.Fatalf("not ignoring: %+v", m.Chunks)
+	}
+	m := New(base, ours, theirs, true)
+	if m.Unresolved() != 0 || m.Result() != "a\n\tb\nC\n" {
+		t.Fatalf("%q, %+v", m.Result(), m.Chunks)
+	}
+	m = New("a\nb\n", "a \nB\n", "a\n b\n", true)
+	if m.Unresolved() != 0 || m.Result() != "a \nB\n" {
+		t.Fatalf("%q, %+v", m.Result(), m.Chunks)
+	}
+}
+
+func TestUnignore(t *testing.T) {
+	m := New("a\nb\nc\n", "a\nours\nc\n", "a\ntheirs\nc\n", false)
+	m.Ignore(0, Ours)
+	m.Unignore(0, Ours)
+	if m.Chunks[0].State != [2]State{Pending, Pending} {
+		t.Fatalf("%+v", m.Chunks[0])
 	}
 }

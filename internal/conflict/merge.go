@@ -56,17 +56,33 @@ type Edit struct {
 }
 
 // New merges ours and theirs, with base their common ancestor, "" when
-// they have none.
-func New(base, ours, theirs string) *Merge {
+// they have none. With ignoreSpace, lines alike but for their spaces are
+// alike, and keep our spaces, as git's ignore-space-change has them.
+func New(base, ours, theirs string, ignoreSpace bool) *Merge {
 	m := &Merge{base: Lines(base), sides: [2][]string{Lines(ours), Lines(theirs)}}
-	m.Chunks = diff3(m.base, Diff(m.base, m.sides[Ours]), Diff(m.base, m.sides[Theirs]))
-	at := 0 // the base's line the result got to
+	key := func(lines []string) []string { return lines }
+	if ignoreSpace {
+		key = func(lines []string) []string {
+			out := make([]string, len(lines))
+			for i, l := range lines {
+				out[i] = strings.Join(strings.Fields(l), " ")
+			}
+			return out
+		}
+	}
+	kb, ko, kt := key(m.base), key(m.sides[Ours]), key(m.sides[Theirs])
+	m.Chunks = diff3(kb, Diff(kb, ko), Diff(kb, kt))
+	at := 0                                 // the base's line the result got to
+	alike := func(base, end int) []string { // our lines alike the base's at to base, ending at ours' end
+		return m.sides[Ours][end-(base-at) : end]
+	}
 	for i := range m.Chunks {
 		c := &m.Chunks[i]
-		m.result = append(m.result, m.base[at:c.Base.Start]...)
+		m.result = append(m.result, alike(c.Base.Start, c.Sides[Ours].Start)...)
 		start := len(m.result)
+		o, t := c.Sides[Ours], c.Sides[Theirs]
 		switch {
-		case c.State == [2]State{Pending, Pending} && !slices.Equal(m.lines(Ours, c), m.lines(Theirs, c)):
+		case c.State == [2]State{Pending, Pending} && !slices.Equal(ko[o.Start:o.End], kt[t.Start:t.End]):
 			c.Conflict = true
 			m.result = append(m.result, m.base[c.Base.Start:c.Base.End]...)
 		case c.State[Ours] == Pending: // theirs too when alike
@@ -84,7 +100,7 @@ func New(base, ours, theirs string) *Merge {
 		c.Result = Range{start, len(m.result)}
 		at = c.Base.End
 	}
-	m.result = append(m.result, m.base[at:]...)
+	m.result = append(m.result, alike(len(m.base), len(m.sides[Ours]))...)
 	return m
 }
 
@@ -175,6 +191,13 @@ func (m *Merge) Apply(i int, s Side) Edit {
 func (m *Merge) Ignore(i int, s Side) {
 	if c := &m.Chunks[i]; c.State[s] == Pending {
 		c.State[s] = Ignored
+	}
+}
+
+// Unignore takes back Ignore.
+func (m *Merge) Unignore(i int, s Side) {
+	if c := &m.Chunks[i]; c.State[s] == Ignored {
+		c.State[s] = Pending
 	}
 }
 

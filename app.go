@@ -75,6 +75,7 @@ type app struct {
 	viewed   map[string]bool // files marked viewed, by viewKey
 
 	confirm      confirmation
+	nextConflict bool   // to open the next file in conflict once the status comes
 	branchesOpen bool   // the branches' popover
 	branchFilter string // its search
 	prompt       prompt
@@ -319,6 +320,15 @@ func (a *app) setStatus(st git.Status) {
 	}
 	a.stagedSel, a.unstagedSel = indexOf(a.staged, stagedPath), indexOf(a.unstaged, unstagedPath)
 	a.refilter()
+	if a.nextConflict { // a file resolved: on to the next in conflict
+		a.nextConflict = false
+		for i, c := range a.unstaged {
+			if c.Conflict {
+				a.chooseChange(i, false)
+				return
+			}
+		}
+	}
 	// The diff of a change shows it as it is now, or nothing once it's gone.
 	if ch := a.detail.change; ch != nil {
 		if c, ok := find(a.changes(a.detail.staged), ch.Path); ok {

@@ -231,6 +231,24 @@ func (r *Repo) ShowStage(ctx context.Context, path string, s Stage) string {
 	return out
 }
 
+// Stages reports which versions of a file in conflict the index holds:
+// a side that deleted the file has none.
+func (r *Repo) Stages(ctx context.Context, path string) (has [4]bool, err error) {
+	out, err := r.Git(ctx, "ls-files", "-u", "-z", "--", path)
+	if err != nil {
+		return has, err
+	}
+	// <mode> <hash> <stage>\t<path>
+	for _, entry := range strings.Split(out, "\x00") {
+		if f := strings.Fields(strings.SplitN(entry, "\t", 2)[0]); len(f) == 3 {
+			if n, err := strconv.Atoi(f[2]); err == nil && n > 0 && n < 4 {
+				has[n] = true
+			}
+		}
+	}
+	return has, nil
+}
+
 // Resolve writes a file's resolved text and stages it, which marks its
 // conflict resolved.
 func (r *Repo) Resolve(ctx context.Context, path, text string) error {
@@ -240,8 +258,13 @@ func (r *Repo) Resolve(ctx context.Context, path, text string) error {
 	return r.Stage(ctx, path)
 }
 
-// TakeSide resolves a file in conflict with one side's version whole.
+// TakeSide resolves a file in conflict with one side's version whole,
+// deleting it when that side deleted it.
 func (r *Repo) TakeSide(ctx context.Context, path string, s Stage) error {
+	if has, err := r.Stages(ctx, path); err == nil && !has[s] {
+		_, err := r.Git(ctx, "rm", "-q", "--", path)
+		return err
+	}
 	side := "--ours"
 	if s == TheirsStage {
 		side = "--theirs"

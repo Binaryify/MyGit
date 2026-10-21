@@ -42,19 +42,64 @@ type merger struct {
 	caret          int        // the result's, to scroll it into view as it moves
 	cur            int        // the chunk shown
 	opening        bool       // to go to the first chunk once the panes are laid out
-	note           string     // what the magic wand did
+	note           string     // what the magic wand did, or that the file's edits were kept
 	split1, split2 float32
+	texts          mergeTexts        // as read, \n ending their lines
+	ignored        []ignoring        // the dismissals ⌘Z takes back, latest last
+	compare        *editor.DiffState // the base against a side, shown in place of the panes
+	compareTitle   string
 }
 
-type mergeTexts struct{ base, ours, theirs string }
+// ignoring is a side's change dismissed, at the result's version then.
+type ignoring struct {
+	chunk   int
+	side    conflict.Side
+	version uint64
+}
+
+// mergeTexts are a file's versions in conflict: the index's, which it has
+// (has[stage]), and the file's as it is in the working tree.
+type mergeTexts struct {
+	base, ours, theirs, work string
+	has                      [4]bool
+}
+
+// kind says what a conflict is: one side deleted the file, or it is
+// binary, which the merge window can't merge; "" for the others.
+func (t mergeTexts) kind() string {
+	switch {
+	case !t.has[git.OursStage]:
+		return "oursDeleted"
+	case !t.has[git.TheirsStage]:
+		return "theirsDeleted"
+	case strings.ContainsRune(t.base+t.ours+t.theirs, 0):
+		return "binary"
+	}
+	return ""
+}
+
+// hasMarkers reports whether a text has the conflict markers git writes.
+func hasMarkers(text string) bool {
+	for _, l := range conflict.Lines(text) {
+		if strings.HasPrefix(l, "<<<<<<<") || strings.HasPrefix(l, ">>>>>>>") {
+			return true
+		}
+	}
+	return false
+}
 
 // showConflict opens the merge of a file in conflict.
 func (a *app) showConflict(c git.Change) {
 	a.detail = detail{change: &c, gen: a.detail.gen + 1, loading: true}
 	gen := a.detail.gen
 	work(a, func(ctx context.Context) (mergeTexts, error) {
+		has, err := a.repo.Stages(ctx, c.Path)
+		if err != nil {
+			return mergeTexts{}, err
+		}
+		work, _ := a.repo.ReadFile(ctx, c.Path) // none when deleted
 		return mergeTexts{a.repo.ShowStage(ctx, c.Path, git.BaseStage), a.repo.ShowStage(ctx, c.Path, git.OursStage),
-			a.repo.ShowStage(ctx, c.Path, git.TheirsStage)}, nil
+			a.repo.ShowStage(ctx, c.Path, git.TheirsStage), work, has}, nil
 	}, func(t mergeTexts, err error) {
 		if gen != a.detail.gen {
 			return
@@ -68,19 +113,33 @@ func (a *app) showConflict(c git.Change) {
 	})
 }
 
+// newMerger merges a file's versions. A file whose conflicts were edited
+// by hand already, its markers gone, keeps its edits in the result.
 func newMerger(path string, t mergeTexts) *merger {
 	lf := func(s string) string { return strings.ReplaceAll(s, "\r\n", "\n") }
-	m := &merger{path: path, model: conflict.New(lf(t.base), lf(t.ours), lf(t.theirs)), lh: 20, split1: 30, split2: 57}
+	crlf := strings.Contains(t.ours, "\r\n")
+	t.base, t.ours, t.theirs, t.work = lf(t.base), lf(t.ours), lf(t.theirs), lf(t.work)
+	m := &merger{path: path, texts: t, model: conflict.New(t.base, t.ours, t.theirs, prefs.IgnoreWhitespace), lh: 20, split1: 30, split2: 57}
+	result := m.model.Result()
+	if t.kind() == "" && t.work != "" && t.work != result && !hasMarkers(t.work) {
+		m.model.Sync(t.work)
+		result, m.note = t.work, loc.KeptEdits()
+	}
 	lang := editor.LanguageFor(path)
-	for i, text := range []string{t.ours, m.model.Result(), t.theirs} {
+	for i, text := range []string{t.ours, result, t.theirs} {
 		b := editor.NewBuffer(text)
 		if lang != nil {
 			b.SetLanguage(lang)
 		}
 		m.panes[i] = &editor.State{Buffer: b, ReadOnly: i != paneResult, NoActiveLine: i != paneResult, FitContent: true, NoFolding: true}
 	}
-	if strings.Contains(t.ours, "\r\n") { // the result's lines end as the file's did
+	if crlf { // the result's lines end as the file's did
 		m.panes[paneResult].Buffer.SetLineEnding("\r\n")
+	}
+	m.panes[paneResult].OnInput = func(ev ui.InputEvent) bool {
+		undo := ev.Kind == ui.InputKeyDown && ev.Key == ui.KeyZ && ev.Mods == ui.Cmd ||
+			ev.Kind == ui.InputCommand && ev.Text == "undo" // the Edit menu's, as macOS sends ⌘Z
+		return undo && m.undoIgnore()
 	}
 	m.version = m.panes[paneResult].Buffer.Version()
 	m.cur = m.next(-1, 1)
@@ -169,10 +228,64 @@ func (m *merger) apply(i int, s conflict.Side) {
 	m.focus.Focus() // for ⌘Z to undo it
 }
 
-// ignore dismisses a side's change to chunk i.
+// ignore dismisses a side's change to chunk i, for ⌘Z to take back.
 func (m *merger) ignore(i int, s conflict.Side) {
+	if m.model.Chunks[i].State[s] != conflict.Pending {
+		return
+	}
 	m.model.Ignore(i, s)
+	m.ignored = append(m.ignored, ignoring{i, s, m.panes[paneResult].Buffer.Version()})
 	m.cur = i
+}
+
+// undoIgnore takes back the last dismissal, as ⌘Z, when the result wasn't
+// edited since: then ⌘Z is the result's.
+func (m *merger) undoIgnore() bool {
+	n := len(m.ignored)
+	if n == 0 || m.ignored[n-1].version != m.panes[paneResult].Buffer.Version() {
+		return false
+	}
+	last := m.ignored[n-1]
+	m.ignored = m.ignored[:n-1]
+	m.model.Unignore(last.chunk, last.side)
+	m.cur = last.chunk
+	return true
+}
+
+// remerge merges the file again, as when spaces are ignored or not, or
+// the edits kept dropped: the result's edits stay with keep, undoably.
+func (m *merger) remerge(keep bool) {
+	m.sync()
+	text := m.panes[paneResult].Buffer.String()
+	m.model = conflict.New(m.texts.base, m.texts.ours, m.texts.theirs, prefs.IgnoreWhitespace)
+	m.ignored, m.note = nil, ""
+	if keep {
+		m.model.Sync(text)
+	} else {
+		b := m.panes[paneResult].Buffer
+		b.Edit(editor.Edit{End: b.Len(), Text: m.model.Result()})
+		m.version = b.Version()
+	}
+	m.cur = m.next(-1, 1)
+	m.goTo(m.cur)
+}
+
+// compareBase shows the base against a side, as IntelliJ's Compare Base
+// with Left or Right does.
+func (m *merger) compareBase(p int, title string) {
+	side := m.texts.ours
+	if p == paneTheirs {
+		side = m.texts.theirs
+	}
+	lang := editor.LanguageFor(m.path)
+	buf := func(text string) *editor.Buffer {
+		b := editor.NewBuffer(text)
+		if lang != nil {
+			b.SetLanguage(lang)
+		}
+		return b
+	}
+	m.compare, m.compareTitle = &editor.DiffState{Old: buf(m.texts.base), New: buf(side)}, title
 }
 
 // take resolves the chunk shown with a side's change, or both's.
@@ -320,7 +433,23 @@ func (m *merger) alpha(i int) float32 {
 	return 0.18
 }
 
+// sideNames are what the merge calls the sides, ours and theirs.
+func (a *app) sideNames() (left, right string) {
+	if a.op == git.Rebasing { // rebasing, HEAD is the branch rebased onto
+		return loc.MergeUpstream(), loc.MergeYours()
+	}
+	return loc.MergeOurs(), loc.MergeTheirs()
+}
+
 func (a *app) mergeView(c *ui.Context, m *merger) {
+	if k := m.texts.kind(); k != "" {
+		a.wholeConflictView(c, m, k)
+		return
+	}
+	if m.compare != nil {
+		m.compareView(c)
+		return
+	}
 	t := c.Theme()
 	ct := editor.DefaultTheme(t)
 	m.sync()
@@ -328,10 +457,7 @@ func (a *app) mergeView(c *ui.Context, m *merger) {
 	if m.opening {
 		c.Invalidate() // a frame more, laid out, to go to the first chunk
 	}
-	left, right := loc.MergeOurs(), loc.MergeTheirs()
-	if a.op == git.Rebasing { // rebasing, HEAD is the branch rebased onto
-		left, right = loc.MergeUpstream(), loc.MergeYours()
-	}
+	left, right := a.sideNames()
 	for p, st := range m.panes {
 		st.LineBackgrounds = st.LineBackgrounds[:0]
 		for i := range m.model.Chunks {
@@ -379,12 +505,28 @@ func (a *app) mergeView(c *ui.Context, m *merger) {
 				ui.Text(c, m.note).TextColor(t.TextMuted).SingleLine()
 			}
 			ui.Box(c).Grow(1)
-			iconMenu(c, "more", loc.WholeFile(), func(menu *ui.Menu) {
+			iconMenu(c, "more", loc.MergeMore(), func(menu *ui.Menu) {
 				if menu.Item(loc.TakeAllLeft(left)).Chosen() {
 					a.takeSide(m.path, git.OursStage)
 				}
 				if menu.Item(loc.TakeAllRight(right)).Chosen() {
 					a.takeSide(m.path, git.TheirsStage)
+				}
+				menu.Separator()
+				if menu.Item(loc.IgnoreWhitespace()).Checked(prefs.IgnoreWhitespace).Chosen() {
+					prefs.IgnoreWhitespace = !prefs.IgnoreWhitespace
+					prefs.save()
+					m.remerge(true)
+				}
+				if menu.Item(loc.CompareBaseLeft()).Chosen() {
+					m.compareBase(paneOurs, loc.CompareBaseLeft())
+				}
+				if menu.Item(loc.CompareBaseRight()).Chosen() {
+					m.compareBase(paneTheirs, loc.CompareBaseRight())
+				}
+				menu.Separator()
+				if menu.Item(loc.Remerge()).Chosen() {
+					m.remerge(false)
 				}
 			})
 			if ui.PrimaryButton(c, loc.SaveResolved()).Disabled(a.busy != "").Clicked() {
@@ -510,6 +652,7 @@ func (m *merger) gutter(c *ui.Context, s conflict.Side) {
 				}, func() {
 					if button(ignore, loc.IgnoreChange()) {
 						m.ignore(i, s)
+						m.focus.Focus() // for ⌘Z to take it back
 					}
 				}
 				if s == conflict.Theirs { // ✕ outermost
@@ -522,8 +665,76 @@ func (m *merger) gutter(c *ui.Context, s conflict.Side) {
 	})
 }
 
+// compareView shows the base against a side, to go back from to the
+// merge.
+func (m *merger) compareView(c *ui.Context) {
+	t := c.Theme()
+	ui.Column(c).Fill().Children(func() {
+		ui.Row(c).Padding(6, 12).Gap(6).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
+			ui.Text(c, m.path).Bold().SingleLine().Shrink(0)
+			ui.Text(c, m.compareTitle).TextColor(t.TextMuted).SingleLine()
+			ui.Box(c).Grow(1)
+			if ui.Button(c, loc.BackToMerge()).Clicked() {
+				m.compare = nil
+			}
+		})
+		if m.compare != nil {
+			editor.DiffView(c.Key("base"), m.compare).Grow(1).FillWidth()
+		}
+	})
+}
+
+// wholeConflictView resolves a conflict the merge window can't merge, a
+// side's version whole: one side deleted the file, or it is binary.
+func (a *app) wholeConflictView(c *ui.Context, m *merger, kind string) {
+	t := c.Theme()
+	left, right := a.sideNames()
+	ui.Column(c).Fill().Children(func() {
+		ui.Row(c).Padding(6, 12).Gap(6).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
+			ui.Text(c, m.path).Bold().SingleLine().Shrink(0)
+			switch kind {
+			case "binary":
+				ui.Text(c, loc.BinaryConflict()).TextColor(t.TextMuted).SingleLine()
+				ui.Box(c).Grow(1)
+				if ui.Button(c, loc.TakeAllLeft(left)).Clicked() {
+					a.takeSide(m.path, git.OursStage)
+				}
+				if ui.Button(c, loc.TakeAllRight(right)).Clicked() {
+					a.takeSide(m.path, git.TheirsStage)
+				}
+			default:
+				deleter, changer, kept, gone := left, right, git.TheirsStage, git.OursStage
+				if kind == "theirsDeleted" {
+					deleter, changer, kept, gone = right, left, git.OursStage, git.TheirsStage
+				}
+				ui.Text(c, loc.DeletedBy(deleter, changer)).TextColor(t.TextMuted).SingleLine()
+				ui.Box(c).Grow(1)
+				if ui.Button(c, loc.DeleteFile()).Clicked() {
+					a.takeSide(m.path, gone)
+				}
+				if ui.PrimaryButton(c, loc.KeepFile(changer)).Disabled(a.busy != "").Clicked() {
+					a.takeSide(m.path, kept)
+				}
+			}
+		})
+		if kind != "binary" { // the version changed, to see what is kept
+			p := paneTheirs
+			if kind == "theirsDeleted" {
+				p = paneOurs
+			}
+			editor.View(c.Key("kept"), m.panes[p]).Grow(1).FillWidth()
+		}
+	})
+}
+
 func (a *app) takeSide(path string, s git.Stage) {
-	a.run(loc.OpResolve(), func(ctx context.Context) error { return a.repo.TakeSide(ctx, path, s) }, func() { a.detail = detail{} })
+	a.run(loc.OpResolve(), func(ctx context.Context) error { return a.repo.TakeSide(ctx, path, s) }, a.resolved)
+}
+
+// resolved leaves the file resolved for the next in conflict.
+func (a *app) resolved() {
+	a.detail = detail{}
+	a.nextConflict = true
 }
 
 // saveResolution writes the result and marks the file resolved, asking
@@ -533,7 +744,7 @@ func (a *app) saveResolution(m *merger) {
 		var b strings.Builder
 		m.panes[paneResult].Buffer.WriteTo(&b) // with the file's line ends
 		text := b.String()
-		a.run(loc.OpResolve(), func(ctx context.Context) error { return a.repo.Resolve(ctx, m.path, text) }, func() { a.detail = detail{} })
+		a.run(loc.OpResolve(), func(ctx context.Context) error { return a.repo.Resolve(ctx, m.path, text) }, a.resolved)
 	}
 	m.sync()
 	if n := m.model.Unresolved(); n > 0 {

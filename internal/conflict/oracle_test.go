@@ -46,7 +46,7 @@ func TestAsGit(t *testing.T) {
 			args = append(args, path)
 		}
 		out, err := exec.Command("git", args...).Output()
-		m := New(texts[1], texts[0], texts[2])
+		m := New(texts[1], texts[0], texts[2], false)
 		if err != nil || m.Unresolved() > 0 {
 			continue
 		}

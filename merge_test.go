@@ -158,7 +158,7 @@ func abs(x float32) float32 { return max(x, -x) }
 
 // Undoing a side taken makes the conflict one again.
 func TestMergeUndo(t *testing.T) {
-	m := newMerger("a.txt", mergeTexts{"a\nb\nc\n", "a\nours\nc\n", "a\ntheirs\nc\n"})
+	m := newMerger("a.txt", mergeTexts{base: "a\nb\nc\n", ours: "a\nours\nc\n", theirs: "a\ntheirs\nc\n", has: [4]bool{1: true, 2: true, 3: true}})
 	m.apply(0, conflict.Ours)
 	b := m.panes[paneResult].Buffer
 	if b.String() != "a\nours\nc\n" || m.model.Unresolved() != 1 {
@@ -170,5 +170,116 @@ func TestMergeUndo(t *testing.T) {
 	m.sync()
 	if c := m.model.Chunks[0]; b.String() != "a\nb\nc\n" || c.State != [2]conflict.State{conflict.Pending, conflict.Pending} {
 		t.Fatalf("result %q, %+v", b.String(), c)
+	}
+}
+
+// ⌘Z takes back a change dismissed, while the result wasn't edited since.
+func TestMergeUndoIgnore(t *testing.T) {
+	m := newMerger("a.txt", mergeTexts{base: "a\nb\nc\n", ours: "a\nours\nc\n", theirs: "a\ntheirs\nc\n", has: [4]bool{1: true, 2: true, 3: true}})
+	m.ignore(0, conflict.Theirs)
+	if !m.undoIgnore() || m.model.Chunks[0].State[conflict.Theirs] != conflict.Pending || m.undoIgnore() {
+		t.Fatalf("%+v", m.model.Chunks[0])
+	}
+	m.ignore(0, conflict.Theirs)
+	m.panes[paneResult].Buffer.Edit(editor.Edit{Text: "x"})
+	if m.undoIgnore() {
+		t.Fatal("took back a dismissal under an edit")
+	}
+}
+
+// A file whose conflicts were edited by hand keeps the edits: the chunks
+// are what the text has.
+func TestMergeKeepsEdits(t *testing.T) {
+	m := newMerger("a.txt", mergeTexts{base: "a\nb\nc\nd\n", ours: "a\nB\nc\nd\n", theirs: "a\nβ\nc\nD\n",
+		work: "a\nB\nc\nD\n", has: [4]bool{1: true, 2: true, 3: true}})
+	if got := m.panes[paneResult].Buffer.String(); got != "a\nB\nc\nD\n" || m.model.Unresolved() != 0 || m.note == "" {
+		t.Fatalf("result %q, %+v", got, m.model.Chunks)
+	}
+	m.remerge(false)
+	if got := m.panes[paneResult].Buffer.String(); got != "a\nb\nc\nD\n" || m.model.Unresolved() != 1 {
+		t.Fatalf("merged again: %q, %+v", got, m.model.Chunks)
+	}
+	// Markers left, it is merged afresh.
+	m = newMerger("a.txt", mergeTexts{base: "a\nb\n", ours: "a\nB\n", theirs: "a\nβ\n", work: "a\n<<<<<<< HEAD\nB\n=======\nβ\n>>>>>>> x\n",
+		has: [4]bool{1: true, 2: true, 3: true}})
+	if got := m.panes[paneResult].Buffer.String(); got != "a\nb\n" || m.note != "" {
+		t.Fatalf("with markers: %q", got)
+	}
+}
+
+// Saving a file opens the next in conflict; one a side deleted is kept or
+// deleted whole.
+func TestMergeNextAndDeleted(t *testing.T) {
+	tt := newTester(t)
+	ctx := context.Background()
+	r := tt.a.repo
+	sh := func(args ...string) {
+		t.Helper()
+		if _, err := r.Git(ctx, append([]string{"-c", "user.name=a", "-c", "user.email=a@a"}, args...)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write := func(name, text string) {
+		if err := os.WriteFile(filepath.Join(r.Dir, name), []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("a.txt", "a\n")
+	write("b.txt", "b\n")
+	sh("add", ".")
+	sh("commit", "-q", "-m", "base")
+	sh("switch", "-q", "-c", "other")
+	write("a.txt", "theirs a\n")
+	write("b.txt", "theirs b\n")
+	sh("commit", "-q", "-am", "theirs")
+	sh("switch", "-q", "main")
+	write("a.txt", "ours a\n")
+	sh("rm", "-q", "b.txt")
+	sh("commit", "-q", "-am", "ours")
+	tt.a.run("合并", func(ctx context.Context) error { return r.Merge(ctx, "other") }, nil)
+	tt.settle()
+	tt.click(t, "a.txt")
+	tt.click(t, "采用左侧")
+	tt.click(t, "保存并标记为已解决")
+	m := tt.a.detail.merge
+	if m == nil || m.path != "b.txt" || !tt.HasText("我们的（HEAD）删除了这个文件，他们的修改了它。") {
+		t.Fatalf("next: %+v, texts %q", m, tt.Texts())
+	}
+	tt.click(t, "保留文件（他们的）")
+	if b, _ := os.ReadFile(filepath.Join(r.Dir, "b.txt")); string(b) != "theirs b\n" || tt.a.errMsg != "" {
+		t.Fatalf("kept %q, error %q", b, tt.a.errMsg)
+	}
+	if out, _ := r.Git(ctx, "diff", "--name-only", "--diff-filter=U"); out != "" {
+		t.Fatalf("left in conflict: %q", out)
+	}
+}
+
+// The base shows against a side, and back.
+func TestMergeCompareBase(t *testing.T) {
+	tt := newTester(t)
+	m := conflictIn(t, tt, "a\nb\n", "a\nours\n", "a\ntheirs\n")
+	m.compareBase(paneOurs, "比较 base 与左侧")
+	tt.Frame()
+	if !tt.HasText("返回合并") || m.compare.Old.String() != "a\nb\n" || m.compare.New.String() != "a\nours\n" {
+		t.Fatalf("texts %q", tt.Texts())
+	}
+	tt.click(t, "返回合并")
+	if m.compare != nil || !tt.HasText("采用左侧") {
+		t.Fatalf("texts %q", tt.Texts())
+	}
+}
+
+// The Edit menu's Undo, as ⌘Z comes on macOS, takes back a dismissal.
+func TestMergeUndoIgnoreMenu(t *testing.T) {
+	tt := newTester(t)
+	m := conflictIn(t, tt, "a\nb\n", "a\nours\n", "a\ntheirs\n")
+	tt.click(t, "忽略这处改动")
+	if m.model.Chunks[0].State[conflict.Ours] != conflict.Ignored {
+		t.Fatalf("%+v", m.model.Chunks[0])
+	}
+	tt.Command("undo")
+	tt.Frame()
+	if c := m.model.Chunks[0]; c.State != [2]conflict.State{conflict.Pending, conflict.Pending} || m.panes[paneResult].Buffer.String() != "a\nb\n" {
+		t.Fatalf("%+v %q", c, m.panes[paneResult].Buffer.String())
 	}
 }

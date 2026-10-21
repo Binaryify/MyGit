@@ -2060,6 +2060,108 @@ func (msgs Messages) SaveAnyway() string {
 	return Catalog.Format(msgs.locale, "saveAnyway", nil)
 }
 
+// KeptEdits says "Kept the file's edits by hand"
+// in the language the app shows.
+func KeptEdits() string { return In(i18n.Locale()).KeptEdits() }
+
+// KeptEdits says "Kept the file's edits by hand"
+// in the language of msgs.
+func (msgs Messages) KeptEdits() string {
+	return Catalog.Format(msgs.locale, "keptEdits", nil)
+}
+
+// MergeMore says "More"
+// in the language the app shows.
+func MergeMore() string { return In(i18n.Locale()).MergeMore() }
+
+// MergeMore says "More"
+// in the language of msgs.
+func (msgs Messages) MergeMore() string {
+	return Catalog.Format(msgs.locale, "mergeMore", nil)
+}
+
+// CompareBaseLeft says "Compare Base with Left"
+// in the language the app shows.
+func CompareBaseLeft() string { return In(i18n.Locale()).CompareBaseLeft() }
+
+// CompareBaseLeft says "Compare Base with Left"
+// in the language of msgs.
+func (msgs Messages) CompareBaseLeft() string {
+	return Catalog.Format(msgs.locale, "compareBaseLeft", nil)
+}
+
+// CompareBaseRight says "Compare Base with Right"
+// in the language the app shows.
+func CompareBaseRight() string { return In(i18n.Locale()).CompareBaseRight() }
+
+// CompareBaseRight says "Compare Base with Right"
+// in the language of msgs.
+func (msgs Messages) CompareBaseRight() string {
+	return Catalog.Format(msgs.locale, "compareBaseRight", nil)
+}
+
+// Remerge says "Merge Again, Dropping the Result's Edits"
+// in the language the app shows.
+func Remerge() string { return In(i18n.Locale()).Remerge() }
+
+// Remerge says "Merge Again, Dropping the Result's Edits"
+// in the language of msgs.
+func (msgs Messages) Remerge() string {
+	return Catalog.Format(msgs.locale, "remerge", nil)
+}
+
+// BackToMerge says "Back to Merge"
+// in the language the app shows.
+func BackToMerge() string { return In(i18n.Locale()).BackToMerge() }
+
+// BackToMerge says "Back to Merge"
+// in the language of msgs.
+func (msgs Messages) BackToMerge() string {
+	return Catalog.Format(msgs.locale, "backToMerge", nil)
+}
+
+// DeletedBy says "{deleter} deleted the file, {changer} changed it."
+// in the language the app shows.
+func DeletedBy(deleter string, changer string) string {
+	return In(i18n.Locale()).DeletedBy(deleter, changer)
+}
+
+// DeletedBy says "{deleter} deleted the file, {changer} changed it."
+// in the language of msgs.
+func (msgs Messages) DeletedBy(deleter string, changer string) string {
+	return Catalog.Format(msgs.locale, "deletedBy", map[string]any{"deleter": deleter, "changer": changer})
+}
+
+// BinaryConflict says "A binary file can't be merged: take one side whole."
+// in the language the app shows.
+func BinaryConflict() string { return In(i18n.Locale()).BinaryConflict() }
+
+// BinaryConflict says "A binary file can't be merged: take one side whole."
+// in the language of msgs.
+func (msgs Messages) BinaryConflict() string {
+	return Catalog.Format(msgs.locale, "binaryConflict", nil)
+}
+
+// KeepFile says "Keep the File ({side})"
+// in the language the app shows.
+func KeepFile(side string) string { return In(i18n.Locale()).KeepFile(side) }
+
+// KeepFile says "Keep the File ({side})"
+// in the language of msgs.
+func (msgs Messages) KeepFile(side string) string {
+	return Catalog.Format(msgs.locale, "keepFile", map[string]any{"side": side})
+}
+
+// DeleteFile says "Delete the File"
+// in the language the app shows.
+func DeleteFile() string { return In(i18n.Locale()).DeleteFile() }
+
+// DeleteFile says "Delete the File"
+// in the language of msgs.
+func (msgs Messages) DeleteFile() string {
+	return Catalog.Format(msgs.locale, "deleteFile", nil)
+}
+
 // RebasePick says "Keep (pick)"
 // in the language the app shows.
 func RebasePick() string { return In(i18n.Locale()).RebasePick() }

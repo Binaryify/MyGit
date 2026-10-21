@@ -567,6 +567,33 @@
     }
   },
   "saveAnyway": "Save Anyway",
+  "keptEdits": "Kept the file's edits by hand",
+  "mergeMore": "More",
+  "compareBaseLeft": "Compare Base with Left",
+  "compareBaseRight": "Compare Base with Right",
+  "remerge": "Merge Again, Dropping the Result's Edits",
+  "backToMerge": "Back to Merge",
+  "deletedBy": "{deleter} deleted the file, {changer} changed it.",
+  "@deletedBy": {
+    "placeholders": {
+      "deleter": {
+        "type": "String"
+      },
+      "changer": {
+        "type": "String"
+      }
+    }
+  },
+  "binaryConflict": "A binary file can't be merged: take one side whole.",
+  "keepFile": "Keep the File ({side})",
+  "@keepFile": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteFile": "Delete the File",
   "rebasePick": "Keep (pick)",
   "rebaseReword": "Reword",
   "rebaseEdit": "Stop to edit",
