@@ -601,6 +601,7 @@
   "ignoreWhitespace": "Ignore whitespace changes",
   "language": "Language",
   "appearance": "Appearance",
+  "filterChanges": "Filter changes by path",
   "themeSystem": "System",
   "themeLight": "Light",
   "themeDark": "Dark",

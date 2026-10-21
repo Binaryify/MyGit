@@ -27,12 +27,13 @@ type settings struct {
 	SidebarW         float32          `json:"sidebarW"`
 	LogH             float32          `json:"logH"`
 	FilesW           float32          `json:"filesW"`
+	StagedPct        float32          `json:"stagedPct"`         // of the changes' room, the staged changes', in percent
 	Proxy            string           `json:"proxy,omitempty"`   // the downloads', "" for the system's
 	Remotes          []string         `json:"remotes,omitempty"` // repositories on other computers opened lately, host:dir
 	path             string
 }
 
-var prefs = &settings{SidebarW: 300, LogH: 360, FilesW: 260}
+var prefs = &settings{SidebarW: 300, LogH: 360, FilesW: 260, StagedPct: 30}
 
 func loadSettings() {
 	dir, err := os.UserConfigDir()

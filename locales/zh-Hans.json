@@ -229,6 +229,7 @@
   "ignoreWhitespace": "忽略空白的改动",
   "language": "语言",
   "appearance": "外观",
+  "filterChanges": "按路径筛选更改",
   "themeSystem": "跟随系统",
   "themeLight": "浅色",
   "themeDark": "深色",

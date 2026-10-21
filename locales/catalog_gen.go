@@ -2330,6 +2330,16 @@ func (msgs Messages) Appearance() string {
 	return Catalog.Format(msgs.locale, "appearance", nil)
 }
 
+// FilterChanges says "Filter changes by path"
+// in the language the app shows.
+func FilterChanges() string { return In(i18n.Locale()).FilterChanges() }
+
+// FilterChanges says "Filter changes by path"
+// in the language of msgs.
+func (msgs Messages) FilterChanges() string {
+	return Catalog.Format(msgs.locale, "filterChanges", nil)
+}
+
 // ThemeSystem says "System"
 // in the language the app shows.
 func ThemeSystem() string { return In(i18n.Locale()).ThemeSystem() }
