@@ -247,6 +247,7 @@
   "save": "Save",
   "edit": "Edit…",
   "add": "Add",
+  "addRepo": "Add Repository",
   "rename": "Rename",
   "renameMenu": "Rename…",
   "stage": "Stage",

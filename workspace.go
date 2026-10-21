@@ -315,14 +315,88 @@ func (ws *workspace) activate(i int) {
 
 func (ws *workspace) view(c *ui.Context) { ws.apps[ws.active].view(c) }
 
-// sidebar is each repository's changes, one under the other.
+// sidebar is each repository's changes, one under the other, with the
+// way to add one on top.
 func (ws *workspace) sidebar(c *ui.Context) {
 	ui.Scroll(c).Fill().Children(func() {
+		ws.addRow(c)
 		for i, a := range ws.apps {
 			ws.section(c, i, a)
 		}
 	})
 	c.OnShortcut(ui.Cmd, ui.KeyEnter, ws.apps[ws.active].commit)
+}
+
+// addRow offers to add a repository to the top of the list.
+func (ws *workspace) addRow(c *ui.Context) {
+	t := c.Theme()
+	row := ui.ButtonBase(c.Key("addRepo")).Padding(8, 10).Gap(10).Radius(8).AlignItems(ui.Center).
+		Cursor(ui.CursorPointer).Label(loc.AddRepo())
+	if row.Hovered() {
+		row.Background(t.SurfaceHover)
+	}
+	row.Children(func() {
+		ui.Icon(c, icons["plus"]).Size(14, 14)
+		ui.Text(c, loc.AddRepo()).SingleLine()
+	})
+	if row.Clicked() {
+		ws.addRepo()
+	}
+}
+
+// addRepo opens a window of the page a repository is opened by, which
+// adds what it opens to the top of the list.
+func (ws *workspace) addRepo() {
+	w := &welcome{recent: recentRepos()}
+	w.opener = func(_, _ string, repos []*git.Repo) {
+		ws.addRepos(repos)
+		w.win.Close() // added, its work done
+	}
+	w.win = mygo.NewWindow(customTitleBar(mygo.WindowOptions{
+		Title:     loc.AddRepo(),
+		Width:     520,
+		Height:    640,
+		MinWidth:  420,
+		MinHeight: 520,
+		Content:   ui.View(w.view),
+	}))
+	dropMenuBar(w.win)
+	credAsker = w // a password git asks for connects or clones in the window
+	w.win.OnClosed(func() {
+		if credAsker == w {
+			credAsker = welcomeWin // back to the welcome window, if it's open
+		}
+	})
+}
+
+// addRepos puts repositories on top of the list, the ones there already
+// only worked in; call it on the main thread.
+func (ws *workspace) addRepos(repos []*git.Repo) {
+	added := false
+	for _, r := range repos {
+		if slices.ContainsFunc(ws.apps, func(a *app) bool { return a.repo.Location() == r.Location() }) {
+			continue // in the list already
+		}
+		a := newApp(r)
+		a.ws = ws
+		a.win = ws.win
+		ws.apps = append([]*app{a}, ws.apps...) // on top
+		ws.opened[r.Dir] = true                 // just added, its changes at hand
+		if r.Host() == "" {
+			_ = mygo.App.AddRecentDocument(r.Dir)
+		}
+		if ws.win != nil {
+			a.start() // without a window, as the tests have it, nothing to run
+		}
+		added = true
+	}
+	if added {
+		ws.active = 0 // work in the one on top, laid out as a new window is
+	} else if len(repos) > 0 {
+		if j := slices.IndexFunc(ws.apps, func(a *app) bool { return a.repo.Location() == repos[0].Location() }); j >= 0 {
+			ws.activate(j)
+		}
+	}
 }
 
 // section is a repository of the workspace: its name, its branch and its

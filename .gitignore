@@ -8,3 +8,4 @@ mygo_windows_*.syso
 .vscode/
 .claude/launch.json
 .wrangler/
+/.trae/documents/

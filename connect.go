@@ -303,7 +303,7 @@ func (w *welcome) openFolder(dir string) {
 		return err
 	}, func() {
 		w.ssh.open = false
-		show(host, whole, repos)
+		w.showRepos(host, whole, repos)
 	})
 }
 
@@ -325,7 +325,7 @@ func (w *welcome) trustAndOpen(u git.UnsafeError) {
 		return err
 	}, func() {
 		w.ssh.open = false
-		show(u.Host, whole, repos)
+		w.showRepos(u.Host, whole, repos)
 	})
 }
 
@@ -345,6 +345,6 @@ func (w *welcome) connect(host, dir string) {
 		return err
 	}, func() {
 		w.ssh.open = false
-		show(host, whole, repos)
+		w.showRepos(host, whole, repos)
 	})
 }

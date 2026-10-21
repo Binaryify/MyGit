@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	_ "embed"
 	"errors"
 	"os"
@@ -35,6 +36,9 @@ type welcome struct {
 	dragging bool
 	settings settingsDialog
 	updFn    func(func()) // runs on the main thread: the window's Update, or the tests'
+	// opener opens what the page chose: windows of their own by default,
+	// or into the workspace that asked for a repository.
+	opener func(host, dir string, repos []*git.Repo)
 }
 
 // update runs fn on the main thread.
@@ -47,6 +51,10 @@ func (w *welcome) update(fn func()) {
 }
 
 var welcomeWin *welcome
+
+// credAsker is the welcome window a password git asks for shows in: the
+// welcome window, or one opened to add a repository to a workspace.
+var credAsker *welcome
 
 // showWelcome opens the welcome window, or brings it to the front.
 func showWelcome() {
@@ -65,7 +73,13 @@ func showWelcome() {
 		Content:   ui.View(w.view),
 	}))
 	dropMenuBar(w.win)
-	w.win.OnClosed(func() { welcomeWin = nil })
+	credAsker = w
+	w.win.OnClosed(func() {
+		welcomeWin = nil
+		if credAsker == w {
+			credAsker = nil
+		}
+	})
 	welcomeWin = w
 }
 
@@ -251,10 +265,25 @@ func (w *welcome) pick() {
 	}
 }
 
-// open opens a repository's window, and says why when the folder isn't
-// in one.
+// open opens the repository dir is in on this computer, or the workspace
+// of those under it, and says why when the folder isn't in one.
 func (w *welcome) open(dir string) {
-	w.failed(dir, openLocal(dir))
+	whole, repos, err := openFolders(context.Background(), git.Local, listLocal, dir)
+	if err != nil {
+		w.failed(dir, err)
+		return
+	}
+	w.showRepos("", whole, repos)
+}
+
+// showRepos opens what the page chose: windows of their own, or into the
+// workspace that asked for a repository.
+func (w *welcome) showRepos(host, dir string, repos []*git.Repo) {
+	if w.opener != nil {
+		w.opener(host, dir, repos)
+		return
+	}
+	show(host, dir, repos)
 }
 
 // failed says why a folder didn't open, and offers to trust a repository

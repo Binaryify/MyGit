@@ -178,6 +178,42 @@ func TestWorkspace(t *testing.T) {
 	}
 }
 
+// A repository added goes on top of the list, unfolded and worked in;
+// one there already is only worked in.
+func TestWorkspaceAddRepos(t *testing.T) {
+	ws, tt, _ := newWorkspace(t, workspaceDir(t))
+	if len(ws.apps) != 3 {
+		t.Fatalf("%d repositories", len(ws.apps))
+	}
+	dir := filepath.Join(t.TempDir(), "newcraft")
+	gitInit(t, dir, "Start the new craft", "new.ts")
+	r, err := git.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ws.addRepos([]*git.Repo{r})
+	tt.Frame()
+	if len(ws.apps) != 4 || ws.apps[0].repo.Name() != "newcraft" || ws.active != 0 || !ws.opened[dir] {
+		t.Fatalf("%d repositories, top %s, active %d", len(ws.apps), ws.apps[0].repo.Name(), ws.active)
+	}
+	if !tt.HasText("newcraft") {
+		t.Fatalf("no %q in %q", "newcraft", tt.Texts())
+	}
+	// The same one again: in the list already, only worked in.
+	ws.activate(2)
+	ws.addRepos([]*git.Repo{r})
+	tt.Frame()
+	if len(ws.apps) != 4 || ws.active != 0 {
+		t.Fatalf("%d repositories, active %d", len(ws.apps), ws.active)
+	}
+	// One there already: worked in, not added again.
+	ws.addRepos([]*git.Repo{ws.apps[3].repo})
+	tt.Frame()
+	if len(ws.apps) != 4 || ws.active != 3 {
+		t.Fatalf("%d repositories, active %d", len(ws.apps), ws.active)
+	}
+}
+
 // Over SSH, the folders are the helper's listings.
 func TestFindReposOnHost(t *testing.T) {
 	old := listFolder

@@ -1,7 +1,7 @@
 // MyGit is a light git client: the history with its graph, the working
 // tree's changes to stage and commit, and the diffs of both.
 //
-//	mygit [dir]   open the repository dir is in, the current folder's by default
+//	mygit [dir]   open the repository dir is in; with none, the welcome page
 //
 // A running MyGit opens the repositories later launches name, each in a
 // window of its own.
@@ -103,10 +103,8 @@ func main() {
 }
 
 // openArg opens the repository named by a command line's arguments, or
-// the repositories under the folder they name; with none, the repository
-// of its working folder, or the welcome window when that isn't in one, as
-// when the app starts from Finder or the Start menu, in /, where it doesn't
-// look for repositories below.
+// the repositories under the folder they name; with none, the welcome
+// window, where a repository is chosen.
 func openArg(args []string, cwd string) {
 	if len(args) > 0 {
 		if host, dir, ok := parseLocation(args[0]); ok && !exists(filepath.Join(cwd, args[0])) {
@@ -115,28 +113,18 @@ func openArg(args []string, cwd string) {
 			return
 		}
 	}
-	dir := cwd
 	if len(args) > 0 {
-		dir = args[0]
+		dir := args[0]
 		if !filepath.IsAbs(dir) {
 			dir = filepath.Join(cwd, dir)
 		}
-	}
-	var err error
-	if len(args) > 0 {
-		err = openLocal(dir)
-	} else if repo, rerr := git.Open(dir); rerr == nil {
-		open(repo)
-	} else {
-		err = rerr
-	}
-	if err == nil {
+		if err := openLocal(dir); err != nil {
+			showWelcome()
+			welcomeWin.failed(dir, err)
+		}
 		return
 	}
 	showWelcome()
-	if len(args) > 0 { // a folder asked for that didn't open: say why
-		welcomeWin.failed(dir, err)
-	}
 }
 
 func openDir(dir string) {
@@ -265,8 +253,8 @@ func askUser(dir, prompt string) (string, bool) {
 				a.ws.activate(slices.Index(a.ws.apps, a))
 			}
 			a.askCredential(prompt, done)
-		case welcomeWin != nil:
-			welcomeWin.cred.ask(welcomeWin.win, prompt, done)
+		case credAsker != nil: // the welcome window, or one adding to a workspace
+			credAsker.cred.ask(credAsker.win, prompt, done)
 		default:
 			done <- credAnswer{}
 		}

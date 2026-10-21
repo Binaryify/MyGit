@@ -62,6 +62,7 @@
   "save": "保存",
   "edit": "编辑…",
   "add": "添加",
+  "addRepo": "添加仓库",
   "rename": "重命名",
   "renameMenu": "重命名…",
   "stage": "暂存",

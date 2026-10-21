@@ -654,6 +654,16 @@ func (msgs Messages) Add() string {
 	return Catalog.Format(msgs.locale, "add", nil)
 }
 
+// AddRepo says "Add Repository"
+// in the language the app shows.
+func AddRepo() string { return In(i18n.Locale()).AddRepo() }
+
+// AddRepo says "Add Repository"
+// in the language of msgs.
+func (msgs Messages) AddRepo() string {
+	return Catalog.Format(msgs.locale, "addRepo", nil)
+}
+
 // Rename says "Rename"
 // in the language the app shows.
 func Rename() string { return In(i18n.Locale()).Rename() }
