@@ -292,8 +292,8 @@ func TestDumpWelcome(t *testing.T) {
 // theme merged with a branch that changed it too, 1120×746 at 1.4×, the
 // traffic lights macOS draws painted where it draws them. merge-wand,
 // merge-base and merge-deleted show it after the magic wand, comparing
-// the base with the left, and a file the left deleted; ssh-merge the
-// merge over SSH.
+// the base with the left, and a file the left deleted; ssh-merge and
+// wsl-merge the merge over SSH and through WSL.
 func TestDumpMerge(t *testing.T) {
 	sc := newShowcase(t)
 	dir := filepath.Join(t.TempDir(), "orbit")
@@ -352,15 +352,21 @@ func TestDumpMerge(t *testing.T) {
 	tt.click(t, "legacy.ts")
 	shot("merge-deleted")
 
-	// The same merge on another computer, over SSH.
-	ra := newApp(helperRepo(t, "devbox", dir))
-	rt := &tester{a: ra, queue: make(chan func(), 64)}
-	ra.update = func(fn func()) { rt.queue <- fn }
-	rt.Tester = sc.tester(ra.view, 1120, 746)
-	ra.start()
-	rt.settle()
-	rt.click(t, "theme.ts")
-	sc.save(t, rt.Tester, "ssh-merge")
+	// The same merge on another computer: over SSH, and through WSL in
+	// Windows' window.
+	remoteShot := func(host, name string) {
+		ra := newApp(helperRepo(t, host, dir))
+		rt := &tester{a: ra, queue: make(chan func(), 64)}
+		ra.update = func(fn func()) { rt.queue <- fn }
+		rt.Tester = sc.tester(ra.view, 1120, 746)
+		ra.start()
+		rt.settle()
+		rt.click(t, "theme.ts")
+		sc.save(t, rt.Tester, name)
+	}
+	remoteShot("devbox", "ssh-merge")
+	sc.asWindows(t)
+	remoteShot(remote.WSLHost("Ubuntu-24.04"), "wsl-merge")
 }
 
 // showcase renders windows as the READMEs show them, into MYGIT_DUMP:
