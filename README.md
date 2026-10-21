@@ -84,7 +84,7 @@ MyGit reads what `git` prints and lets `git` itself make every change, so a repo
 </table>
 
 - **Reading changes** — generated files (lockfiles, minified, `linguist-generated`) fold away; mark files viewed; changed pictures show before and after; comment on lines and copy the comments as Markdown for an agent or a colleague
-- **Staging** — stage, unstage or discard files, changes or selected lines; edit and save the working tree in the diff
+- **Staging** — stage, unstage or discard files, changes or selected lines; edit and save the working tree in the diff; filter thousands of changes by path
 - **Commits** — whole messages, changed files and side-by-side diffs with syntax highlighting; a merge against any parent; compare two commits (⌘-click), a branch or the working tree
 - **History** — every branch, tag and remote with its graph, streamed as it loads; search by message, author or hash; filter by branch or path (file history)
 - **History tools** — branch, tag, check out, cherry-pick, revert, reset (soft / mixed / hard) and interactive rebase (reorder, reword, edit, squash, fixup, drop)
@@ -94,7 +94,7 @@ MyGit reads what `git` prints and lets `git` itself make every change, so a repo
 - **Sign-ins** — when git needs a username, token or passphrase, the window asks
 - **Workspaces** — open a folder of repositories, as an agent's working folder over a few of them, and each shows in the sidebar with its own message, sync and changes, as VS Code's source control has them
 - **Over SSH** — open a repository on another computer (`host:/path/to/repo`, Linux, macOS or Windows) with your ssh config and keys; MyGit runs a small helper there, in `~/.mygit`, and needs only git on it
-- **Everywhere** — a window per repository, drag folders in, `mygit .` from a terminal, custom title bars, light and dark, English and 简体中文, signed auto-updates
+- **Everywhere** — a window per repository, drag folders in, `mygit .` from a terminal, custom title bars, light and dark (the system's or chosen in Settings), English and 简体中文, signed auto-updates
 
 ## Install
 

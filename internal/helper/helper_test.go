@@ -224,3 +224,44 @@ func TestList(t *testing.T) {
 		t.Errorf("err = %v", err)
 	}
 }
+
+// git reading the index, as the window's refresh does, changes nothing a
+// watch reports: else every refresh would bring another, a few a second.
+func TestWatchIgnoresReads(t *testing.T) {
+	c := connect(t, nil)
+	dir := gitInit(t)
+	git := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(dir, "f"), []byte("x\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git("add", "f")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	changed := make(chan struct{}, 10)
+	go func() { _ = c.Watch(ctx, filepath.ToSlash(dir), func() { changed <- struct{}{} }) }()
+	time.Sleep(300 * time.Millisecond)
+	for range 3 {
+		git("--no-optional-locks", "status", "--porcelain=v2")
+		git("check-attr", "linguist-generated", "--", "f")
+	}
+	select {
+	case <-changed:
+		t.Fatal("reading the index was seen as a change")
+	case <-time.After(time.Second):
+	}
+	if err := os.WriteFile(filepath.Join(dir, "f"), []byte("y\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-changed:
+	case <-time.After(5 * time.Second):
+		t.Fatal("a file written wasn't seen")
+	}
+}

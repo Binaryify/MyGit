@@ -62,6 +62,8 @@ type app struct {
 	genMarked                map[string]bool // the changes .gitattributes marks generated
 	stagedList, unstagedList ui.ListState
 	stagedSel, unstagedSel   int
+	stagedRow, unstagedRow   int // the rows of the changes chosen, as the filter shows them
+	filter                   changeFilter
 
 	message string
 	amend   bool
@@ -89,13 +91,14 @@ type app struct {
 	submit       submitPlan
 	pullReviews  map[int]*pullReview // the pull requests opened, with their reviews
 
-	busy     string // the operation running, as the toolbar says it
-	errMsg   string
-	notice   string // news that isn't an error, as an update check's
-	trustDir string // a repository another user owns, dropped, to trust
-	sidebarW float32
-	logH     float32
-	filesW   float32
+	busy      string // the operation running, as the toolbar says it
+	errMsg    string
+	notice    string // news that isn't an error, as an update check's
+	trustDir  string // a repository another user owns, dropped, to trust
+	sidebarW  float32
+	logH      float32
+	filesW    float32
+	stagedPct float32 // of the changes' room, the staged changes'
 }
 
 // detail is what the bottom of the window shows: a commit's files and the
@@ -131,7 +134,7 @@ type detail struct {
 
 func newApp(repo *git.Repo) *app {
 	return &app{repo: repo, online: make(chan struct{}, 1), logSel: -1, stagedSel: -1, unstagedSel: -1, stashSel: -1,
-		sidebarW: prefs.SidebarW, logH: prefs.LogH, filesW: prefs.FilesW,
+		sidebarW: prefs.SidebarW, logH: prefs.LogH, filesW: prefs.FilesW, stagedPct: prefs.StagedPct,
 		unfolded: map[string]bool{}, viewed: map[string]bool{}, pullReviews: map[int]*pullReview{}}
 }
 
@@ -140,7 +143,7 @@ func (a *app) start() {
 	a.logList.Selection = &a.logChosen
 	a.logList.Key = func(i int) any { return a.commits[a.commitAt(i)].Hash }
 	a.logList.Label = func(i int) string { return a.commits[a.commitAt(i)].Subject }
-	a.stagedList.Selected, a.unstagedList.Selected = &a.stagedSel, &a.unstagedSel
+	a.stagedList.Selected, a.unstagedList.Selected = &a.stagedRow, &a.unstagedRow
 	a.stashList.Selected = &a.stashSel
 	a.fileList.Selected = &a.detail.fileSel
 	if a.win != nil {
@@ -155,7 +158,7 @@ func (a *app) start() {
 			})
 		}
 		a.win.OnClosed(func() { // the next window opens as this one was laid out
-			prefs.SidebarW, prefs.LogH, prefs.FilesW = a.sidebarW, a.logH, a.filesW
+			prefs.SidebarW, prefs.LogH, prefs.FilesW, prefs.StagedPct = a.sidebarW, a.logH, a.filesW, a.stagedPct
 			prefs.save()
 		})
 		a.watch()
@@ -315,6 +318,7 @@ func (a *app) setStatus(st git.Status) {
 		}
 	}
 	a.stagedSel, a.unstagedSel = indexOf(a.staged, stagedPath), indexOf(a.unstaged, unstagedPath)
+	a.refilter()
 	// The diff of a change shows it as it is now, or nothing once it's gone.
 	if ch := a.detail.change; ch != nil {
 		if c, ok := find(a.changes(a.detail.staged), ch.Path); ok {
@@ -759,15 +763,19 @@ func (a *app) discard(c git.Change) {
 	})
 }
 
+// stageAll and unstageAll act on a whole list, or with a filter on the
+// changes it shows.
 func (a *app) stageAll() {
 	if a.savingFirst(a.stageAll) {
 		return
 	}
-	a.run(loc.OpStage(), func(ctx context.Context) error { return a.repo.Stage(ctx, ".") }, nil)
+	paths := a.shownPaths(false)
+	a.run(loc.OpStage(), func(ctx context.Context) error { return a.repo.Stage(ctx, paths...) }, nil)
 }
 
 func (a *app) unstageAll() {
-	a.run(loc.OpUnstage(), func(ctx context.Context) error { return a.repo.Unstage(ctx, ".") }, nil)
+	paths := a.shownPaths(true)
+	a.run(loc.OpUnstage(), func(ctx context.Context) error { return a.repo.Unstage(ctx, paths...) }, nil)
 }
 
 func (a *app) canCommit() bool {
