@@ -495,7 +495,7 @@ func (a *app) mergeView(c *ui.Context, m *merger) {
 				if ui.Button(c, loc.TakeBoth()).Clicked() {
 					m.take(conflict.Ours, conflict.Theirs)
 				}
-				if ui.Button(c, "✨").Label(loc.ResolveSimple()).Tooltip(loc.ResolveSimple() + ": " + loc.ResolveSimpleHint()).Clicked() {
+				if iconButton(c, "wand", loc.ResolveSimple(), loc.ResolveSimple()+": "+loc.ResolveSimpleHint()) {
 					m.resolveSimple()
 				}
 			} else {
