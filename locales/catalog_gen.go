@@ -244,6 +244,16 @@ func (msgs Messages) OpPushTags() string {
 	return Catalog.Format(msgs.locale, "opPushTags", nil)
 }
 
+// OpPushTag says "Push tag {name}"
+// in the language the app shows.
+func OpPushTag(name string) string { return In(i18n.Locale()).OpPushTag(name) }
+
+// OpPushTag says "Push tag {name}"
+// in the language of msgs.
+func (msgs Messages) OpPushTag(name string) string {
+	return Catalog.Format(msgs.locale, "opPushTag", map[string]any{"name": name})
+}
+
 // OpResolve says "Resolve conflict"
 // in the language the app shows.
 func OpResolve() string { return In(i18n.Locale()).OpResolve() }
@@ -806,11 +816,11 @@ func (msgs Messages) Branches() string {
 	return Catalog.Format(msgs.locale, "branches", nil)
 }
 
-// BranchSearch says "Search branches"
+// BranchSearch says "Search branches and tags"
 // in the language the app shows.
 func BranchSearch() string { return In(i18n.Locale()).BranchSearch() }
 
-// BranchSearch says "Search branches"
+// BranchSearch says "Search branches and tags"
 // in the language of msgs.
 func (msgs Messages) BranchSearch() string {
 	return Catalog.Format(msgs.locale, "branchSearch", nil)
@@ -846,14 +856,64 @@ func (msgs Messages) BranchesRemote() string {
 	return Catalog.Format(msgs.locale, "branchesRemote", nil)
 }
 
-// BranchesNone says "No branches match"
+// BranchesNone says "No branches or tags match"
 // in the language the app shows.
 func BranchesNone() string { return In(i18n.Locale()).BranchesNone() }
 
-// BranchesNone says "No branches match"
+// BranchesNone says "No branches or tags match"
 // in the language of msgs.
 func (msgs Messages) BranchesNone() string {
 	return Catalog.Format(msgs.locale, "branchesNone", nil)
+}
+
+// BranchesTags says "Tags"
+// in the language the app shows.
+func BranchesTags() string { return In(i18n.Locale()).BranchesTags() }
+
+// BranchesTags says "Tags"
+// in the language of msgs.
+func (msgs Messages) BranchesTags() string {
+	return Catalog.Format(msgs.locale, "branchesTags", nil)
+}
+
+// TagCheckout says "Check Out This Tag"
+// in the language the app shows.
+func TagCheckout() string { return In(i18n.Locale()).TagCheckout() }
+
+// TagCheckout says "Check Out This Tag"
+// in the language of msgs.
+func (msgs Messages) TagCheckout() string {
+	return Catalog.Format(msgs.locale, "tagCheckout", nil)
+}
+
+// TagHistory says "Show This Tag's History"
+// in the language the app shows.
+func TagHistory() string { return In(i18n.Locale()).TagHistory() }
+
+// TagHistory says "Show This Tag's History"
+// in the language of msgs.
+func (msgs Messages) TagHistory() string {
+	return Catalog.Format(msgs.locale, "tagHistory", nil)
+}
+
+// TagCopyName says "Copy Tag Name"
+// in the language the app shows.
+func TagCopyName() string { return In(i18n.Locale()).TagCopyName() }
+
+// TagCopyName says "Copy Tag Name"
+// in the language of msgs.
+func (msgs Messages) TagCopyName() string {
+	return Catalog.Format(msgs.locale, "tagCopyName", nil)
+}
+
+// TagPush says "Push Tag to origin"
+// in the language the app shows.
+func TagPush() string { return In(i18n.Locale()).TagPush() }
+
+// TagPush says "Push Tag to origin"
+// in the language of msgs.
+func (msgs Messages) TagPush() string {
+	return Catalog.Format(msgs.locale, "tagPush", nil)
 }
 
 // BranchCurrent says "current"

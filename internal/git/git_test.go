@@ -234,6 +234,18 @@ func TestBranchesAndCommits(t *testing.T) {
 	if err := r.Tag(ctx, "v1", log[0].Hash, "first"); err != nil {
 		t.Fatal(err)
 	}
+	if err := r.Tag(ctx, "v0", log[len(log)-1].Hash, ""); err != nil {
+		t.Fatal(err)
+	}
+	if tags, _ := r.Tags(ctx); !slices.Equal(slices.Sorted(slices.Values(tags)), []string{"v0", "v1"}) {
+		t.Fatalf("tags %v", tags)
+	}
+	if err := r.DeleteTag(ctx, "v0"); err != nil {
+		t.Fatal(err)
+	}
+	if tags, _ := r.Tags(ctx); !slices.Equal(tags, []string{"v1"}) {
+		t.Fatalf("tags after deleting v0: %v", tags)
+	}
 	if !r.ValidBranchName(ctx, "feature/x") || r.ValidBranchName(ctx, "bad..name") {
 		t.Fatal("branch names")
 	}

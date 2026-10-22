@@ -61,6 +61,21 @@ func (r *Repo) Push(ctx context.Context, st Status, force bool) error {
 	return err
 }
 
+// Tags are the tags, by name, the newest first.
+func (r *Repo) Tags(ctx context.Context) ([]string, error) {
+	out, err := r.Git(ctx, "for-each-ref", "--sort=-creatordate", "--format=%(refname:short)", "refs/tags")
+	if err != nil {
+		return nil, err
+	}
+	return strings.Fields(out), nil
+}
+
+// PushTag sends one tag to origin.
+func (r *Repo) PushTag(ctx context.Context, name string) error {
+	_, err := r.Git(ctx, "push", "origin", "refs/tags/"+name)
+	return err
+}
+
 // PushTags sends every tag to origin.
 func (r *Repo) PushTags(ctx context.Context) error {
 	_, err := r.Git(ctx, "push", "origin", "--tags")

@@ -95,6 +95,30 @@ func (a *app) remoteItems(m *ui.Menu, rb string) {
 	}
 }
 
+// tagItems are what a tag's menu does with it.
+func (a *app) tagItems(m *ui.Menu, tag string) {
+	if a.chose(m.Item(loc.TagCheckout())) {
+		a.run(loc.OpCheckout(tag), func(ctx context.Context) error { return a.repo.CheckoutDetached(ctx, tag) }, nil)
+	}
+	a.mergeItems(m, tag)
+	if a.chose(m.Item(loc.BranchNewFrom())) {
+		a.newBranch(tag)
+	}
+	if a.chose(m.Item(loc.TagHistory())) {
+		a.setScope(git.Scope{Ref: tag})
+	}
+	if a.chose(m.Item(loc.TagCopyName())) {
+		mygo.Clipboard.WriteText(tag)
+	}
+	m.Separator()
+	if a.chose(m.Item(loc.TagPush())) {
+		a.run(loc.OpPushTag(tag), func(ctx context.Context) error { return a.repo.PushTag(ctx, tag) }, nil)
+	}
+	if a.chose(m.Item(loc.DeleteTag(tag))) {
+		a.run(loc.OpDeleteTag(tag), func(ctx context.Context) error { return a.repo.DeleteTag(ctx, tag) }, nil)
+	}
+}
+
 // chose reports the item chosen, closing the branches' popover then, as
 // whatever its branches' menus do is done with it.
 func (a *app) chose(it *ui.MenuItem) bool {
@@ -110,8 +134,8 @@ func (a *app) switchTo(b string) {
 }
 
 // branchesButton opens the branches' popover, as IntelliJ's: a search,
-// a new branch, and the local and remote branches the search matches,
-// each with its menu. Enter switches to the first local one.
+// a new branch, and the local and remote branches and the tags the search
+// matches, each with its menu. Enter switches to the first local one.
 func (a *app) branchesButton(c *ui.Context, label string) {
 	b := ui.Button(c, label).Label(loc.Branches())
 	if b.Clicked() {
@@ -121,17 +145,16 @@ func (a *app) branchesButton(c *ui.Context, label string) {
 		t := c.Theme()
 		q := strings.ToLower(strings.TrimSpace(a.branchFilter))
 		match := func(name string) bool { return q == "" || strings.Contains(strings.ToLower(name), q) }
-		var local, remote []string
-		for _, n := range a.branches {
-			if match(n) {
-				local = append(local, n)
+		matching := func(names []string) []string {
+			var m []string
+			for _, n := range names {
+				if match(n) {
+					m = append(m, n)
+				}
 			}
+			return m
 		}
-		for _, n := range a.remotes {
-			if match(n) {
-				remote = append(remote, n)
-			}
-		}
+		local, remote, tags := matching(a.branches), matching(a.remotes), matching(a.tags)
 		ui.Column(c).Width(320).Gap(4).Children(func() {
 			in := ui.TextInput(c, &a.branchFilter).Placeholder(loc.BranchSearch()).Label(loc.BranchSearch()).AutoFocus()
 			if in.Submitted() && len(local) > 0 && local[0] != a.status.Branch {
@@ -143,20 +166,23 @@ func (a *app) branchesButton(c *ui.Context, label string) {
 				a.newBranch("")
 			}
 			ui.Scroll(c).MaxHeight(420).Gap(1).Children(func() {
-				section := func(title string, names []string, items func(*ui.Menu, string)) {
+				// cur is the section's current one, checked: the current branch
+				// among the local ones.
+				section := func(title string, names []string, cur string, items func(*ui.Menu, string)) {
 					if len(names) == 0 {
 						return
 					}
 					ui.Text(c, title).FontSize(11).Bold().TextColor(t.TextMuted).Padding(8, 8, 2, 8)
 					for _, n := range names {
 						ui.Box(c.Key(title + n)).Children(func() {
-							branchMenuRow(c, n, n == a.status.Branch, func(m *ui.Menu) { items(m, n) })
+							branchMenuRow(c, n, n == cur, func(m *ui.Menu) { items(m, n) })
 						})
 					}
 				}
-				section(loc.BranchesLocal(), local, a.branchItems)
-				section(loc.BranchesRemote(), remote, a.remoteItems)
-				if len(local)+len(remote) == 0 {
+				section(loc.BranchesLocal(), local, a.status.Branch, a.branchItems)
+				section(loc.BranchesRemote(), remote, "", a.remoteItems)
+				section(loc.BranchesTags(), tags, "", a.tagItems)
+				if len(local)+len(remote)+len(tags) == 0 {
 					ui.Text(c, loc.BranchesNone()).TextColor(t.TextMuted).Padding(8)
 				}
 			})

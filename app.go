@@ -52,6 +52,7 @@ type app struct {
 	status                   git.Status
 	branches                 []string
 	remotes                  []string // the remotes' branches
+	tags                     []string // the newest first
 	op                       git.Operation
 	stashes                  []git.Stash
 	stashList                ui.ListState
@@ -250,6 +251,7 @@ type snapshot struct {
 	status   git.Status
 	branches []string
 	remotes  []string
+	tags     []string
 	refs     string
 	op       git.Operation
 	stashes  []git.Stash
@@ -272,12 +274,13 @@ func (a *app) refresh() {
 		}
 		b, _ := a.repo.Branches(ctx)
 		rb, _ := a.repo.RemoteBranches(ctx)
+		tags, _ := a.repo.Tags(ctx)
 		stashes, _ := a.repo.Stashes(ctx)
 		paths := make([]string, len(st.Changes))
 		for i, c := range st.Changes {
 			paths[i] = c.Path
 		}
-		return snapshot{st, b, rb, a.repo.Refs(ctx), a.repo.Operation(ctx), stashes, a.repo.Generated(ctx, paths)}, nil
+		return snapshot{st, b, rb, tags, a.repo.Refs(ctx), a.repo.Operation(ctx), stashes, a.repo.Generated(ctx, paths)}, nil
 	}, func(s snapshot, err error) {
 		a.refreshing = false
 		if a.again {
@@ -294,7 +297,7 @@ func (a *app) refresh() {
 		}
 		a.genMarked = s.marked
 		a.setStatus(s.status)
-		a.branches, a.remotes, a.op, a.stashes = s.branches, s.remotes, s.op, s.stashes
+		a.branches, a.remotes, a.tags, a.op, a.stashes = s.branches, s.remotes, s.tags, s.op, s.stashes
 		a.stashSel = min(a.stashSel, len(a.stashes)-1)
 		if s.refs != a.refs || a.commits == nil && !a.loading {
 			a.refs = s.refs

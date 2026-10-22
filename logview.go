@@ -93,6 +93,15 @@ func (a *app) scopeButton(c *ui.Context) {
 				a.setScope(git.Scope{Ref: b, Path: a.scope.Path})
 			}
 		}
+		if len(a.tags) > 0 {
+			m.Submenu(loc.BranchesTags(), func(m *ui.Menu) {
+				for _, t := range a.tags {
+					if m.Item(t).Checked(a.scope.Ref == t).Chosen() {
+						a.setScope(git.Scope{Ref: t, Path: a.scope.Path})
+					}
+				}
+			})
+		}
 	})
 }
 

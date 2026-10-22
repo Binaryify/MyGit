@@ -831,6 +831,31 @@ func TestBranchMenuClosesPopover(t *testing.T) {
 	}
 }
 
+// The branches' popover lists the tags too, each with its menu: its
+// history shows the tag's.
+func TestTagsInBranchesPopover(t *testing.T) {
+	tt := newTester(t)
+	if err := tt.a.repo.Tag(context.Background(), "v1.0", "HEAD", ""); err != nil {
+		t.Fatal(err)
+	}
+	tt.a.refresh()
+	tt.settle()
+	tt.click(t, "分支")
+	r, ok := tt.Find(loc.BranchesTags())
+	if !ok || !tt.HasText("v1.0") {
+		t.Fatalf("texts %q", tt.Texts())
+	}
+	tt.ClickAt(r.X+30, r.Y+r.H+16)
+	tt.Frame()
+	if err := tt.ChooseMenuItem(loc.TagHistory()); err != nil {
+		t.Fatalf("%v; menu %q", err, tt.Menu())
+	}
+	tt.settle()
+	if tt.a.branchesOpen || tt.a.scope.Ref != "v1.0" {
+		t.Errorf("open %v, scope %+v", tt.a.branchesOpen, tt.a.scope)
+	}
+}
+
 // F7 and ⇧F7 step the caret from change to change, and stop at the ends.
 func TestStepChange(t *testing.T) {
 	var oldText, newText strings.Builder

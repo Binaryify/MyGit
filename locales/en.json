@@ -101,6 +101,14 @@
     }
   },
   "opPushTags": "Push tags",
+  "opPushTag": "Push tag {name}",
+  "@opPushTag": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "opResolve": "Resolve conflict",
   "opRebaseInteractive": "Interactive rebase",
   "opSaveRemote": "Save remote",
@@ -276,11 +284,16 @@
   },
   "branchDeleteRemoteMessage": "The branch will be deleted from the remote repository.",
   "branches": "Branches",
-  "branchSearch": "Search branches",
+  "branchSearch": "Search branches and tags",
   "branchNew": "+ New Branch…",
   "branchesLocal": "Local",
   "branchesRemote": "Remote",
-  "branchesNone": "No branches match",
+  "branchesNone": "No branches or tags match",
+  "branchesTags": "Tags",
+  "tagCheckout": "Check Out This Tag",
+  "tagHistory": "Show This Tag's History",
+  "tagCopyName": "Copy Tag Name",
+  "tagPush": "Push Tag to origin",
   "branchCurrent": "current",
   "compareWith": "Compare with {branch}",
   "@compareWith": {
