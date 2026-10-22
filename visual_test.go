@@ -589,3 +589,41 @@ func TestDumpShowcase(t *testing.T) {
 	sc.asWindows(t)
 	shoot("wsl", remote.WSLHost("Ubuntu-24.04"), []string{"devbox", "gpu-box"}, []string{"Ubuntu-24.04", "Debian"})
 }
+
+// TestDumpTags renders, into MYGIT_DUMP, the branches' popover listing
+// orbit's tags (tags), and the history of one chosen from its menu
+// (tag-history), as newShowcase names and sizes them. The menu itself is
+// the platform's, not drawn: the test logs its items.
+func TestDumpTags(t *testing.T) {
+	sc := newShowcase(t)
+	dir := orbitRepo(t)
+	run := teamGit(t, dir)
+	day := time.Date(2026, 9, 20, 10, 13, 0, 0, time.Local)
+	run("Mia Chen", day.Add(46*time.Hour), "tag", "v0.1.0", "HEAD~6")
+	run("Mia Chen", day.Add(232*time.Hour), "tag", "-a", "v0.3.0", "-m", "Alerts and caching")
+	r, err := git.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := newApp(r)
+	at := &tester{a: a, queue: make(chan func(), 64)}
+	a.update = func(fn func()) { at.queue <- fn }
+	at.Tester = sc.tester(a.view, 1120, 746)
+	a.start()
+	at.settle()
+	at.click(t, loc.Branches())
+	sc.save(t, at.Tester, "tags")
+	// v0.2.0, the second tag, under the heading: it shows in the history too.
+	h, ok := at.Find(loc.BranchesTags())
+	if !ok {
+		t.Fatalf("texts %q", at.Texts())
+	}
+	at.ClickAt(h.X+30, h.Y+h.H+16+27)
+	at.Frame()
+	t.Logf("v0.2.0's menu: %q", at.Menu())
+	if err := at.ChooseMenuItem(loc.TagHistory()); err != nil {
+		t.Fatalf("%v; menu %q", err, at.Menu())
+	}
+	at.settle()
+	sc.save(t, at.Tester, "tag-history")
+}

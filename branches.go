@@ -101,7 +101,7 @@ func (a *app) tagItems(m *ui.Menu, tag string) {
 		a.run(loc.OpCheckout(tag), func(ctx context.Context) error { return a.repo.CheckoutDetached(ctx, tag) }, nil)
 	}
 	a.mergeItems(m, tag)
-	if a.chose(m.Item(loc.BranchNewFrom())) {
+	if a.chose(m.Item(loc.TagNewBranch())) {
 		a.newBranch(tag)
 	}
 	if a.chose(m.Item(loc.TagHistory())) {

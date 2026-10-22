@@ -85,6 +85,7 @@
   "branchesNone": "没有匹配的分支或标签",
   "branchesTags": "标签",
   "tagCheckout": "检出此标签",
+  "tagNewBranch": "从此标签新建分支…",
   "tagHistory": "查看此标签的历史",
   "tagCopyName": "复制标签名",
   "tagPush": "推送标签到 origin",

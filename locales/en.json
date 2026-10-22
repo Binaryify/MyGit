@@ -291,6 +291,7 @@
   "branchesNone": "No branches or tags match",
   "branchesTags": "Tags",
   "tagCheckout": "Check Out This Tag",
+  "tagNewBranch": "New Branch from Here…",
   "tagHistory": "Show This Tag's History",
   "tagCopyName": "Copy Tag Name",
   "tagPush": "Push Tag to origin",

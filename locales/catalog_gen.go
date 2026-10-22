@@ -886,6 +886,16 @@ func (msgs Messages) TagCheckout() string {
 	return Catalog.Format(msgs.locale, "tagCheckout", nil)
 }
 
+// TagNewBranch says "New Branch from Here…"
+// in the language the app shows.
+func TagNewBranch() string { return In(i18n.Locale()).TagNewBranch() }
+
+// TagNewBranch says "New Branch from Here…"
+// in the language of msgs.
+func (msgs Messages) TagNewBranch() string {
+	return Catalog.Format(msgs.locale, "tagNewBranch", nil)
+}
+
 // TagHistory says "Show This Tag's History"
 // in the language the app shows.
 func TagHistory() string { return In(i18n.Locale()).TagHistory() }
