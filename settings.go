@@ -30,6 +30,7 @@ type settings struct {
 	StagedPct        float32          `json:"stagedPct"`         // of the changes' room, the staged changes', in percent
 	Proxy            string           `json:"proxy,omitempty"`   // the downloads', "" for the system's
 	Remotes          []string         `json:"remotes,omitempty"` // repositories on other computers opened lately, host:dir
+	Recent           []string         `json:"recent,omitempty"`  // the folders opened lately here and there, the latest first
 	path             string
 }
 

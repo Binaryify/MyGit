@@ -198,13 +198,54 @@ var openRemote = func(ctx context.Context, host, dir string) (string, []*git.Rep
 	return openFolders(ctx, remoteHost{host}, listOn(host), dir)
 }
 
-// addRemoteRecent puts a repository on another computer first among those
-// opened lately.
-func addRemoteRecent(location string) {
-	r := slices.DeleteFunc(slices.Clone(prefs.Remotes), func(s string) bool { return s == location })
-	prefs.Remotes = append([]string{location}, r...)
-	if len(prefs.Remotes) > 10 {
-		prefs.Remotes = prefs.Remotes[:10]
+// remember puts a repository's or a workspace's folder first among those
+// opened lately: the system's recent folders for one on this computer, the
+// remote ones for one on another, and the order of them all.
+func remember(host, dir string) {
+	location := git.Location(host, dir)
+	if host == "" {
+		_ = mygo.App.AddRecentDocument(dir)
+	} else {
+		prefs.Remotes = first(prefs.Remotes, location, 10)
 	}
+	prefs.Recent = first(prefs.Recent, location, 30)
 	prefs.save()
+}
+
+// first puts s first in list, keeping max of it.
+func first(list []string, s string, max int) []string {
+	list = append([]string{s}, slices.DeleteFunc(slices.Clone(list), func(l string) bool { return l == s })...)
+	return list[:min(len(list), max)]
+}
+
+// recentLocations are the repositories opened lately, on this computer and
+// on others, the latest first. The system's recent folders and the remote
+// ones say which, as the system's can be cleared from its menu; folders
+// opened before their order was kept come after, as they used to show.
+func recentLocations() []string {
+	local := recentRepos()
+	known := append(slices.Clone(prefs.Remotes), local...)
+	var out []string
+	for _, l := range prefs.Recent {
+		if slices.Contains(known, l) {
+			out = append(out, l)
+		}
+	}
+	for _, l := range known {
+		if !slices.Contains(out, l) {
+			out = append(out, l)
+		}
+	}
+	return out
+}
+
+// openRecent opens a repository opened lately: a folder, or host:dir on
+// another computer.
+func openRecent(location string) {
+	if host, dir, ok := parseLocation(location); ok && !exists(location) {
+		showWelcome()
+		welcomeWin.connect(host, dir)
+		return
+	}
+	openDir(location)
 }

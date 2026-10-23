@@ -127,19 +127,11 @@ func (a *app) repoMenu(m *ui.Menu) {
 	if m.Item(loc.SshMenu()).Chosen() {
 		openSSH()
 	}
-	if recent := recentRepos(); len(recent) > 0 || len(prefs.Remotes) > 0 {
+	if recent := recentLocations(); len(recent) > 0 {
 		m.Submenu(loc.MenuRecent(), func(m *ui.Menu) {
-			for _, l := range prefs.Remotes {
-				if m.Item(l).Chosen() {
-					if host, dir, ok := parseLocation(l); ok {
-						showWelcome()
-						welcomeWin.connect(host, dir)
-					}
-				}
-			}
-			for _, dir := range recent {
-				if m.Item(homeRelative(dir)).Chosen() {
-					openDir(dir)
+			for _, l := range recent {
+				if m.Item(homeRelative(l)).Chosen() {
+					openRecent(l)
 				}
 			}
 		})

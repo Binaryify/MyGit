@@ -248,6 +248,7 @@ func show(host, dir string, repos []*git.Repo) {
 // there is one.
 func openWorkspace(host, dir string, repos []*git.Repo) {
 	key := git.Location(host, dir)
+	remember(host, dir)
 	if ws := workspaces[key]; ws != nil {
 		ws.win.Show()
 		ws.win.Focus()
@@ -255,10 +256,7 @@ func openWorkspace(host, dir string, repos []*git.Repo) {
 	}
 	name := path.Base(strings.ReplaceAll(dir, `\`, "/"))
 	title := name + " — MyGit"
-	if host == "" {
-		_ = mygo.App.AddRecentDocument(dir)
-	} else {
-		addRemoteRecent(key)
+	if host != "" {
 		title = name + " — " + hostName(host)
 	}
 	ws := &workspace{host: host, dir: dir, closed: map[string]bool{}}

@@ -149,16 +149,14 @@ func openDir(dir string) {
 // open shows a repository's window, the one open already if there is one.
 func open(repo *git.Repo) {
 	key := repo.Location()
+	remember(repo.Host(), repo.Dir)
 	if a := apps[key]; a != nil {
 		a.win.Show()
 		a.win.Focus()
 		return
 	}
 	title := repo.Name() + " — MyGit"
-	if repo.Host() == "" {
-		_ = mygo.App.AddRecentDocument(repo.Dir)
-	} else {
-		addRemoteRecent(key)
+	if repo.Host() != "" {
 		title = repo.Name() + " — " + hostName(repo.Host())
 	}
 	a := newApp(repo)

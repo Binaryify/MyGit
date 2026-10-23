@@ -286,3 +286,21 @@ func TestHostName(t *testing.T) {
 		}
 	}
 }
+
+// A folder opened goes first among those opened lately, a remote one or
+// not; those opened before the order was kept come after, as they were.
+func TestRecentLocations(t *testing.T) {
+	oldRemotes, oldRecent := prefs.Remotes, prefs.Recent
+	t.Cleanup(func() { prefs.Remotes, prefs.Recent = oldRemotes, oldRecent })
+	prefs.Remotes, prefs.Recent = []string{"devbox:/a", "devbox:/b"}, nil
+	remember("devbox", "/b")
+	remember("pi", "/c")
+	got := slices.DeleteFunc(recentLocations(), func(l string) bool { _, _, ok := parseLocation(l); return !ok })
+	if !slices.Equal(got, []string{"pi:/c", "devbox:/b", "devbox:/a"}) {
+		t.Fatalf("recent %q", got)
+	}
+	remember("devbox", "/a")
+	if got := recentLocations(); got[0] != "devbox:/a" {
+		t.Fatalf("recent %q", got)
+	}
+}

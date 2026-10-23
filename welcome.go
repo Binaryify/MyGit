@@ -51,11 +51,12 @@ var welcomeWin *welcome
 // showWelcome opens the welcome window, or brings it to the front.
 func showWelcome() {
 	if welcomeWin != nil {
+		welcomeWin.recent = recentLocations()
 		welcomeWin.win.Show()
 		welcomeWin.win.Focus()
 		return
 	}
-	w := &welcome{recent: recentRepos()}
+	w := &welcome{recent: recentLocations()}
 	w.win = mygo.NewWindow(customTitleBar(mygo.WindowOptions{
 		Title:     "MyGit",
 		Width:     520,
@@ -168,14 +169,11 @@ func (w *welcome) body(c *ui.Context) {
 				}
 			})
 		}
-		if len(w.recent) > 0 || len(prefs.Remotes) > 0 {
+		if len(w.recent) > 0 {
 			ui.Text(c, loc.Recent()).Bold().TextColor(t.TextMuted)
 			ui.Scroll(c).Grow(1).Basis(0).Gap(2).Children(func() {
-				for _, l := range prefs.Remotes {
+				for _, l := range w.recent {
 					w.recentRow(c, l)
-				}
-				for _, dir := range w.recent {
-					w.recentRow(c, dir)
 				}
 			})
 		}
