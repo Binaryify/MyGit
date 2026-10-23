@@ -68,6 +68,7 @@ func (a *app) view(c *ui.Context) {
 	a.rebaseView(c)
 	a.pushView(c)
 	a.promptView(c)
+	a.worktreeView(c)
 	a.remotesView(c)
 	a.settingsView(c)
 	a.confirmView(c)

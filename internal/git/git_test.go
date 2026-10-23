@@ -520,3 +520,68 @@ func TestInBatches(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// Worktrees are listed, added and removed; removing one with changes in
+// it takes force. A submodule's are named by its working tree, not by
+// its repository in the superproject's .git/modules.
+func TestWorktrees(t *testing.T) {
+	ctx := context.Background()
+	r := repo(t)
+	write(t, r, "a.txt", "a")
+	if err := r.Stage(ctx, "a.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Commit(ctx, "a", false); err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join(filepath.Dir(r.Dir), filepath.Base(r.Dir)+"-topic")
+	if err := r.AddWorktree(ctx, dir, "HEAD", "topic"); err != nil {
+		t.Fatal(err)
+	}
+	trees, err := r.Worktrees(ctx)
+	if err != nil || len(trees) != 2 || trees[0].Dir != r.Dir || !trees[0].Main || trees[0].Branch != "main" ||
+		trees[1].Branch != "topic" || trees[1].Main || trees[1].Head == "" {
+		t.Fatalf("worktrees %+v, %v", trees, err)
+	}
+	other, err := r.Open(trees[1].Dir)
+	if err != nil || other.Dir != trees[1].Dir {
+		t.Fatalf("opening %s: %v", trees[1].Dir, err)
+	}
+	if again, _ := other.Worktrees(ctx); len(again) != 2 || again[0].Dir != r.Dir {
+		t.Fatalf("from the linked one %+v", again)
+	}
+	if err := os.WriteFile(filepath.Join(other.Dir, "new.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.RemoveWorktree(ctx, other.Dir, false); !WorktreeNeedsForce(err) {
+		t.Fatalf("removing one with a file in it: %v", err)
+	}
+	if err := r.RemoveWorktree(ctx, other.Dir, true); err != nil {
+		t.Fatal(err)
+	}
+	if trees, _ := r.Worktrees(ctx); len(trees) != 1 || r.Superproject(ctx) != "" {
+		t.Fatalf("worktrees after removing %+v", trees)
+	}
+
+	// A submodule of another repository, and a worktree of it.
+	super := repo(t)
+	if _, err := super.Git(ctx, "-c", "protocol.file.allow=always", "submodule", "add", "-q", r.Dir, "lib"); err != nil {
+		t.Fatal(err)
+	}
+	sub, err := super.Open(super.Path("lib"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sub.Superproject(ctx) != super.Dir {
+		t.Fatalf("superproject %q", sub.Superproject(ctx))
+	}
+	if err := sub.AddWorktree(ctx, dir, "main", "lib-topic"); err != nil {
+		t.Fatal(err)
+	}
+	linked, _ := sub.Open(dir)
+	for _, from := range []*Repo{sub, linked} {
+		if trees, _ := from.Worktrees(ctx); len(trees) != 2 || trees[0].Dir != sub.Dir || trees[1].Dir != linked.Dir {
+			t.Fatalf("submodule's worktrees from %s: %+v", from.Dir, trees)
+		}
+	}
+}

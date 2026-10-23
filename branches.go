@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/egoist/mygo"
@@ -64,6 +66,9 @@ func (a *app) branchItems(m *ui.Menu, b string) {
 	if a.chose(m.Item(loc.BranchNewFrom())) {
 		a.newBranch(b)
 	}
+	if a.chose(m.Item(loc.WorktreeNew())) {
+		a.newWorktree(b, true)
+	}
 	if a.chose(m.Item(loc.BranchHistory())) {
 		a.setScope(git.Scope{Ref: b})
 	}
@@ -87,6 +92,9 @@ func (a *app) remoteItems(m *ui.Menu, rb string) {
 	if a.chose(m.Item(loc.BranchNewFrom())) {
 		a.newBranch(rb)
 	}
+	if a.chose(m.Item(loc.WorktreeNew())) {
+		a.newWorktree(rb, false)
+	}
 	m.Separator()
 	if a.chose(m.Item(loc.BranchDeleteRemote())) {
 		a.ask(loc.BranchDeleteRemoteTitle(rb), loc.BranchDeleteRemoteMessage(), loc.Delete(), func() {
@@ -103,6 +111,9 @@ func (a *app) tagItems(m *ui.Menu, tag string) {
 	a.mergeItems(m, tag)
 	if a.chose(m.Item(loc.TagNewBranch())) {
 		a.newBranch(tag)
+	}
+	if a.chose(m.Item(loc.WorktreeNew())) {
+		a.newWorktree(tag, false)
 	}
 	if a.chose(m.Item(loc.TagHistory())) {
 		a.setScope(git.Scope{Ref: tag})
@@ -134,12 +145,16 @@ func (a *app) switchTo(b string) {
 }
 
 // branchesButton opens the branches' popover, as IntelliJ's: a search,
-// a new branch, and the local and remote branches and the tags the search
-// matches, each with its menu. Enter switches to the first local one.
+// a new branch, and the local and remote branches, the tags and the
+// working trees the search matches, each with its menu. Enter switches to
+// the first local one.
 func (a *app) branchesButton(c *ui.Context, label string) {
 	b := ui.Button(c, label).Label(loc.Branches())
 	if b.Clicked() {
 		a.branchesOpen, a.branchFilter = !a.branchesOpen, ""
+		if a.branchesOpen {
+			a.loadWorktrees()
+		}
 	}
 	ui.Popover(c, b, &a.branchesOpen, func() {
 		t := c.Theme()
@@ -155,6 +170,14 @@ func (a *app) branchesButton(c *ui.Context, label string) {
 			return m
 		}
 		local, remote, tags := matching(a.branches), matching(a.remotes), matching(a.tags)
+		var trees []git.Worktree
+		if len(a.worktrees) > 1 { // the repository's own alone is no news
+			for _, w := range a.worktrees {
+				if match(path.Base(filepath.ToSlash(w.Dir))) || match(w.Branch) {
+					trees = append(trees, w)
+				}
+			}
+		}
 		ui.Column(c).Width(320).Gap(4).Children(func() {
 			in := ui.TextInput(c, &a.branchFilter).Placeholder(loc.BranchSearch()).Label(loc.BranchSearch()).AutoFocus()
 			if in.Submitted() && len(local) > 0 && local[0] != a.status.Branch {
@@ -182,7 +205,23 @@ func (a *app) branchesButton(c *ui.Context, label string) {
 				section(loc.BranchesLocal(), local, a.status.Branch, a.branchItems)
 				section(loc.BranchesRemote(), remote, "", a.remoteItems)
 				section(loc.BranchesTags(), tags, "", a.tagItems)
-				if len(local)+len(remote)+len(tags) == 0 {
+				if len(trees) > 0 {
+					// A submodule's are its own, apart from the superproject's.
+					ui.Row(c).Gap(6).Padding(8, 8, 2, 8).Children(func() {
+						ui.Text(c, loc.BranchesWorktrees()).FontSize(11).Bold().TextColor(t.TextMuted)
+						if a.super != "" {
+							ui.Text(c, loc.WorktreeSubmodule()).FontSize(11).TextColor(t.TextMuted)
+						}
+					})
+					for _, w := range trees {
+						ui.Box(c.Key("worktree" + w.Dir)).Children(func() {
+							current := w.Dir == a.repo.Dir
+							branchRowElement(c, path.Base(filepath.ToSlash(w.Dir)), worktreeNote(w), current).Tooltip(w.Dir).
+								Menu(func(m *ui.Menu) { a.worktreeItems(m, w) })
+						})
+					}
+				}
+				if len(local)+len(remote)+len(tags)+len(trees) == 0 {
 					ui.Text(c, loc.BranchesNone()).TextColor(t.TextMuted).Padding(8)
 				}
 			})
@@ -193,10 +232,20 @@ func (a *app) branchesButton(c *ui.Context, label string) {
 // branchRow is a row of the branches' popover, the current branch's
 // checked; it reports a click.
 func branchRow(c *ui.Context, name string, current bool) bool {
-	return branchRowElement(c, name, current).Clicked()
+	return branchRowElement(c, name, currentNote(current), current).Clicked()
 }
 
-func branchRowElement(c *ui.Context, name string, current bool) ui.Element {
+// currentNote says a row is the current one.
+func currentNote(current bool) string {
+	if current {
+		return loc.BranchCurrent()
+	}
+	return ""
+}
+
+// branchRowElement is a row with name, checked when current, and a note
+// after it.
+func branchRowElement(c *ui.Context, name, note string, current bool) ui.Element {
 	t := c.Theme()
 	row := ui.ButtonBase(c).Height(26).PaddingX(8).Gap(6).Radius(5).AlignItems(ui.Center).Label(name)
 	if row.Hovered() {
@@ -209,8 +258,8 @@ func branchRowElement(c *ui.Context, name string, current bool) ui.Element {
 		}
 		ui.Text(c, mark).Width(12).TextColor(t.Accent)
 		ui.Text(c, name).SingleLine().Grow(1).Basis(0)
-		if current {
-			ui.Text(c, loc.BranchCurrent()).FontSize(11).TextColor(t.TextMuted)
+		if note != "" {
+			ui.Text(c, note).FontSize(11).TextColor(t.TextMuted).SingleLine()
 		}
 	})
 	return row
@@ -218,7 +267,7 @@ func branchRowElement(c *ui.Context, name string, current bool) ui.Element {
 
 // branchMenuRow is a branch's row, whose click opens its menu.
 func branchMenuRow(c *ui.Context, name string, current bool, items func(*ui.Menu)) {
-	branchRowElement(c, name, current).Menu(items)
+	branchRowElement(c, name, currentNote(current), current).Menu(items)
 }
 
 // mergeItems merge a branch into the current one, or rebase the current

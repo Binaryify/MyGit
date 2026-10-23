@@ -856,6 +856,63 @@ func TestTagsInBranchesPopover(t *testing.T) {
 	}
 }
 
+// A branch checked out in a new worktree from its menu opens in a window
+// of its own, and the popover lists the worktrees, each with its menu:
+// removing one with a file in it asks first.
+func TestWorktreesInBranchesPopover(t *testing.T) {
+	var opened []string
+	openRepo = func(r *git.Repo) { opened = append(opened, r.Dir) }
+	t.Cleanup(func() { openRepo = open })
+	tt := newTester(t)
+	branchRow := func(section string, n int) {
+		t.Helper()
+		r, ok := tt.Find(section)
+		if !ok {
+			t.Fatalf("texts %q", tt.Texts())
+		}
+		tt.ClickAt(r.X+30, r.Y+r.H+16+float32(n*27))
+		tt.Frame()
+	}
+	tt.click(t, "分支")
+	if tt.HasText(loc.BranchesWorktrees()) {
+		t.Fatal("the repository's own worktree alone is listed")
+	}
+	branchRow(loc.BranchesLocal(), 0) // feature
+	if err := tt.ChooseMenuItem(loc.WorktreeNew()); err != nil {
+		t.Fatalf("%v; menu %q", err, tt.Menu())
+	}
+	tt.settle()
+	d := tt.a.worktree
+	want := filepath.Join(filepath.Dir(tt.a.repo.Dir), filepath.Base(tt.a.repo.Dir)+"-feature")
+	if !d.open || d.asksBranch || d.dir != want {
+		t.Fatalf("dialog %+v, want %s", d, want)
+	}
+	tt.click(t, loc.Create())
+	if len(opened) != 1 || opened[0] != want {
+		t.Fatalf("opened %q", opened)
+	}
+	tt.click(t, "分支")
+	tt.settle()
+	if !tt.HasText(loc.BranchesWorktrees()) || !tt.HasText(filepath.Base(want)) {
+		t.Fatalf("texts %q", tt.Texts())
+	}
+	if err := os.WriteFile(filepath.Join(want, "new.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	branchRow(loc.BranchesWorktrees(), 1)
+	if err := tt.ChooseMenuItem(loc.WorktreeRemove()); err != nil {
+		t.Fatalf("%v; menu %q", err, tt.Menu())
+	}
+	tt.settle()
+	if !tt.a.confirm.open {
+		t.Fatalf("didn't ask; error %q", tt.a.errMsg)
+	}
+	tt.click(t, loc.DeleteAnyway())
+	if _, err := os.Stat(want); !os.IsNotExist(err) {
+		t.Fatalf("the worktree's folder after removing it: %v", err)
+	}
+}
+
 // F7 and ⇧F7 step the caret from change to change, and stop at the ends.
 func TestStepChange(t *testing.T) {
 	var oldText, newText strings.Builder

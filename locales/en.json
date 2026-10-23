@@ -295,6 +295,49 @@
   "tagHistory": "Show This Tag's History",
   "tagCopyName": "Copy Tag Name",
   "tagPush": "Push Tag to origin",
+  "opNewWorktree": "New worktree {name}",
+  "@opNewWorktree": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "opRemoveWorktree": "Remove worktree {name}",
+  "@opRemoveWorktree": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "branchesWorktrees": "Worktrees",
+  "worktreeSubmodule": "submodule",
+  "worktreeNew": "Check Out in New Worktree…",
+  "worktreeOpen": "Open in New Window",
+  "worktreeRemove": "Remove Worktree",
+  "worktreeRemoveTitle": "Remove worktree {name} anyway?",
+  "@worktreeRemoveTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "worktreeRemoveMessage": "Changes not committed, files git doesn't track and submodules in it will be deleted with it.",
+  "worktreeTitle": "New Worktree from {rev}",
+  "@worktreeTitle": {
+    "placeholders": {
+      "rev": {
+        "type": "String"
+      }
+    }
+  },
+  "worktreeSubmoduleInfo": "This repository is a Git submodule. The new worktree will not replace the submodule in the parent repository.",
+  "worktreeLocation": "Location",
+  "worktreeBranch": "New branch",
+  "worktreeBranchDetached": "Leave empty for a detached HEAD",
+  "worktreeBranchNeeded": "Required: the branch is checked out already",
   "branchCurrent": "current",
   "compareWith": "Compare with {branch}",
   "@compareWith": {

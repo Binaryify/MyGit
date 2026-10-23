@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"image"
 	"image/color"
 	"image/png"
@@ -626,4 +627,39 @@ func TestDumpTags(t *testing.T) {
 	}
 	at.settle()
 	sc.save(t, at.Tester, "tag-history")
+}
+
+// TestDumpWorktrees renders the branches' popover of a submodule with a
+// worktree of its own (worktrees), and the dialog checking a branch out
+// in another (worktree-new), which says the superproject keeps its
+// submodule.
+func TestDumpWorktrees(t *testing.T) {
+	sc := newShowcase(t)
+	orbit := orbitRepo(t)
+	super := filepath.Join(filepath.Dir(orbit), "station")
+	run := teamGit(t, super)
+	day := time.Date(2026, 9, 20, 10, 13, 0, 0, time.Local)
+	run("Mia Chen", day, "init", "-q", "-b", "main")
+	run("Mia Chen", day, "-c", "protocol.file.allow=always", "submodule", "add", "-q", orbit, "orbit")
+	run("Mia Chen", day, "commit", "-q", "-m", "Add orbit")
+	r, err := git.Open(filepath.Join(super, "orbit"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := r.AddWorktree(context.Background(), filepath.Join(filepath.Dir(super), "orbit-alerts"), "HEAD", "alerts"); err != nil {
+		t.Fatal(err)
+	}
+	a := newApp(r)
+	at := &tester{a: a, queue: make(chan func(), 64)}
+	a.update = func(fn func()) { at.queue <- fn }
+	at.Tester = sc.tester(a.view, 1120, 746)
+	a.start()
+	at.settle()
+	at.click(t, loc.Branches())
+	at.settle()
+	sc.save(t, at.Tester, "worktrees")
+	at.click(t, loc.Branches())
+	a.newWorktree("main", true)
+	at.Frame()
+	sc.save(t, at.Tester, "worktree-new")
 }

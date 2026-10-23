@@ -53,6 +53,8 @@ type app struct {
 	branches                 []string
 	remotes                  []string // the remotes' branches
 	tags                     []string // the newest first
+	worktrees                []git.Worktree
+	super                    string // the superproject's working tree, of a submodule
 	op                       git.Operation
 	stashes                  []git.Stash
 	stashList                ui.ListState
@@ -80,6 +82,7 @@ type app struct {
 	branchesOpen bool   // the branches' popover
 	branchFilter string // its search
 	prompt       prompt
+	worktree     worktreeDialog
 	rebase       rebasePlan
 	push         pushPlan
 	cred         credPrompt

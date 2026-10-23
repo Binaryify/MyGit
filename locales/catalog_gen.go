@@ -926,6 +926,156 @@ func (msgs Messages) TagPush() string {
 	return Catalog.Format(msgs.locale, "tagPush", nil)
 }
 
+// OpNewWorktree says "New worktree {name}"
+// in the language the app shows.
+func OpNewWorktree(name string) string { return In(i18n.Locale()).OpNewWorktree(name) }
+
+// OpNewWorktree says "New worktree {name}"
+// in the language of msgs.
+func (msgs Messages) OpNewWorktree(name string) string {
+	return Catalog.Format(msgs.locale, "opNewWorktree", map[string]any{"name": name})
+}
+
+// OpRemoveWorktree says "Remove worktree {name}"
+// in the language the app shows.
+func OpRemoveWorktree(name string) string { return In(i18n.Locale()).OpRemoveWorktree(name) }
+
+// OpRemoveWorktree says "Remove worktree {name}"
+// in the language of msgs.
+func (msgs Messages) OpRemoveWorktree(name string) string {
+	return Catalog.Format(msgs.locale, "opRemoveWorktree", map[string]any{"name": name})
+}
+
+// BranchesWorktrees says "Worktrees"
+// in the language the app shows.
+func BranchesWorktrees() string { return In(i18n.Locale()).BranchesWorktrees() }
+
+// BranchesWorktrees says "Worktrees"
+// in the language of msgs.
+func (msgs Messages) BranchesWorktrees() string {
+	return Catalog.Format(msgs.locale, "branchesWorktrees", nil)
+}
+
+// WorktreeSubmodule says "submodule"
+// in the language the app shows.
+func WorktreeSubmodule() string { return In(i18n.Locale()).WorktreeSubmodule() }
+
+// WorktreeSubmodule says "submodule"
+// in the language of msgs.
+func (msgs Messages) WorktreeSubmodule() string {
+	return Catalog.Format(msgs.locale, "worktreeSubmodule", nil)
+}
+
+// WorktreeNew says "Check Out in New Worktree…"
+// in the language the app shows.
+func WorktreeNew() string { return In(i18n.Locale()).WorktreeNew() }
+
+// WorktreeNew says "Check Out in New Worktree…"
+// in the language of msgs.
+func (msgs Messages) WorktreeNew() string {
+	return Catalog.Format(msgs.locale, "worktreeNew", nil)
+}
+
+// WorktreeOpen says "Open in New Window"
+// in the language the app shows.
+func WorktreeOpen() string { return In(i18n.Locale()).WorktreeOpen() }
+
+// WorktreeOpen says "Open in New Window"
+// in the language of msgs.
+func (msgs Messages) WorktreeOpen() string {
+	return Catalog.Format(msgs.locale, "worktreeOpen", nil)
+}
+
+// WorktreeRemove says "Remove Worktree"
+// in the language the app shows.
+func WorktreeRemove() string { return In(i18n.Locale()).WorktreeRemove() }
+
+// WorktreeRemove says "Remove Worktree"
+// in the language of msgs.
+func (msgs Messages) WorktreeRemove() string {
+	return Catalog.Format(msgs.locale, "worktreeRemove", nil)
+}
+
+// WorktreeRemoveTitle says "Remove worktree {name} anyway?"
+// in the language the app shows.
+func WorktreeRemoveTitle(name string) string { return In(i18n.Locale()).WorktreeRemoveTitle(name) }
+
+// WorktreeRemoveTitle says "Remove worktree {name} anyway?"
+// in the language of msgs.
+func (msgs Messages) WorktreeRemoveTitle(name string) string {
+	return Catalog.Format(msgs.locale, "worktreeRemoveTitle", map[string]any{"name": name})
+}
+
+// WorktreeRemoveMessage says "Changes not committed, files git doesn't track and submodules in it will be deleted with it."
+// in the language the app shows.
+func WorktreeRemoveMessage() string { return In(i18n.Locale()).WorktreeRemoveMessage() }
+
+// WorktreeRemoveMessage says "Changes not committed, files git doesn't track and submodules in it will be deleted with it."
+// in the language of msgs.
+func (msgs Messages) WorktreeRemoveMessage() string {
+	return Catalog.Format(msgs.locale, "worktreeRemoveMessage", nil)
+}
+
+// WorktreeTitle says "New Worktree from {rev}"
+// in the language the app shows.
+func WorktreeTitle(rev string) string { return In(i18n.Locale()).WorktreeTitle(rev) }
+
+// WorktreeTitle says "New Worktree from {rev}"
+// in the language of msgs.
+func (msgs Messages) WorktreeTitle(rev string) string {
+	return Catalog.Format(msgs.locale, "worktreeTitle", map[string]any{"rev": rev})
+}
+
+// WorktreeSubmoduleInfo says "This repository is a Git submodule. The new worktree will not replace the submodule in the parent repository."
+// in the language the app shows.
+func WorktreeSubmoduleInfo() string { return In(i18n.Locale()).WorktreeSubmoduleInfo() }
+
+// WorktreeSubmoduleInfo says "This repository is a Git submodule. The new worktree will not replace the submodule in the parent repository."
+// in the language of msgs.
+func (msgs Messages) WorktreeSubmoduleInfo() string {
+	return Catalog.Format(msgs.locale, "worktreeSubmoduleInfo", nil)
+}
+
+// WorktreeLocation says "Location"
+// in the language the app shows.
+func WorktreeLocation() string { return In(i18n.Locale()).WorktreeLocation() }
+
+// WorktreeLocation says "Location"
+// in the language of msgs.
+func (msgs Messages) WorktreeLocation() string {
+	return Catalog.Format(msgs.locale, "worktreeLocation", nil)
+}
+
+// WorktreeBranch says "New branch"
+// in the language the app shows.
+func WorktreeBranch() string { return In(i18n.Locale()).WorktreeBranch() }
+
+// WorktreeBranch says "New branch"
+// in the language of msgs.
+func (msgs Messages) WorktreeBranch() string {
+	return Catalog.Format(msgs.locale, "worktreeBranch", nil)
+}
+
+// WorktreeBranchDetached says "Leave empty for a detached HEAD"
+// in the language the app shows.
+func WorktreeBranchDetached() string { return In(i18n.Locale()).WorktreeBranchDetached() }
+
+// WorktreeBranchDetached says "Leave empty for a detached HEAD"
+// in the language of msgs.
+func (msgs Messages) WorktreeBranchDetached() string {
+	return Catalog.Format(msgs.locale, "worktreeBranchDetached", nil)
+}
+
+// WorktreeBranchNeeded says "Required: the branch is checked out already"
+// in the language the app shows.
+func WorktreeBranchNeeded() string { return In(i18n.Locale()).WorktreeBranchNeeded() }
+
+// WorktreeBranchNeeded says "Required: the branch is checked out already"
+// in the language of msgs.
+func (msgs Messages) WorktreeBranchNeeded() string {
+	return Catalog.Format(msgs.locale, "worktreeBranchNeeded", nil)
+}
+
 // BranchCurrent says "current"
 // in the language the app shows.
 func BranchCurrent() string { return In(i18n.Locale()).BranchCurrent() }
