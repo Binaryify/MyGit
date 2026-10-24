@@ -129,6 +129,7 @@ To build it from source instead, see [Development](#development).
 | Keys | Does |
 |---|---|
 | ⌘↩ / Ctrl+Enter | Commit |
+| ↑ / ↓ | In an empty commit message box: bring back the recent messages |
 | ⌘F / Ctrl+F | Search the history |
 | ⌘R / Ctrl+R | Refresh |
 | ⌘P / Ctrl+P | Go to a file of the commit or the changes |
