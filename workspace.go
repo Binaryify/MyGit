@@ -378,7 +378,7 @@ func (ws *workspace) section(c *ui.Context, i int, a *app) {
 		}
 		ui.Column(c).Gap(6).Padding(4, 10, 8, 10).Children(func() {
 			// A line, growing with what is typed, as VS Code's.
-			ui.TextArea(c, &a.message).Placeholder(loc.MessagePlaceholder(shortcut("↩"))).Label(loc.Message()).Lines(1, 6).MinHeight(0)
+			a.messageField(c).Lines(1, 6).MinHeight(0)
 			if st.Upstream != "" && counts(st) != "" {
 				if ui.Button(c, loc.SyncChanges(counts(st))).FillWidth().Disabled(a.busy != "").Clicked() {
 					a.sync()

@@ -6,6 +6,7 @@ import (
 	"path"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
@@ -184,7 +185,7 @@ func (a *app) changesPanel(c *ui.Context) {
 		// The message on top, as VS Code has it, where it shows however
 		// many files changed.
 		ui.Column(c).Gap(8).Padding(10).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
-			ui.TextArea(c, &a.message).Placeholder(loc.MessagePlaceholder(shortcut("↩"))).Label(loc.Message()).Lines(2, 8)
+			a.messageField(c).Lines(2, 8)
 			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 				if ui.Checkbox(c, &a.amend, loc.Amend()).Changed() {
 					a.toggleAmend()
@@ -210,6 +211,18 @@ func (a *app) changesPanel(c *ui.Context) {
 		}).Grow(1).Basis(0)
 	})
 	c.OnShortcut(ui.Cmd, ui.KeyEnter, a.commit)
+}
+
+// messageField is the commit message's box, where Up brings back the
+// recent messages.
+func (a *app) messageField(c *ui.Context) ui.Element {
+	in := ui.TextArea(c, &a.message).Placeholder(loc.MessagePlaceholder(shortcut("↩"))).Label(loc.Message()).OnTextKey(a.recallKey)
+	if a.recallEnd {
+		n := utf8.RuneCountInString(a.message)
+		in.SetTextSelection(n, n)
+		a.recallEnd = false
+	}
+	return in
 }
 
 // changeSection lists the staged changes or the others, those the filter

@@ -150,6 +150,34 @@ func TestStageAndCommit(t *testing.T) {
 	}
 }
 
+func TestUpBringsBackRecentMessages(t *testing.T) {
+	tt := newTester(t)
+	tt.click(t, "提交说明")
+	for _, step := range []struct {
+		key  ui.Key
+		want string
+	}{
+		{ui.KeyUp, "Merge the feature"},
+		{ui.KeyUp, "Write main"},
+		{ui.KeyDown, "Merge the feature"},
+		{ui.KeyDown, ""},
+		{ui.KeyDown, ""},
+		{ui.KeyUp, "Merge the feature"},
+	} {
+		tt.Key(0, step.key)
+		if !strings.HasPrefix(tt.a.message, step.want) || step.want == "" && tt.a.message != "" {
+			t.Fatalf("after %v: message %q, want %q", step.key, tt.a.message, step.want)
+		}
+	}
+	// The caret after it, which typing goes on from; changed, the arrows
+	// move the caret again.
+	tt.Type("!")
+	tt.Key(0, ui.KeyUp)
+	if !strings.HasSuffix(tt.a.message, "!") {
+		t.Fatalf("message %q", tt.a.message)
+	}
+}
+
 func TestAmendStartsFromLastMessage(t *testing.T) {
 	tt := newTester(t)
 	tt.click(t, "修改上次提交")

@@ -138,6 +138,9 @@ func TestStageCommitLog(t *testing.T) {
 	if r.LastMessage(ctx) != "second" {
 		t.Fatal("last message", r.LastMessage(ctx))
 	}
+	if m := r.RecentMessages(ctx, 10); !slices.Equal(m, []string{"second", "first"}) {
+		t.Fatal("recent messages", m)
+	}
 }
 
 func TestParseStatusRename(t *testing.T) {

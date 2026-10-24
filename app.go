@@ -70,6 +70,11 @@ type app struct {
 
 	message string
 	amend   bool
+	// The recent messages Up in the message box brings back, and how far
+	// back the one it shows is: 0 for one typed.
+	recalled  []string
+	recall    int
+	recallEnd bool // put the caret after the message brought back
 
 	detail   detail
 	fileList ui.ListState // of the commit's files
@@ -807,8 +812,40 @@ func (a *app) commit() {
 	}
 	msg, amend := a.message, a.amend
 	a.run(loc.OpCommit(), func(ctx context.Context) error { return a.repo.Commit(ctx, msg, amend) }, func() {
-		a.message, a.amend = "", false
+		a.message, a.amend, a.recall = "", false, 0
 	})
+}
+
+// recallKey brings back the recent messages with Up, as a shell does its
+// commands, and goes forward again with Down: from an empty box, or one
+// still showing a message brought back, so the arrows move the caret
+// through what is typed.
+func (a *app) recallKey(k ui.TextKey) bool {
+	if k.Mods != 0 || k.Key != ui.KeyUp && k.Key != ui.KeyDown {
+		return false
+	}
+	text, step := k.Text(), 1
+	if k.Key == ui.KeyDown {
+		step = -1
+	}
+	if a.recall == 0 {
+		if text != "" || step < 0 {
+			return false
+		}
+		a.recalled = a.repo.RecentMessages(context.Background(), 50)
+	} else if text != a.recalled[a.recall-1] {
+		a.recall = 0
+		return false
+	}
+	if i := a.recall + step; i <= len(a.recalled) {
+		a.recall, a.message = i, ""
+		if i > 0 {
+			a.message = a.recalled[i-1]
+		}
+		k.SetText(a.message)
+		a.recallEnd = true
+	}
+	return true
 }
 
 // toggleAmend starts amending from HEAD's message, and stops with an

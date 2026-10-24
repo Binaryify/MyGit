@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -186,6 +187,19 @@ func (r *Repo) Commit(ctx context.Context, message string, amend bool) error {
 func (r *Repo) LastMessage(ctx context.Context) string {
 	out, _ := r.Git(ctx, "log", "-1", "--format=%B")
 	return strings.TrimSpace(out)
+}
+
+// RecentMessages are the messages of HEAD's last n commits, newest first
+// and each once, which Up in the message box brings back.
+func (r *Repo) RecentMessages(ctx context.Context, n int) []string {
+	out, _ := r.Git(ctx, "log", "-"+strconv.Itoa(n), "--format=%B%x00")
+	var msgs []string
+	for _, m := range strings.Split(out, "\x00") {
+		if m = strings.TrimSpace(m); m != "" && !slices.Contains(msgs, m) {
+			msgs = append(msgs, m)
+		}
+	}
+	return msgs
 }
 
 // Apply applies a patch: to the index when cached, else to the working
