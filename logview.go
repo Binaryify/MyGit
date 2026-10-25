@@ -24,7 +24,8 @@ var laneColors = []ui.Color{
 func laneColor(i int) ui.Color { return laneColors[i%len(laneColors)] }
 
 // logView is the history: a row per commit, with its graph, and above it
-// the search and the scope.
+// the search. It is the current branch's, unless a branch's or a tag's
+// menu chose its history, which a banner tells.
 func (a *app) logView(c *ui.Context) {
 	t := c.Theme()
 	a.updateMatches()
@@ -40,16 +41,13 @@ func (a *app) logView(c *ui.Context) {
 				ui.Spinner(c).Size(12, 12)
 			}
 			ui.Box(c).Grow(1)
-			a.scopeButton(c)
 			a.searchField(c)
 		})
+		if a.scope.Ref != "HEAD" {
+			a.scopeBanner(c, loc.RefOnly(a.scope.Ref), loc.BackToCurrentBranch(), git.Scope{Ref: "HEAD", Path: a.scope.Path})
+		}
 		if a.scope.Path != "" {
-			ui.Row(c).Padding(4, 12).Gap(8).AlignItems(ui.Center).Background(t.Accent.Alpha(0.1)).Children(func() {
-				ui.Text(c, loc.PathOnly(a.scope.Path)).Grow(1)
-				if ui.Button(c, loc.ShowAll()).Clicked() {
-					a.setScope(git.Scope{Ref: a.scope.Ref})
-				}
-			})
+			a.scopeBanner(c, loc.PathOnly(a.scope.Path), loc.ShowAll(), git.Scope{Ref: a.scope.Ref})
 		}
 		lanes := 0
 		if !a.searching() {
@@ -70,37 +68,13 @@ func (a *app) logView(c *ui.Context) {
 	c.OnShortcut(ui.Cmd, ui.KeyF, func() { a.searchBox.Focus() })
 }
 
-// scopeButton picks the refs the history lists.
-func (a *app) scopeButton(c *ui.Context) {
-	label := loc.AllBranches()
-	switch a.scope.Ref {
-	case "":
-	case "HEAD":
-		label = loc.CurrentBranch()
-	default:
-		label = a.scope.Ref
-	}
-	ui.Button(c, label+" ▾").Label(loc.BranchesShown()).Menu(func(m *ui.Menu) {
-		if m.Item(loc.AllBranches()).Checked(a.scope.Ref == "").Chosen() {
-			a.setScope(git.Scope{Path: a.scope.Path})
-		}
-		if m.Item(loc.CurrentBranch()).Checked(a.scope.Ref == "HEAD").Chosen() {
-			a.setScope(git.Scope{Ref: "HEAD", Path: a.scope.Path})
-		}
-		m.Separator()
-		for _, b := range a.branches {
-			if m.Item(b).Checked(a.scope.Ref == b).Chosen() {
-				a.setScope(git.Scope{Ref: b, Path: a.scope.Path})
-			}
-		}
-		if len(a.tags) > 0 {
-			m.Submenu(loc.BranchesTags(), func(m *ui.Menu) {
-				for _, t := range a.tags {
-					if m.Item(t).Checked(a.scope.Ref == t).Chosen() {
-						a.setScope(git.Scope{Ref: t, Path: a.scope.Path})
-					}
-				}
-			})
+// scopeBanner tells the history is narrowed, with a button widening it to
+// wider.
+func (a *app) scopeBanner(c *ui.Context, text, button string, wider git.Scope) {
+	ui.Row(c).Padding(4, 12).Gap(8).AlignItems(ui.Center).Background(c.Theme().Accent.Alpha(0.1)).Children(func() {
+		ui.Text(c, text).Grow(1)
+		if ui.Button(c, button).Clicked() {
+			a.setScope(wider)
 		}
 	})
 }

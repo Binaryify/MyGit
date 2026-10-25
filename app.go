@@ -143,7 +143,7 @@ type detail struct {
 }
 
 func newApp(repo *git.Repo) *app {
-	return &app{repo: repo, online: make(chan struct{}, 1), logSel: -1, stagedSel: -1, unstagedSel: -1, stashSel: -1,
+	return &app{repo: repo, scope: git.Scope{Ref: "HEAD"}, online: make(chan struct{}, 1), logSel: -1, stagedSel: -1, unstagedSel: -1, stashSel: -1,
 		sidebarW: prefs.SidebarW, logH: prefs.LogH, filesW: prefs.FilesW, stagedPct: prefs.StagedPct,
 		unfolded: map[string]bool{}, viewed: map[string]bool{}, pullReviews: map[int]*pullReview{}}
 }
@@ -304,10 +304,15 @@ func (a *app) refresh() {
 		default:
 		}
 		a.genMarked = s.marked
+		reload := s.refs != a.refs || a.commits == nil && !a.loading
+		if s.status.Branch != a.status.Branch && a.scope.Ref != "HEAD" {
+			// Switching branches shows the new one's history.
+			a.scope.Ref, reload = "HEAD", true
+		}
 		a.setStatus(s.status)
 		a.branches, a.remotes, a.tags, a.op, a.stashes = s.branches, s.remotes, s.tags, s.op, s.stashes
 		a.stashSel = min(a.stashSel, len(a.stashes)-1)
-		if s.refs != a.refs || a.commits == nil && !a.loading {
+		if reload {
 			a.refs = s.refs
 			a.loadLog()
 		}

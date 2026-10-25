@@ -1850,34 +1850,34 @@ func (msgs Messages) ShowAll() string {
 	return Catalog.Format(msgs.locale, "showAll", nil)
 }
 
-// AllBranches says "All Branches"
+// RefOnly says "Commits of {ref} — you're still on your branch"
 // in the language the app shows.
-func AllBranches() string { return In(i18n.Locale()).AllBranches() }
+func RefOnly(ref string) string { return In(i18n.Locale()).RefOnly(ref) }
 
-// AllBranches says "All Branches"
+// RefOnly says "Commits of {ref} — you're still on your branch"
 // in the language of msgs.
-func (msgs Messages) AllBranches() string {
-	return Catalog.Format(msgs.locale, "allBranches", nil)
+func (msgs Messages) RefOnly(ref string) string {
+	return Catalog.Format(msgs.locale, "refOnly", map[string]any{"ref": ref})
 }
 
-// CurrentBranch says "Current Branch"
+// BackToCurrentBranch says "Back to Current Branch"
 // in the language the app shows.
-func CurrentBranch() string { return In(i18n.Locale()).CurrentBranch() }
+func BackToCurrentBranch() string { return In(i18n.Locale()).BackToCurrentBranch() }
 
-// CurrentBranch says "Current Branch"
+// BackToCurrentBranch says "Back to Current Branch"
 // in the language of msgs.
-func (msgs Messages) CurrentBranch() string {
-	return Catalog.Format(msgs.locale, "currentBranch", nil)
+func (msgs Messages) BackToCurrentBranch() string {
+	return Catalog.Format(msgs.locale, "backToCurrentBranch", nil)
 }
 
-// BranchesShown says "Branches shown"
+// BranchesTip says "The branch you are on. Click to switch, create or manage branches."
 // in the language the app shows.
-func BranchesShown() string { return In(i18n.Locale()).BranchesShown() }
+func BranchesTip() string { return In(i18n.Locale()).BranchesTip() }
 
-// BranchesShown says "Branches shown"
+// BranchesTip says "The branch you are on. Click to switch, create or manage branches."
 // in the language of msgs.
-func (msgs Messages) BranchesShown() string {
-	return Catalog.Format(msgs.locale, "branchesShown", nil)
+func (msgs Messages) BranchesTip() string {
+	return Catalog.Format(msgs.locale, "branchesTip", nil)
 }
 
 // SearchPlaceholder says "Search messages, authors, hashes  {shortcut}"

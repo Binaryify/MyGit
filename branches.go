@@ -69,7 +69,7 @@ func (a *app) branchItems(m *ui.Menu, b string) {
 	if a.chose(m.Item(loc.WorktreeNew())) {
 		a.newWorktree(b, true)
 	}
-	if a.chose(m.Item(loc.BranchHistory())) {
+	if b != cur && a.chose(m.Item(loc.BranchHistory())) { // the current one's is the history's own
 		a.setScope(git.Scope{Ref: b})
 	}
 	m.Separator()
@@ -149,7 +149,7 @@ func (a *app) switchTo(b string) {
 // working trees the search matches, each with its menu. Enter switches to
 // the first local one.
 func (a *app) branchesButton(c *ui.Context, label string) {
-	b := ui.Button(c, label).Label(loc.Branches())
+	b := ui.Button(c, label).Label(loc.Branches()).Tooltip(loc.BranchesTip())
 	if b.Clicked() {
 		a.branchesOpen, a.branchFilter = !a.branchesOpen, ""
 		if a.branchesOpen {

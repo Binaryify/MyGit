@@ -543,9 +543,16 @@
     }
   },
   "showAll": "Show All",
-  "allBranches": "All Branches",
-  "currentBranch": "Current Branch",
-  "branchesShown": "Branches shown",
+  "refOnly": "Commits of {ref} — you're still on your branch",
+  "@refOnly": {
+    "placeholders": {
+      "ref": {
+        "type": "String"
+      }
+    }
+  },
+  "backToCurrentBranch": "Back to Current Branch",
+  "branchesTip": "The branch you are on. Click to switch, create or manage branches.",
   "searchPlaceholder": "Search messages, authors, hashes  {shortcut}",
   "searchHistory": "Search history",
   "clearSearch": "Clear search",

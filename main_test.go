@@ -240,7 +240,7 @@ func TestSearchAndScope(t *testing.T) {
 		t.Fatalf("chose %+v", d.commit)
 	}
 	tt.a.search = ""
-	tt.a.setScope(git.Scope{Path: "feature.go"})
+	tt.a.setScope(git.Scope{Ref: "HEAD", Path: "feature.go"})
 	tt.settle()
 	if len(tt.a.commits) != 1 || !tt.HasText("只看改动了 feature.go 的提交") {
 		t.Fatalf("history of feature.go: %d commits", len(tt.a.commits))
@@ -296,7 +296,7 @@ func TestResetHardAsks(t *testing.T) {
 	tt.settle()
 	tt.click(t, "硬重置")
 	main, _ := tt.a.repo.Git(context.Background(), "log", "-1", "--format=%s", "main")
-	if strings.TrimSpace(main) != "Start" || len(tt.a.commits) != 2 { // Start, and feature's commit
+	if strings.TrimSpace(main) != "Start" || len(tt.a.commits) != 1 { // main's history: Start alone
 		t.Fatalf("main at %q, %d commits", main, len(tt.a.commits))
 	}
 }
@@ -706,7 +706,7 @@ func TestEnglish(t *testing.T) {
 	i18n.SetLocaleFunc(func() string { return "en" })
 	defer i18n.SetLocaleFunc(func() string { return "zh-Hans" })
 	tt := newTester(t)
-	for _, s := range []string{"Staged Changes", "Changes", "Commit message", "Amend last commit", "History", "4 commits", "All Branches ▾"} {
+	for _, s := range []string{"Staged Changes", "Changes", "Commit message", "Amend last commit", "History", "4 commits"} {
 		if !tt.HasText(s) {
 			t.Fatalf("no %q in %q", s, tt.Texts())
 		}
@@ -825,7 +825,8 @@ func TestChooseAfterAChangeIsGone(t *testing.T) {
 }
 
 // What a branch's menu in the branches' popover does closes the popover:
-// switching, as the rest.
+// its history, which a banner tells, and switching to it, which shows the
+// current branch's again.
 func TestBranchMenuClosesPopover(t *testing.T) {
 	tt := newTester(t)
 	// The popover's first local branch, under its heading: "feature" is
@@ -841,6 +842,15 @@ func TestBranchMenuClosesPopover(t *testing.T) {
 	}
 	tt.click(t, "分支")
 	firstBranch()
+	if err := tt.ChooseMenuItem(loc.BranchHistory()); err != nil {
+		t.Fatalf("%v; menu %q", err, tt.Menu())
+	}
+	tt.settle()
+	if tt.a.branchesOpen || tt.a.scope.Ref != "feature" || !tt.HasText(loc.RefOnly("feature")) {
+		t.Fatalf("open %v, scope %+v, texts %q", tt.a.branchesOpen, tt.a.scope, tt.Texts())
+	}
+	tt.click(t, "分支")
+	firstBranch()
 	if err := tt.ChooseMenuItem(loc.BranchSwitch()); err != nil {
 		t.Fatalf("%v; menu %q", err, tt.Menu())
 	}
@@ -848,14 +858,8 @@ func TestBranchMenuClosesPopover(t *testing.T) {
 	if tt.a.branchesOpen || tt.a.status.Branch != "feature" {
 		t.Fatalf("open %v, branch %q", tt.a.branchesOpen, tt.a.status.Branch)
 	}
-	tt.click(t, "分支")
-	firstBranch()
-	if err := tt.ChooseMenuItem(loc.BranchHistory()); err != nil {
-		t.Fatalf("%v; menu %q", err, tt.Menu())
-	}
-	tt.settle()
-	if tt.a.branchesOpen || tt.a.scope.Ref == "" {
-		t.Errorf("open %v, scope %+v", tt.a.branchesOpen, tt.a.scope)
+	if tt.a.scope.Ref != "HEAD" || tt.HasText(loc.RefOnly("feature")) {
+		t.Errorf("after switching, scope %+v", tt.a.scope)
 	}
 }
 
@@ -881,6 +885,10 @@ func TestTagsInBranchesPopover(t *testing.T) {
 	tt.settle()
 	if tt.a.branchesOpen || tt.a.scope.Ref != "v1.0" {
 		t.Errorf("open %v, scope %+v", tt.a.branchesOpen, tt.a.scope)
+	}
+	tt.click(t, loc.BackToCurrentBranch())
+	if tt.a.scope.Ref != "HEAD" {
+		t.Errorf("back: scope %+v", tt.a.scope)
 	}
 }
 
