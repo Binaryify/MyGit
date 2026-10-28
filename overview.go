@@ -16,10 +16,7 @@ const previewLines = 8
 // where it is in the file, as VS Code's overview ruler: a click goes to
 // the change, and pointing at it previews its lines.
 func overview(c *ui.Context, d *editor.DiffState) {
-	hunks := d.Hunks()
-	if len(hunks) == 0 {
-		return
-	}
+	hunks := d.Hunks() // none still keeps the strip, lest the diff widen as the last goes
 	t := c.Theme()
 	total := max(d.New.LineCount(), 1)
 	ui.Column(c).Width(14).AlignSelf(ui.Stretch).Padding(2).BorderWidth(0, 0, 0, 1).BorderColor(t.Border).Children(func() {
