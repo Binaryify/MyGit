@@ -78,3 +78,45 @@ func runeClass(r rune) int {
 	}
 	return 0
 }
+
+// ChangedWords are the words side s changed of chunk i's base lines, as
+// IntelliJ tints them within the lines: ranges of the bytes of the side's
+// text. A side that left the chunk alone, or added or deleted whole lines
+// there, or changed every word of them, has none, as its lines say it.
+func (m *Merge) ChangedWords(i int, s Side) []Range {
+	c := &m.Chunks[i]
+	side, base := m.lines(s, c), m.base[c.Base.Start:c.Base.End]
+	if c.State[s] == Unchanged || len(side) == 0 || len(base) == 0 {
+		return nil
+	}
+	words := Words(strings.Join(side, ""))
+	at := 0
+	for _, l := range m.sides[s][:c.Sides[s].Start] {
+		at += len(l)
+	}
+	offs := make([]int, len(words)+1) // the bytes of the side's text each word starts at
+	for j, w := range words {
+		offs[j], at = at, at+len(w)
+	}
+	offs[len(words)] = at
+	solid := func(ws []string) (n int) { // the words but spaces and line ends
+		for _, w := range ws {
+			if strings.TrimSpace(w) != "" {
+				n++
+			}
+		}
+		return n
+	}
+	var out []Range
+	changed := 0
+	for _, h := range Diff(Words(strings.Join(base, "")), words) {
+		if h.B.Len() > 0 {
+			out = append(out, Range{offs[h.B.Start], offs[h.B.End]})
+			changed += solid(words[h.B.Start:h.B.End])
+		}
+	}
+	if changed == solid(words) {
+		return nil
+	}
+	return out
+}

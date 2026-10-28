@@ -306,3 +306,30 @@ func TestUnignore(t *testing.T) {
 		t.Fatalf("%+v", m.Chunks[0])
 	}
 }
+
+func TestChangedWords(t *testing.T) {
+	m := New("a\nx := 1 // one\nb\nc\n", "a\nx := 2 // one\nb\nc\n", "a\ny := 1 // one\nb\nc\n", false)
+	if len(m.Chunks) != 1 || !m.Chunks[0].Conflict {
+		t.Fatalf("chunks %+v", m.Chunks)
+	}
+	if got := m.ChangedWords(0, Ours); !slices.Equal(got, []Range{{7, 8}}) {
+		t.Errorf("ours %v", got)
+	}
+	if got := m.ChangedWords(0, Theirs); !slices.Equal(got, []Range{{2, 3}}) {
+		t.Errorf("theirs %v", got)
+	}
+	// Every word changed, or a side alone changing: none, or the side's.
+	m = New("a\nfoo\nb\nc\n", "a\nbar\nb\nc\n", "a\nfoo\nb\nc!\n", false)
+	if len(m.Chunks) != 2 {
+		t.Fatalf("chunks %+v", m.Chunks)
+	}
+	if got := m.ChangedWords(0, Ours); got != nil {
+		t.Errorf("all changed: %v", got)
+	}
+	if got := m.ChangedWords(0, Theirs); got != nil {
+		t.Errorf("theirs unchanged: %v", got)
+	}
+	if got := m.ChangedWords(1, Theirs); !slices.Equal(got, []Range{{9, 10}}) {
+		t.Errorf("theirs' second %v", got)
+	}
+}

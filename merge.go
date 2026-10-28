@@ -48,6 +48,8 @@ type merger struct {
 	ignored        []ignoring        // the dismissals ⌘Z takes back, latest last
 	compare        *editor.DiffState // the base against a side, shown in place of the panes
 	compareTitle   string
+	words          [2][][]conflict.Range // the words each side changed, by chunk, of the model wordsOf
+	wordsOf        *conflict.Merge
 }
 
 // ignoring is a side's change dismissed, at the result's version then.
@@ -391,6 +393,21 @@ func (m *merger) mapLine(line float64, from, to int) float64 {
 
 // chunkColor is the color of a chunk, as IntelliJ's: red for a conflict,
 // else green for lines added, gray for lines removed, and blue for lines
+// changedWords finds the words each side changed of each chunk, once for
+// a model, as the sides don't change.
+func (m *merger) changedWords() {
+	if m.wordsOf == m.model {
+		return
+	}
+	m.wordsOf = m.model
+	for s := range m.words {
+		m.words[s] = make([][]conflict.Range, len(m.model.Chunks))
+		for i := range m.model.Chunks {
+			m.words[s][i] = m.model.ChangedWords(i, conflict.Side(s))
+		}
+	}
+}
+
 // changed by the side that changed it.
 func chunkColor(t *ui.Theme, ct *editor.Theme, c *conflict.Chunk) ui.Color {
 	if c.Conflict {
@@ -458,13 +475,25 @@ func (a *app) mergeView(c *ui.Context, m *merger) {
 		c.Invalidate() // a frame more, laid out, to go to the first chunk
 	}
 	left, right := a.sideNames()
+	m.changedWords()
 	for p, st := range m.panes {
-		st.LineBackgrounds = st.LineBackgrounds[:0]
+		st.LineBackgrounds, st.TextBackgrounds = st.LineBackgrounds[:0], st.TextBackgrounds[:0]
 		for i := range m.model.Chunks {
 			ch := &m.model.Chunks[i]
 			if r := rangeIn(ch, p); shows(ch, p) && r.Len() > 0 {
+				color := chunkColor(t, ct, ch)
 				st.LineBackgrounds = append(st.LineBackgrounds, editor.LineBackground{First: r.Start, Last: r.End - 1,
-					Color: chunkColor(t, ct, ch).Alpha(m.alpha(i))})
+					Color: color.Alpha(m.alpha(i))})
+				// The words the side changed, deeper, as IntelliJ tints them.
+				for s, sp := range paneOf {
+					if sp != p {
+						continue
+					}
+					for _, w := range m.words[s][i] {
+						st.TextBackgrounds = append(st.TextBackgrounds, editor.TextBackground{Start: w.Start, End: w.End,
+							Color: color.Alpha(min(2*m.alpha(i), 0.5))})
+					}
+				}
 			}
 		}
 	}
