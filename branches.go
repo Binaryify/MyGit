@@ -351,6 +351,9 @@ func (a *app) commitMenu(m *ui.Menu, cm git.Commit) {
 		a.run(loc.OpRevert(cm.Short()), func(ctx context.Context) error { return a.repo.Revert(ctx, cm) }, nil)
 	}
 	a.mergeItems(m, cm.Hash)
+	if m.Item(loc.EditCommitMessage()).Shortcut(0, ui.KeyF2).Chosen() {
+		a.planReword(cm)
+	}
 	if m.Item(loc.RebaseFromHere()).Chosen() {
 		a.planRebase(cm)
 	}

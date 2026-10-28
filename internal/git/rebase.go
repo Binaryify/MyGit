@@ -82,8 +82,9 @@ func CheckSteps(steps []RebaseStep) error {
 
 // RebaseInteractive replays the steps on base, "" for the root. Git reads
 // the todo list from a file written for it, and a reworded commit is
-// picked and then amended with its message, so git opens no editor. A
-// rebase stopped by a conflict or an edit goes on with Continue.
+// picked and then amended with its message, so git opens no editor.
+// Changes not committed are stashed meanwhile. A rebase stopped by a
+// conflict or an edit goes on with Continue.
 func (r *Repo) RebaseInteractive(ctx context.Context, base string, steps []RebaseStep) error {
 	if err := CheckSteps(steps); err != nil {
 		return err
@@ -107,7 +108,7 @@ func (r *Repo) RebaseInteractive(ctx context.Context, base string, steps []Rebas
 	if err := r.run.WriteFile(ctx, todoFile, []byte(todo.String())); err != nil {
 		return err
 	}
-	args := []string{"rebase", "-i"}
+	args := []string{"rebase", "-i", "--autostash"}
 	if base == "" {
 		args = append(args, "--root")
 	} else {
@@ -127,4 +128,36 @@ func shellQuote(path string) string {
 func (r *Repo) IsAncestor(ctx context.Context, hash string) bool {
 	_, err := r.Git(ctx, "merge-base", "--is-ancestor", hash, "HEAD")
 	return err == nil
+}
+
+// Pushed tells whether a commit is in the current branch's upstream.
+func (r *Repo) Pushed(ctx context.Context, hash string) bool {
+	_, err := r.Git(ctx, "merge-base", "--is-ancestor", hash, "@{upstream}")
+	return err == nil
+}
+
+// Reword gives a commit of HEAD's history a new message: HEAD by
+// amending only its message, an older one by rebasing what follows it.
+func (r *Repo) Reword(ctx context.Context, cm Commit, message string) error {
+	head, err := r.Git(ctx, "rev-parse", "HEAD")
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(head) == cm.Hash {
+		_, err := r.Git(ctx, "commit", "--amend", "--only", "--allow-empty", "-m", message)
+		return err
+	}
+	base := ""
+	if len(cm.Parents) > 0 {
+		base = cm.Parents[0]
+	}
+	steps, err := r.RebaseSteps(ctx, base)
+	if err != nil {
+		return err
+	}
+	if len(steps) == 0 || steps[0].Hash != cm.Hash {
+		return errors.New(loc.ErrRewordNotInHead())
+	}
+	steps[0].Action, steps[0].Message = Reword, message
+	return r.RebaseInteractive(ctx, base, steps)
 }

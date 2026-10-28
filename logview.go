@@ -66,6 +66,11 @@ func (a *app) logView(c *ui.Context) {
 		}
 	})
 	c.OnShortcut(ui.Cmd, ui.KeyF, func() { a.searchBox.Focus() })
+	c.OnShortcut(0, ui.KeyF2, func() {
+		if a.logSel >= 0 && a.logSel < a.logCount() {
+			a.planReword(a.commits[a.commitAt(a.logSel)])
+		}
+	})
 }
 
 // scopeBanner tells the history is narrowed, with a button widening it to

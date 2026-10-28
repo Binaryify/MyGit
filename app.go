@@ -89,6 +89,7 @@ type app struct {
 	prompt       prompt
 	worktree     worktreeDialog
 	rebase       rebasePlan
+	reword       rewordPlan
 	push         pushPlan
 	cred         credPrompt
 	remotes2     remotesPlan // the remotes dialog

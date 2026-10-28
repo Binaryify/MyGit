@@ -428,6 +428,38 @@ func TestInteractiveRebaseDialog(t *testing.T) {
 	}
 }
 
+func TestEditCommitMessage(t *testing.T) {
+	tt := newTester(t)
+	ctx := context.Background()
+	if _, err := tt.a.repo.Git(ctx, "switch", "-q", "feature"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tt.a.repo.Git(ctx, "-c", "user.name=a", "-c", "user.email=a@a", "commit", "-q", "--allow-empty", "-m", "Polish"); err != nil {
+		t.Fatal(err)
+	}
+	tt.a.refresh()
+	tt.settle()
+	if err := tt.RightClick("Add the feature"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("编辑提交消息…"); err != nil {
+		t.Fatal(err)
+	}
+	tt.settle()
+	p := &tt.a.reword
+	if !p.open || p.pushed || p.message != "Add the feature" {
+		t.Fatalf("plan %+v", p)
+	}
+	p.message = "Add the feature, reworded"
+	tt.Frame()
+	tt.click(t, "保存")
+	tt.settle()
+	out, _ := tt.a.repo.Git(ctx, "log", "--format=%s", "-3")
+	if tt.a.errMsg != "" || out != "Polish\nAdd the feature, reworded\nStart\n" {
+		t.Fatalf("error %q, log %q", tt.a.errMsg, out)
+	}
+}
+
 func TestBlameAndParents(t *testing.T) {
 	tt := newTester(t)
 	tt.click(t, "Merge the feature")

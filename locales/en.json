@@ -1323,5 +1323,26 @@
   },
   "updateLater": "Later",
   "checkUpdatesMenu": "Check for Updates…",
-  "menuApp": "MyGit"
+  "menuApp": "MyGit",
+  "editCommitMessage": "Edit Commit Message…",
+  "rewordTitle": "Edit the message of {rev}",
+  "@rewordTitle": {
+    "placeholders": {
+      "rev": {
+        "type": "String"
+      }
+    }
+  },
+  "rewordPushed": "This commit is pushed already: a new message rewrites the branch, which then has to be force pushed.",
+  "opReword": "Edit commit message",
+  "forcePushTitle": "Force push {branch}?",
+  "@forcePushTitle": {
+    "placeholders": {
+      "branch": {
+        "type": "String"
+      }
+    }
+  },
+  "forcePushMessage": "Its rewritten commits replace the remote branch's, if nobody else updated it (--force-with-lease).",
+  "errRewordNotInHead": "Only a commit of the current branch's history can have its message edited"
 }

@@ -185,8 +185,7 @@ func (r *Repo) Commit(ctx context.Context, message string, amend bool) error {
 
 // LastMessage is HEAD's message, which amending starts from.
 func (r *Repo) LastMessage(ctx context.Context) string {
-	out, _ := r.Git(ctx, "log", "-1", "--format=%B")
-	return strings.TrimSpace(out)
+	return r.Message(ctx, "HEAD")
 }
 
 // RecentMessages are the messages of HEAD's last n commits, newest first

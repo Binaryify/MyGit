@@ -4849,3 +4849,73 @@ func MenuApp() string { return In(i18n.Locale()).MenuApp() }
 func (msgs Messages) MenuApp() string {
 	return Catalog.Format(msgs.locale, "menuApp", nil)
 }
+
+// EditCommitMessage says "Edit Commit Message…"
+// in the language the app shows.
+func EditCommitMessage() string { return In(i18n.Locale()).EditCommitMessage() }
+
+// EditCommitMessage says "Edit Commit Message…"
+// in the language of msgs.
+func (msgs Messages) EditCommitMessage() string {
+	return Catalog.Format(msgs.locale, "editCommitMessage", nil)
+}
+
+// RewordTitle says "Edit the message of {rev}"
+// in the language the app shows.
+func RewordTitle(rev string) string { return In(i18n.Locale()).RewordTitle(rev) }
+
+// RewordTitle says "Edit the message of {rev}"
+// in the language of msgs.
+func (msgs Messages) RewordTitle(rev string) string {
+	return Catalog.Format(msgs.locale, "rewordTitle", map[string]any{"rev": rev})
+}
+
+// RewordPushed says "This commit is pushed already: a new message rewrites the branch, which then has to be force pushed."
+// in the language the app shows.
+func RewordPushed() string { return In(i18n.Locale()).RewordPushed() }
+
+// RewordPushed says "This commit is pushed already: a new message rewrites the branch, which then has to be force pushed."
+// in the language of msgs.
+func (msgs Messages) RewordPushed() string {
+	return Catalog.Format(msgs.locale, "rewordPushed", nil)
+}
+
+// OpReword says "Edit commit message"
+// in the language the app shows.
+func OpReword() string { return In(i18n.Locale()).OpReword() }
+
+// OpReword says "Edit commit message"
+// in the language of msgs.
+func (msgs Messages) OpReword() string {
+	return Catalog.Format(msgs.locale, "opReword", nil)
+}
+
+// ForcePushTitle says "Force push {branch}?"
+// in the language the app shows.
+func ForcePushTitle(branch string) string { return In(i18n.Locale()).ForcePushTitle(branch) }
+
+// ForcePushTitle says "Force push {branch}?"
+// in the language of msgs.
+func (msgs Messages) ForcePushTitle(branch string) string {
+	return Catalog.Format(msgs.locale, "forcePushTitle", map[string]any{"branch": branch})
+}
+
+// ForcePushMessage says "Its rewritten commits replace the remote branch's, if nobody else updated it (--force-with-lease)."
+// in the language the app shows.
+func ForcePushMessage() string { return In(i18n.Locale()).ForcePushMessage() }
+
+// ForcePushMessage says "Its rewritten commits replace the remote branch's, if nobody else updated it (--force-with-lease)."
+// in the language of msgs.
+func (msgs Messages) ForcePushMessage() string {
+	return Catalog.Format(msgs.locale, "forcePushMessage", nil)
+}
+
+// ErrRewordNotInHead says "Only a commit of the current branch's history can have its message edited"
+// in the language the app shows.
+func ErrRewordNotInHead() string { return In(i18n.Locale()).ErrRewordNotInHead() }
+
+// ErrRewordNotInHead says "Only a commit of the current branch's history can have its message edited"
+// in the language of msgs.
+func (msgs Messages) ErrRewordNotInHead() string {
+	return Catalog.Format(msgs.locale, "errRewordNotInHead", nil)
+}

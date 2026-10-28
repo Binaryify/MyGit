@@ -67,6 +67,7 @@ func (a *app) view(c *ui.Context) {
 		a.openDropped(paths)
 	}
 	a.rebaseView(c)
+	a.rewordView(c)
 	a.pushView(c)
 	a.promptView(c)
 	a.worktreeView(c)

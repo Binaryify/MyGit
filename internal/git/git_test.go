@@ -424,6 +424,46 @@ func TestBlameAndRemote(t *testing.T) {
 	if err := r.Pull(ctx, PullRebase); err != nil {
 		t.Fatal(err)
 	}
+	if !r.Pushed(ctx, lines[0].Hash) {
+		t.Fatal("pushed commit not pushed")
+	}
+}
+
+func TestReword(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	for _, name := range []string{"a", "b", "c"} {
+		write(t, r, name+".txt", name)
+		_ = r.Stage(ctx, name+".txt")
+		_ = r.Commit(ctx, name, false)
+	}
+	write(t, r, "a.txt", "not committed") // stashed meanwhile, staged left out
+	write(t, r, "d.txt", "staged")
+	_ = r.Stage(ctx, "d.txt")
+	logged := func() []Commit {
+		var log []Commit
+		_ = r.Log(ctx, Scope{}, 10, func(c []Commit) { log = append(log, c...) })
+		return log
+	}
+	if err := r.Reword(ctx, logged()[0], "cee\n\nbody"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Reword(ctx, logged()[2], "ay"); err != nil {
+		t.Fatal(err)
+	}
+	var subjects []string
+	for _, c := range logged() {
+		subjects = append(subjects, c.Subject)
+	}
+	if !slices.Equal(subjects, []string{"cee", "b", "ay"}) || r.LastMessage(ctx) != "cee\n\nbody" {
+		t.Fatalf("history %v, last %q", subjects, r.LastMessage(ctx))
+	}
+	if out, _ := r.Git(ctx, "status", "--porcelain"); out != " M a.txt\nA  d.txt\n" {
+		t.Fatalf("changes %q", out)
+	}
+	if out, _ := r.Git(ctx, "show", "--stat", "--format=", "HEAD"); strings.Contains(out, "d.txt") {
+		t.Fatalf("staged change amended in: %s", out)
+	}
 }
 
 func TestCloneInitRemotes(t *testing.T) {

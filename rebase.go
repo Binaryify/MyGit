@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
 
 	"github.com/egoist/mygo/ui"
 
@@ -117,5 +118,69 @@ func (a *app) rebaseView(c *ui.Context) {
 				}
 			})
 		})
+	})
+}
+
+// rewordPlan is a commit's message being edited.
+type rewordPlan struct {
+	open    bool
+	commit  git.Commit
+	message string
+	pushed  bool // already upstream, so the branch is force pushed after
+}
+
+// planReword opens cm's whole message to edit, if cm is in HEAD's history.
+func (a *app) planReword(cm git.Commit) {
+	work(a, func(ctx context.Context) (rewordPlan, error) {
+		if !a.repo.IsAncestor(ctx, cm.Hash) {
+			return rewordPlan{}, errors.New(loc.ErrRewordNotInHead())
+		}
+		return rewordPlan{open: true, commit: cm, message: a.repo.Message(ctx, cm.Hash), pushed: a.repo.Pushed(ctx, cm.Hash)}, nil
+	}, func(p rewordPlan, err error) {
+		if err != nil {
+			a.errMsg = err.Error()
+			return
+		}
+		a.reword = p
+	})
+}
+
+func (a *app) rewordView(c *ui.Context) {
+	p := &a.reword
+	if !p.open {
+		return
+	}
+	ui.Modal(c, &p.open, func() {
+		ui.Column(c).Gap(10).Width(560).Children(func() {
+			ui.Text(c, loc.RewordTitle(p.commit.Short())).Bold().FontSize(15)
+			ui.TextArea(c.Key("msg"), &p.message).Label(loc.RebaseNewMessage()).AutoFocus().Lines(4, 12)
+			if p.pushed {
+				ui.Text(c, loc.RewordPushed()).TextColor(c.Theme().Danger)
+			}
+			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+				if ui.Button(c, loc.Cancel()).Clicked() {
+					p.open = false
+				}
+				msg := strings.TrimSpace(p.message)
+				if ui.PrimaryButton(c, loc.Save()).Disabled(msg == "" || a.busy != "").Clicked() {
+					p.open = false
+					cm, pushed := p.commit, p.pushed
+					a.run(loc.OpReword(), func(ctx context.Context) error { return a.repo.Reword(ctx, cm, msg) }, func() {
+						if pushed {
+							a.askForcePush()
+						}
+					})
+				}
+			})
+		})
+	})
+}
+
+// askForcePush offers to force push the branch whose pushed commits were
+// rewritten.
+func (a *app) askForcePush() {
+	st := a.status
+	a.ask(loc.ForcePushTitle(st.Branch), loc.ForcePushMessage(), loc.ForcePushButton(), func() {
+		a.run(loc.ForcePushButton(), func(ctx context.Context) error { return a.repo.Push(ctx, st, true) }, nil)
 	})
 }
