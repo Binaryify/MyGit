@@ -217,7 +217,7 @@ func (a *app) openCommands() {
 	add(idle && len(a.staged)+len(a.unstaged) > 0, loc.StashChanges(), "", a.stashChanges)
 	add(idle, loc.Fetch(), "", func() { a.run(loc.OpFetch(), a.repo.Fetch, nil) })
 	add(idle && a.status.Upstream != "", loc.Pull(), "", func() {
-		a.run(loc.OpPull(), func(ctx context.Context) error { return a.repo.Pull(ctx, git.PullFastForward) }, nil)
+		a.runPull(loc.OpPull(), func(ctx context.Context) error { return a.repo.Pull(ctx, git.PullFastForward) })
 	})
 	add(idle && a.status.Branch != "", loc.PushMenu(), "", a.openPush)
 	add(true, loc.Refresh(), shortcut("R"), a.refresh)

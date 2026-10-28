@@ -551,6 +551,58 @@ func TestPushDialog(t *testing.T) {
 	}
 }
 
+func TestPullStashesUntrackedInTheWay(t *testing.T) {
+	tt := newTester(t)
+	ctx := context.Background()
+	origin, other := t.TempDir(), filepath.Join(t.TempDir(), "other")
+	sh := func(dir string, args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v %s", args, err, out)
+		}
+	}
+	sh(origin, "init", "-q", "--bare", "-b", "main")
+	sh(tt.a.repo.Dir, "remote", "add", "origin", origin)
+	sh(tt.a.repo.Dir, "push", "-q", "-u", "origin", "main")
+	sh(origin, "clone", "-q", origin, other)
+	for _, name := range []string{"local.cfg", "配置.txt"} {
+		if err := os.WriteFile(filepath.Join(other, name), []byte("theirs"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	sh(other, "add", ".")
+	sh(other, "-c", "user.name=b", "-c", "user.email=b@b", "commit", "-qm", "Add the config")
+	sh(other, "push", "-q")
+	sh(tt.a.repo.Dir, "fetch", "-q")
+	for _, name := range []string{"local.cfg", "配置.txt", "notes.txt"} {
+		if err := os.WriteFile(filepath.Join(tt.a.repo.Dir, name), []byte("mine"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	tt.a.refresh()
+	tt.settle()
+	tt.a.runPull("拉取", func(ctx context.Context) error { return tt.a.repo.Pull(ctx, git.PullFastForward) })
+	tt.settle()
+	if q := tt.a.confirm; !q.open || q.message != loc.UntrackedInTheWayMessage("local.cfg\n配置.txt") || tt.a.errMsg != "" {
+		t.Fatalf("asking %+v, error %q", q, tt.a.errMsg)
+	}
+	tt.click(t, "存入 stash 并拉取")
+	tt.settle()
+	if out, _ := tt.a.repo.Git(ctx, "log", "-1", "--format=%s"); tt.a.errMsg != "" || out != "Add the config\n" {
+		t.Fatalf("error %q, HEAD %q", tt.a.errMsg, out)
+	}
+	for name, want := range map[string]string{"local.cfg": "theirs", "配置.txt": "theirs", "notes.txt": "mine"} {
+		if b, _ := os.ReadFile(filepath.Join(tt.a.repo.Dir, name)); string(b) != want {
+			t.Fatalf("%s: %q", name, b)
+		}
+	}
+	if out, _ := tt.a.repo.Git(ctx, "show", "stash@{0}^3:local.cfg"); out != "mine" {
+		t.Fatalf("stashed local.cfg %q", out)
+	}
+}
+
 func TestWelcome(t *testing.T) {
 	dir := t.TempDir()
 	w := &welcome{recent: []string{filepath.Join(dir, "project")}}

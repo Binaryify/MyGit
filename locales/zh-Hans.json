@@ -487,5 +487,10 @@
   "errRewordNotInHead": "只能编辑当前分支历史中的提交消息",
   "squashCommits": "压缩 {count} 个提交…",
   "squashTitle": "将 {count} 个提交压缩为一个",
-  "squash": "压缩"
+  "squash": "压缩",
+  "untrackedInTheWayTitle": "未跟踪的文件挡住了拉取",
+  "untrackedInTheWayMessage": "要拉取的提交里有和这些未跟踪文件同名的文件，git 不会覆盖它们：\n\n{files}\n\n可以先把它们存进 stash 再拉取，之后在 stash 列表里能找回。",
+  "stashAndPull": "存入 stash 并拉取",
+  "untrackedStashMessage": "拉取前存下的未跟踪文件",
+  "andMore": "等另外 {count} 个"
 }

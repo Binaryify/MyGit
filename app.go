@@ -256,6 +256,37 @@ func (a *app) run(label string, fn func(ctx context.Context) error, then func())
 	})
 }
 
+// runPull runs a pull, and when untracked files are in the way of files
+// it brings, offers to stash them and pull again, as they would be lost.
+func (a *app) runPull(label string, pull func(ctx context.Context) error) {
+	a.run(label, func(ctx context.Context) error {
+		err := pull(ctx)
+		files := git.UntrackedInTheWay(err)
+		if len(files) == 0 {
+			return err
+		}
+		a.update(func() {
+			a.ask(loc.UntrackedInTheWayTitle(), loc.UntrackedInTheWayMessage(listed(files, 10)), loc.StashAndPull(), func() {
+				a.run(label, func(ctx context.Context) error {
+					if err := a.repo.StashFiles(ctx, loc.UntrackedStashMessage(), files); err != nil {
+						return err
+					}
+					return pull(ctx)
+				}, nil)
+			})
+		})
+		return nil
+	}, nil)
+}
+
+// listed lists items a line each, the first n of them and how many more.
+func listed(items []string, n int) string {
+	if len(items) <= n {
+		return strings.Join(items, "\n")
+	}
+	return strings.Join(items[:n], "\n") + "\n" + loc.AndMore(len(items)-n)
+}
+
 type snapshot struct {
 	status   git.Status
 	branches []string

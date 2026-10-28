@@ -413,7 +413,7 @@ func counts(st git.Status) string {
 // sync brings the upstream's commits in, as git is set to pull, then
 // sends the branch's, as VS Code's Sync Changes does.
 func (a *app) sync() {
-	a.run(loc.OpSync(), func(ctx context.Context) error {
+	a.runPull(loc.OpSync(), func(ctx context.Context) error {
 		if a.status.Behind > 0 {
 			if err := a.repo.Pull(ctx, git.PullConfigured); err != nil {
 				return err
@@ -427,7 +427,7 @@ func (a *app) sync() {
 			return a.repo.Push(ctx, st, false)
 		}
 		return nil
-	}, nil)
+	})
 }
 
 // appAt is the window's repository at a location, of a window of its own

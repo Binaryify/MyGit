@@ -155,7 +155,7 @@ func (a *app) toolbar(c *ui.Context) {
 		})
 		ui.Button(c, loc.Pull()+" ▾").Label(loc.Pull()).Disabled(!idle || st.Upstream == "").Menu(func(m *ui.Menu) {
 			pull := func(mode git.PullMode) {
-				a.run(loc.OpPull(), func(ctx context.Context) error { return a.repo.Pull(ctx, mode) }, nil)
+				a.runPull(loc.OpPull(), func(ctx context.Context) error { return a.repo.Pull(ctx, mode) })
 			}
 			if m.Item(loc.PullFF()).Chosen() {
 				pull(git.PullFastForward)

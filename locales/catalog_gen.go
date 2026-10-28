@@ -4939,3 +4939,55 @@ func Squash() string { return In(i18n.Locale()).Squash() }
 func (msgs Messages) Squash() string {
 	return Catalog.Format(msgs.locale, "squash", nil)
 }
+
+// UntrackedInTheWayTitle says "Untracked files are in the way"
+// in the language the app shows.
+func UntrackedInTheWayTitle() string { return In(i18n.Locale()).UntrackedInTheWayTitle() }
+
+// UntrackedInTheWayTitle says "Untracked files are in the way"
+// in the language of msgs.
+func (msgs Messages) UntrackedInTheWayTitle() string {
+	return Catalog.Format(msgs.locale, "untrackedInTheWayTitle", nil)
+}
+
+// UntrackedInTheWayMessage says "The commits being pulled add files at the paths of these untracked ones, which git won't overwrite:\n\n{files}\n\nThey ca…"
+// in the language the app shows.
+func UntrackedInTheWayMessage(files string) string {
+	return In(i18n.Locale()).UntrackedInTheWayMessage(files)
+}
+
+// UntrackedInTheWayMessage says "The commits being pulled add files at the paths of these untracked ones, which git won't overwrite:\n\n{files}\n\nThey ca…"
+// in the language of msgs.
+func (msgs Messages) UntrackedInTheWayMessage(files string) string {
+	return Catalog.Format(msgs.locale, "untrackedInTheWayMessage", map[string]any{"files": files})
+}
+
+// StashAndPull says "Stash Them and Pull"
+// in the language the app shows.
+func StashAndPull() string { return In(i18n.Locale()).StashAndPull() }
+
+// StashAndPull says "Stash Them and Pull"
+// in the language of msgs.
+func (msgs Messages) StashAndPull() string {
+	return Catalog.Format(msgs.locale, "stashAndPull", nil)
+}
+
+// UntrackedStashMessage says "Untracked files in the way of a pull"
+// in the language the app shows.
+func UntrackedStashMessage() string { return In(i18n.Locale()).UntrackedStashMessage() }
+
+// UntrackedStashMessage says "Untracked files in the way of a pull"
+// in the language of msgs.
+func (msgs Messages) UntrackedStashMessage() string {
+	return Catalog.Format(msgs.locale, "untrackedStashMessage", nil)
+}
+
+// AndMore says "and {count} more"
+// in the language the app shows.
+func AndMore(count int) string { return In(i18n.Locale()).AndMore(count) }
+
+// AndMore says "and {count} more"
+// in the language of msgs.
+func (msgs Messages) AndMore(count int) string {
+	return Catalog.Format(msgs.locale, "andMore", map[string]any{"count": count})
+}

@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"strconv"
 	"strings"
 )
 
@@ -139,6 +140,30 @@ func (r *Repo) DeleteBranch(ctx context.Context, name string, force bool) error 
 	}
 	_, err := r.Git(ctx, "branch", flag, name)
 	return err
+}
+
+// UntrackedInTheWay are the untracked files a pull, a merge or a checkout
+// failed not to overwrite with files of the same paths it brings.
+func UntrackedInTheWay(err error) []string {
+	if err == nil {
+		return nil
+	}
+	_, list, ok := strings.Cut(err.Error(), "untracked working tree files would be overwritten by")
+	if !ok {
+		return nil
+	}
+	var paths []string
+	for _, line := range strings.Split(list, "\n")[1:] {
+		if !strings.HasPrefix(line, "\t") {
+			break
+		}
+		path := strings.TrimPrefix(line, "\t")
+		if p, err := strconv.Unquote(path); err == nil { // git quotes unusual paths, C's way
+			path = p
+		}
+		paths = append(paths, path)
+	}
+	return paths
 }
 
 // NotMerged tells whether DeleteBranch failed for a branch not merged.

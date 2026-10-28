@@ -1360,5 +1360,24 @@
       }
     }
   },
-  "squash": "Squash"
+  "squash": "Squash",
+  "untrackedInTheWayTitle": "Untracked files are in the way",
+  "untrackedInTheWayMessage": "The commits being pulled add files at the paths of these untracked ones, which git won't overwrite:\n\n{files}\n\nThey can be stashed first, and found in the stashes after.",
+  "@untrackedInTheWayMessage": {
+    "placeholders": {
+      "files": {
+        "type": "String"
+      }
+    }
+  },
+  "stashAndPull": "Stash Them and Pull",
+  "untrackedStashMessage": "Untracked files in the way of a pull",
+  "andMore": "and {count} more",
+  "@andMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

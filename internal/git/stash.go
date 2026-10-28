@@ -46,6 +46,16 @@ func (r *Repo) StashPush(ctx context.Context, message string, untracked bool) er
 	return err
 }
 
+// StashFiles stashes untracked files, as they are, and removes them.
+func (r *Repo) StashFiles(ctx context.Context, message string, paths []string) error {
+	args := []string{"stash", "push", "--include-untracked", "-m", message, "--"}
+	for _, p := range paths {
+		args = append(args, ":(literal)"+p)
+	}
+	_, err := r.Git(ctx, args...)
+	return err
+}
+
 // StashApply applies a stash's changes, restoring what was staged as
 // staged; pop drops the stash once applied.
 func (r *Repo) StashApply(ctx context.Context, ref string, pop bool) error {
