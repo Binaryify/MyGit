@@ -36,13 +36,18 @@ const (
 	PullConfigured  PullMode = ""            // as git is set to, pull.rebase
 )
 
-// Pull brings the upstream's commits in.
+// Pull brings the upstream's commits in, stashing the changes not
+// committed meanwhile, as IntelliJ does. A git before 2.27 stashes only
+// with a rebase, and pulls otherwise as it can.
 func (r *Repo) Pull(ctx context.Context, mode PullMode) error {
 	args := []string{"pull"}
 	if mode != PullConfigured {
 		args = append(args, string(mode))
 	}
-	_, err := r.Git(ctx, args...)
+	_, err := r.Git(ctx, append(args, "--autostash")...)
+	if err != nil && strings.Contains(err.Error(), "autostash") {
+		_, err = r.Git(ctx, args...)
+	}
 	return err
 }
 

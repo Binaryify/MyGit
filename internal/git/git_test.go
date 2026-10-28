@@ -628,3 +628,48 @@ func TestWorktrees(t *testing.T) {
 		}
 	}
 }
+
+func TestPullStashesChanges(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	write(t, r, "a.txt", "one\ntwo\nthree\nfour\nfive\n")
+	_ = r.Stage(ctx, "a.txt")
+	_ = r.Commit(ctx, "a", false)
+	origin := t.TempDir()
+	if _, err := git(ctx, Local, origin, "", nil, "init", "-q", "--bare"); err != nil {
+		t.Fatal(err)
+	}
+	_, _ = r.Git(ctx, "remote", "add", "origin", origin)
+	st, _ := r.Status(ctx)
+	if err := r.Push(ctx, st, false); err != nil {
+		t.Fatal(err)
+	}
+	other := filepath.Join(t.TempDir(), "other")
+	if _, err := git(ctx, Local, "", "", nil, "clone", "-q", origin, other); err != nil {
+		t.Fatal(err)
+	}
+	// Each pull brings a change to the file's last line in, while its first
+	// line is changed here and not committed.
+	for i, mode := range []PullMode{PullFastForward, PullRebase, PullMerge} {
+		last := fmt.Sprintf("five %d\n", i)
+		if err := os.WriteFile(filepath.Join(other, "a.txt"), []byte("one\ntwo\nthree\nfour\n"+last), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := git(ctx, Local, other, "", nil, "-c", "user.name=b", "-c", "user.email=b@b", "commit", "-qam", last); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := git(ctx, Local, other, "", nil, "push", "-q"); err != nil {
+			t.Fatal(err)
+		}
+		write(t, r, "a.txt", "ONE\ntwo\nthree\nfour\nfive\n")
+		if i > 0 {
+			write(t, r, "a.txt", fmt.Sprintf("ONE\ntwo\nthree\nfour\nfive %d\n", i-1))
+		}
+		if err := r.Pull(ctx, mode); err != nil {
+			t.Fatalf("%s: %v", mode, err)
+		}
+		if b, _ := os.ReadFile(filepath.Join(r.Dir, "a.txt")); string(b) != "ONE\ntwo\nthree\nfour\n"+last {
+			t.Fatalf("%s: a.txt %q", mode, b)
+		}
+	}
+}
