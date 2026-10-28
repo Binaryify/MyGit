@@ -24,7 +24,7 @@ type settings struct {
 	Theme            mygo.ThemeSource `json:"theme,omitempty"` // light or dark, "" for the system's
 	Unified          bool             `json:"unified"`
 	IgnoreWhitespace bool             `json:"ignoreWhitespace"`
-	FoldUnchanged    bool             `json:"foldUnchanged"` // a changed file's lines away from its changes, as it shows whole
+	FoldUnchanged    bool             `json:"foldUnchanged"`            // a changed file's lines away from its changes, as it shows whole
 	FoldedBranches   map[string]bool  `json:"foldedBranches,omitempty"` // the branches' popover's sections folded, by kind
 	SidebarW         float32          `json:"sidebarW"`
 	LogH             float32          `json:"logH"`
