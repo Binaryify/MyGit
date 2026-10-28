@@ -65,7 +65,8 @@ type app struct {
 	genMarked                map[string]bool // the changes .gitattributes marks generated
 	stagedList, unstagedList ui.ListState
 	stagedSel, unstagedSel   int
-	stagedRow, unstagedRow   int // the rows of the changes chosen, as the filter shows them
+	stagedRow, unstagedRow   int             // the rows of the changes chosen, as the filter shows them
+	foldedDirs               map[string]bool // the folders folded of the lists shown as trees, by list and path
 	filter                   changeFilter
 
 	message string
@@ -78,6 +79,7 @@ type app struct {
 
 	detail   detail
 	fileList ui.ListState // of the commit's files
+	fileRow  int          // its row chosen, a file's or, shown as a tree, a folder's
 
 	unfolded map[string]bool // generated files whose diffs were asked for, by foldKey
 	viewed   map[string]bool // files marked viewed, by viewKey
@@ -156,7 +158,7 @@ func (a *app) start() {
 	a.logList.Label = func(i int) string { return a.commits[a.commitAt(i)].Subject }
 	a.stagedList.Selected, a.unstagedList.Selected = &a.stagedRow, &a.unstagedRow
 	a.stashList.Selected = &a.stashSel
-	a.fileList.Selected = &a.detail.fileSel
+	a.fileList.Selected = &a.fileRow
 	if a.win != nil {
 		a.update = a.win.Update
 		a.win.OnFocus(a.refresh) // the repository may have changed in a terminal

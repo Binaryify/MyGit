@@ -493,5 +493,7 @@
   "stashAndPull": "存入 stash 并拉取",
   "untrackedStashMessage": "拉取前存下的未跟踪文件",
   "andMore": "等另外 {count} 个",
-  "foldUnchanged": "折叠未更改"
+  "foldUnchanged": "折叠未更改",
+  "viewAsTree": "以树形式查看",
+  "viewAsList": "以列表形式查看"
 }

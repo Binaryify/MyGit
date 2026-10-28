@@ -26,6 +26,7 @@ type settings struct {
 	IgnoreWhitespace bool             `json:"ignoreWhitespace"`
 	FoldUnchanged    bool             `json:"foldUnchanged"`            // a changed file's lines away from its changes, as it shows whole
 	FoldedBranches   map[string]bool  `json:"foldedBranches,omitempty"` // the branches' popover's sections folded, by kind
+	TreeView         bool             `json:"treeView"`                 // the lists of files show as trees
 	SidebarW         float32          `json:"sidebarW"`
 	LogH             float32          `json:"logH"`
 	FilesW           float32          `json:"filesW"`

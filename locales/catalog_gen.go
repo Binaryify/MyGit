@@ -5001,3 +5001,23 @@ func FoldUnchanged() string { return In(i18n.Locale()).FoldUnchanged() }
 func (msgs Messages) FoldUnchanged() string {
 	return Catalog.Format(msgs.locale, "foldUnchanged", nil)
 }
+
+// ViewAsTree says "View as Tree"
+// in the language the app shows.
+func ViewAsTree() string { return In(i18n.Locale()).ViewAsTree() }
+
+// ViewAsTree says "View as Tree"
+// in the language of msgs.
+func (msgs Messages) ViewAsTree() string {
+	return Catalog.Format(msgs.locale, "viewAsTree", nil)
+}
+
+// ViewAsList says "View as List"
+// in the language the app shows.
+func ViewAsList() string { return In(i18n.Locale()).ViewAsList() }
+
+// ViewAsList says "View as List"
+// in the language of msgs.
+func (msgs Messages) ViewAsList() string {
+	return Catalog.Format(msgs.locale, "viewAsList", nil)
+}

@@ -236,13 +236,23 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 	if staged {
 		list, sel, row = &a.stagedList, &a.stagedSel, &a.stagedRow
 	}
-	// The list chooses rows; the app, changes, by their indices.
+	// The list chooses rows; the app, changes, by their indices. A tree's
+	// rows are folders too, which are no change.
+	key := map[bool]string{true: "staged", false: "changes"}[staged]
 	rows := a.shownRows(staged)
-	n, at := len(changes), func(r int) int { return r }
-	if rows != nil {
-		n, at = len(rows), func(r int) int { return rows[r] }
+	items := rows
+	if items == nil {
+		items = make([]int, len(changes))
+		for i := range items {
+			items[i] = i
+		}
 	}
-	*row = rowOf(rows, *sel)
+	tree, n, at := a.listRows(key, items, func(i int) string { return changes[i].Path })
+	if tree != nil {
+		*row = treeRowOf(tree, *sel)
+	} else {
+		*row = rowOf(rows, *sel)
+	}
 	// A fixed height, so the header doesn't move as its button comes and
 	// goes; the button stays while git runs, doing nothing then.
 	head := ui.Row(c).Height(32).Padding(4, 8, 0, 10).Gap(6).AlignItems(ui.Center)
@@ -255,11 +265,12 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		ui.Text(c, title).Bold().TextColor(t.TextMuted)
 		count := fmt.Sprint(len(changes))
 		if rows != nil {
-			count = fmt.Sprintf("%d/%d", n, len(changes))
+			count = fmt.Sprintf("%d/%d", len(items), len(changes))
 		}
 		ui.Badge(c, count)
 		ui.Box(c).Grow(1)
-		if n > 0 {
+		if len(items) > 0 {
+			treeToggle(c)
 			idle := a.busy == ""
 			if staged {
 				if iconButton(c, "minus", loc.UnstageAll()) && idle {
@@ -271,11 +282,20 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		}
 	})
 	l := ui.List(c.Key(title), list, n, func(i int) {
+		if at(i) < 0 {
+			a.folderRow(c, key, tree[i])
+			return
+		}
 		ch := changes[at(i)]
 		chosen := i == *row
 		// As VS Code's: the name, its folder, the actions while the
-		// pointer is over the row, and the change's letter at the end.
-		row := ui.Row(c).Height(24).Padding(0, 8, 0, 10).Gap(6).AlignItems(ui.Center)
+		// pointer is over the row, and the change's letter at the end;
+		// in a tree, the name alone, in from its folder's.
+		indent := float32(10)
+		if tree != nil {
+			indent = 22 + float32(tree[i].depth)*treeIndent
+		}
+		row := ui.Row(c).Height(24).Padding(0, 8, 0, indent).Gap(6).AlignItems(ui.Center)
 		if chosen {
 			row.TextColor(t.AccentText)
 		}
@@ -293,7 +313,7 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 			if chosen {
 				muted = t.AccentText.Alpha(0.75)
 			}
-			if dir != "." {
+			if dir != "." && tree == nil {
 				ui.Text(c, dir).FontSize(11).TextColor(muted).SingleLine().Grow(1).Basis(0)
 			} else {
 				ui.Box(c).Grow(1)
@@ -340,11 +360,13 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 	} else {
 		l.Height(float32(n * 24))
 	}
-	if l.Changed() && *row >= 0 && *row < n {
+	folder := *row >= 0 && *row < n && at(*row) < 0
+	if (l.Changed() || l.Submitted()) && folder {
+		a.toggleFolder(key, tree[*row].dir)
+	} else if l.Changed() && *row >= 0 && *row < n {
 		// One change is chosen at a time, of both lists.
 		a.chooseChange(at(*row), staged)
-	}
-	if l.Submitted() && *row >= 0 && *row < n {
+	} else if l.Submitted() && *row >= 0 && *row < n {
 		a.toggleStage(changes[at(*row)], staged)
 	}
 	// The keys of VS Code's and Finder's lists: space stages or unstages
@@ -525,7 +547,8 @@ func (a *app) filesPane(c *ui.Context) {
 	ui.Column(c).Fill().Children(func() {
 		if len(files) > 1 {
 			ui.Row(c).Height(26).Padding(0, 10).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
-				ui.Text(c, loc.ViewedCount(a.viewedCount(), len(files))).FontSize(11).TextColor(t.TextMuted)
+				ui.Text(c, loc.ViewedCount(a.viewedCount(), len(files))).FontSize(11).TextColor(t.TextMuted).Grow(1)
+				treeToggle(c)
 			})
 		}
 		a.filesList(c)
@@ -535,7 +558,21 @@ func (a *app) filesPane(c *ui.Context) {
 func (a *app) filesList(c *ui.Context) {
 	t := c.Theme()
 	files := a.detail.files
-	l := ui.List(c, &a.fileList, len(files), func(i int) {
+	items := make([]int, len(files))
+	for i := range items {
+		items[i] = i
+	}
+	tree, n, at := a.listRows("files", items, func(i int) string { return fileName(files[i]) })
+	a.fileRow = a.detail.fileSel
+	if tree != nil {
+		a.fileRow = treeRowOf(tree, a.detail.fileSel)
+	}
+	l := ui.List(c, &a.fileList, n, func(r int) {
+		if at(r) < 0 {
+			a.folderRow(c, "files", tree[r])
+			return
+		}
+		i := at(r)
 		f := files[i]
 		code, name := byte('M'), f.NewName
 		switch {
@@ -551,7 +588,11 @@ func (a *app) filesList(c *ui.Context) {
 			rev = a.detail.commit.Hash
 		}
 		viewed, gen := a.isViewed(i), a.detail.generated[i]
-		row := ui.Row(c).Height(24).Padding(0, 8, 0, 4).Gap(6).AlignItems(ui.Center).Tooltip(name)
+		indent := float32(4)
+		if tree != nil {
+			indent = 16 + float32(tree[r].depth)*treeIndent
+		}
+		row := ui.Row(c).Height(24).Padding(0, 8, 0, indent).Gap(6).AlignItems(ui.Center).Tooltip(name)
 		row.ContextMenu(func(m *ui.Menu) {
 			if m.Item(map[bool]string{true: loc.MarkUnviewed(), false: loc.MarkViewed()}[viewed]).Chosen() {
 				a.toggleViewed(i)
@@ -581,7 +622,7 @@ func (a *app) filesList(c *ui.Context) {
 			if (viewed || gen) && !chosen {
 				nameText.TextColor(t.TextMuted)
 			}
-			if dir := path.Dir(name); dir != "." {
+			if dir := path.Dir(name); dir != "." && tree == nil {
 				ui.Text(c, dir).FontSize(11).TextColor(muted).SingleLine().Grow(1).Basis(0)
 			} else {
 				ui.Box(c).Grow(1)
@@ -593,8 +634,13 @@ func (a *app) filesList(c *ui.Context) {
 				Width(14).TextAlign(ui.Center).Tooltip(changeName(code))
 		})
 	}).Grow(1).Basis(0)
-	if l.Changed() && a.detail.fileSel >= 0 && a.detail.fileSel < len(files) {
-		a.showFile(a.detail.fileSel)
+	if r := a.fileRow; l.Changed() && r >= 0 && r < n {
+		if at(r) < 0 {
+			a.toggleFolder("files", tree[r].dir)
+		} else {
+			a.detail.fileSel = at(r)
+			a.showFile(a.detail.fileSel)
+		}
 	}
 	// Space marks the file chosen viewed and goes on to the next, as
 	// GitHub's review does with its checkbox.
