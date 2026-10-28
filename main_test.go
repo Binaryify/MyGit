@@ -1070,6 +1070,42 @@ func TestBranchMenuClosesPopover(t *testing.T) {
 	}
 }
 
+// A section of the branches' popover folds, as kept, and shows again
+// while searching.
+func TestFoldBranchSections(t *testing.T) {
+	defer func(f map[string]bool) { prefs.FoldedBranches = f }(prefs.FoldedBranches)
+	prefs.FoldedBranches = nil
+	tt := newTester(t)
+	if err := tt.a.repo.Tag(context.Background(), "v1.0", "HEAD", ""); err != nil {
+		t.Fatal(err)
+	}
+	tt.a.refresh()
+	tt.settle()
+	tt.click(t, "分支")
+	tags := func() int { // the history's badge, and the popover's rows
+		return strings.Count(strings.Join(tt.Texts(), "\x00")+"\x00", "v1.0\x00")
+	}
+	shown := tags()
+	tt.click(t, loc.BranchesTags())
+	tt.Frame()
+	folded := tags()
+	if !prefs.FoldedBranches["tags"] || folded >= shown || !tt.HasText("feature") {
+		t.Fatalf("folded %v, %d of %d tags, texts %q", prefs.FoldedBranches, folded, shown, tt.Texts())
+	}
+	tt.a.branchFilter = "v1"
+	tt.Frame()
+	if tags() != shown {
+		t.Fatalf("searching: texts %q", tt.Texts())
+	}
+	tt.a.branchFilter = ""
+	tt.Frame()
+	tt.click(t, loc.BranchesTags())
+	tt.Frame()
+	if prefs.FoldedBranches["tags"] || tags() != shown {
+		t.Fatalf("unfolded %v, texts %q", prefs.FoldedBranches, tt.Texts())
+	}
+}
+
 // The branches' popover lists the tags too, each with its menu: its
 // history shows the tag's.
 func TestTagsInBranchesPopover(t *testing.T) {

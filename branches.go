@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"path/filepath"
 	"strings"
@@ -191,28 +192,26 @@ func (a *app) branchesButton(c *ui.Context, label string) {
 			ui.Scroll(c).MaxHeight(420).Gap(1).Children(func() {
 				// cur is the section's current one, checked: the current branch
 				// among the local ones.
-				section := func(title string, names []string, cur string, items func(*ui.Menu, string)) {
-					if len(names) == 0 {
+				section := func(kind, title string, names []string, cur string, items func(*ui.Menu, string)) {
+					if len(names) == 0 || !sectionHeader(c, kind, title, len(names), q != "") {
 						return
 					}
-					ui.Text(c, title).FontSize(11).Bold().TextColor(t.TextMuted).Padding(8, 8, 2, 8)
 					for _, n := range names {
 						ui.Box(c.Key(title + n)).Children(func() {
 							branchMenuRow(c, n, n == cur, func(m *ui.Menu) { items(m, n) })
 						})
 					}
 				}
-				section(loc.BranchesLocal(), local, a.status.Branch, a.branchItems)
-				section(loc.BranchesRemote(), remote, "", a.remoteItems)
-				section(loc.BranchesTags(), tags, "", a.tagItems)
-				if len(trees) > 0 {
-					// A submodule's are its own, apart from the superproject's.
-					ui.Row(c).Gap(6).Padding(8, 8, 2, 8).Children(func() {
-						ui.Text(c, loc.BranchesWorktrees()).FontSize(11).Bold().TextColor(t.TextMuted)
-						if a.super != "" {
-							ui.Text(c, loc.WorktreeSubmodule()).FontSize(11).TextColor(t.TextMuted)
-						}
-					})
+				section("local", loc.BranchesLocal(), local, a.status.Branch, a.branchItems)
+				section("remote", loc.BranchesRemote(), remote, "", a.remoteItems)
+				section("tags", loc.BranchesTags(), tags, "", a.tagItems)
+				// A submodule's working trees are its own, apart from the
+				// superproject's.
+				title := loc.BranchesWorktrees()
+				if a.super != "" {
+					title += " · " + loc.WorktreeSubmodule()
+				}
+				if len(trees) > 0 && sectionHeader(c, "worktrees", title, len(trees), q != "") {
 					for _, w := range trees {
 						ui.Box(c.Key("worktree" + w.Dir)).Children(func() {
 							current := w.Dir == a.repo.Dir
@@ -227,6 +226,30 @@ func (a *app) branchesButton(c *ui.Context, label string) {
 			})
 		})
 	})
+}
+
+// sectionHeader is the title of a section of the branches' popover, with
+// how many it lists, which folds or unfolds it, as kept; it reports
+// whether the section shows, as it always does while searching.
+func sectionHeader(c *ui.Context, kind, title string, n int, searching bool) bool {
+	t := c.Theme()
+	open := searching || !prefs.FoldedBranches[kind]
+	icon := map[bool]string{true: "chevron-down", false: "chevron-right"}[open]
+	h := ui.ButtonBase(c.Key("section "+kind)).Padding(8, 8, 2, 4).Gap(4).AlignItems(ui.Center).Justify(ui.Start).
+		Label(title).Cursor(ui.CursorPointer)
+	h.Children(func() {
+		ui.Icon(c, icons[icon]).Size(12, 12).TextColor(t.TextMuted)
+		ui.Text(c, title).FontSize(11).Bold().TextColor(t.TextMuted)
+		ui.Text(c, fmt.Sprint(n)).FontSize(11).TextColor(t.TextMuted)
+	})
+	if h.Clicked() && !searching {
+		if prefs.FoldedBranches == nil {
+			prefs.FoldedBranches = map[string]bool{}
+		}
+		prefs.FoldedBranches[kind] = open
+		prefs.save()
+	}
+	return open
 }
 
 // branchRow is a row of the branches' popover, the current branch's
