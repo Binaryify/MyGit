@@ -142,6 +142,15 @@ func (a *app) planReword(cm git.Commit) {
 // planSquash opens the messages of the commits chosen in the history,
 // oldest first, to squash them into one with.
 func (a *app) planSquash() {
+	chosen := a.chosenCommits()
+	oldest, others := chosen[0], hashes(chosen[1:])
+	a.planMessage(loc.SquashTitle(len(chosen)), loc.Squash(), chosen, func(ctx context.Context, msg string) error {
+		return a.repo.Squash(ctx, oldest, others, msg)
+	})
+}
+
+// chosenCommits are the commits chosen in the history, oldest first.
+func (a *app) chosenCommits() []git.Commit {
 	var chosen []git.Commit // newest first, as the history
 	for _, cm := range a.commits {
 		if a.logChosen.Has(cm.Hash) {
@@ -149,12 +158,50 @@ func (a *app) planSquash() {
 		}
 	}
 	slices.Reverse(chosen)
-	oldest, others := chosen[0], make([]string, 0, len(chosen)-1)
-	for _, cm := range chosen[1:] {
-		others = append(others, cm.Hash)
+	return chosen
+}
+
+// hashes are the commits' hashes.
+func hashes(commits []git.Commit) []string {
+	out := make([]string, len(commits))
+	for i, cm := range commits {
+		out[i] = cm.Hash
 	}
-	a.planMessage(loc.SquashTitle(len(chosen)), loc.Squash(), chosen, func(ctx context.Context, msg string) error {
-		return a.repo.Squash(ctx, oldest, others, msg)
+	return out
+}
+
+// planDrop asks before deleting commits of HEAD's history, oldest first,
+// saying so when they are pushed, as the branch is force pushed after.
+func (a *app) planDrop(commits []git.Commit) {
+	oldest, others := commits[0], hashes(commits[1:])
+	work(a, func(ctx context.Context) (bool, error) {
+		for _, cm := range commits {
+			if !a.repo.IsAncestor(ctx, cm.Hash) {
+				return false, errors.New(loc.ErrRewordNotInHead())
+			}
+		}
+		return a.repo.Pushed(ctx, oldest.Hash), nil
+	}, func(pushed bool, err error) {
+		if err != nil {
+			a.errMsg = err.Error()
+			return
+		}
+		title := loc.DropCommitTitle(oldest.Short())
+		if len(commits) > 1 {
+			title = loc.DropCommitsTitle(len(commits))
+		}
+		message := loc.DropCommitMessage()
+		if pushed {
+			message += "\n\n" + loc.RewordPushed()
+		}
+		a.ask(title, message, loc.Delete(), func() {
+			a.run(title, func(ctx context.Context) error { return a.repo.Drop(ctx, oldest, others) }, func() {
+				a.logChosen.Clear()
+				if pushed {
+					a.askForcePush()
+				}
+			})
+		})
 	})
 }
 

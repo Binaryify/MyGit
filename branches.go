@@ -377,8 +377,15 @@ func (a *app) commitMenu(m *ui.Menu, cm git.Commit) {
 	if m.Item(loc.EditCommitMessage()).Shortcut(0, ui.KeyF2).Chosen() {
 		a.planReword(cm)
 	}
-	if n := a.logChosen.Len(); n > 1 && a.logChosen.Has(cm.Hash) && m.Item(loc.SquashCommits(n)).Chosen() {
-		a.planSquash()
+	if n := a.logChosen.Len(); n > 1 && a.logChosen.Has(cm.Hash) {
+		if m.Item(loc.SquashCommits(n)).Chosen() {
+			a.planSquash()
+		}
+		if m.Item(loc.DropCommits(n)).Chosen() {
+			a.planDrop(a.chosenCommits())
+		}
+	} else if m.Item(loc.DropCommit()).Chosen() {
+		a.planDrop([]git.Commit{cm})
 	}
 	if m.Item(loc.RebaseFromHere()).Chosen() {
 		a.planRebase(cm)

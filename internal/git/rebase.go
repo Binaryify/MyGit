@@ -169,16 +169,9 @@ func (r *Repo) Reword(ctx context.Context, cm Commit, message string) error {
 // and the others, moved after it, fixed up into it. What follows oldest
 // is rebased.
 func (r *Repo) Squash(ctx context.Context, oldest Commit, others []string, message string) error {
-	base := ""
-	if len(oldest.Parents) > 0 {
-		base = oldest.Parents[0]
-	}
-	steps, err := r.RebaseSteps(ctx, base)
+	base, steps, err := r.stepsFrom(ctx, oldest)
 	if err != nil {
 		return err
-	}
-	if len(steps) == 0 || steps[0].Hash != oldest.Hash {
-		return errors.New(loc.ErrRewordNotInHead())
 	}
 	steps[0].Action, steps[0].Message = Reword, message
 	var melded, rest []RebaseStep
@@ -194,4 +187,41 @@ func (r *Repo) Squash(ctx context.Context, oldest Commit, others []string, messa
 		return errors.New(loc.ErrRewordNotInHead())
 	}
 	return r.RebaseInteractive(ctx, base, slices.Concat(steps[:1], melded, rest))
+}
+
+// Drop takes commits of HEAD's history out of it, oldest the oldest of
+// them and others the rest, rebasing what follows oldest.
+func (r *Repo) Drop(ctx context.Context, oldest Commit, others []string) error {
+	base, steps, err := r.stepsFrom(ctx, oldest)
+	if err != nil {
+		return err
+	}
+	dropped := 0
+	for i := range steps {
+		if i == 0 || slices.Contains(others, steps[i].Hash) {
+			steps[i].Action = Drop
+			dropped++
+		}
+	}
+	if dropped != len(others)+1 {
+		return errors.New(loc.ErrRewordNotInHead())
+	}
+	return r.RebaseInteractive(ctx, base, steps)
+}
+
+// stepsFrom lists HEAD's commits from oldest on, all picked, and the
+// commit they go on, "" for the root.
+func (r *Repo) stepsFrom(ctx context.Context, oldest Commit) (string, []RebaseStep, error) {
+	base := ""
+	if len(oldest.Parents) > 0 {
+		base = oldest.Parents[0]
+	}
+	steps, err := r.RebaseSteps(ctx, base)
+	if err != nil {
+		return "", nil, err
+	}
+	if len(steps) == 0 || steps[0].Hash != oldest.Hash {
+		return "", nil, errors.New(loc.ErrRewordNotInHead())
+	}
+	return base, steps, nil
 }

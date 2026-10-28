@@ -4900,11 +4900,11 @@ func (msgs Messages) ForcePushMessage() string {
 	return Catalog.Format(msgs.locale, "forcePushMessage", nil)
 }
 
-// ErrRewordNotInHead says "Only a commit of the current branch's history can have its message edited"
+// ErrRewordNotInHead says "Only commits of the current branch's history can be changed"
 // in the language the app shows.
 func ErrRewordNotInHead() string { return In(i18n.Locale()).ErrRewordNotInHead() }
 
-// ErrRewordNotInHead says "Only a commit of the current branch's history can have its message edited"
+// ErrRewordNotInHead says "Only commits of the current branch's history can be changed"
 // in the language of msgs.
 func (msgs Messages) ErrRewordNotInHead() string {
 	return Catalog.Format(msgs.locale, "errRewordNotInHead", nil)
@@ -5030,4 +5030,54 @@ func Unpushed() string { return In(i18n.Locale()).Unpushed() }
 // in the language of msgs.
 func (msgs Messages) Unpushed() string {
 	return Catalog.Format(msgs.locale, "unpushed", nil)
+}
+
+// DropCommit says "Delete Commit…"
+// in the language the app shows.
+func DropCommit() string { return In(i18n.Locale()).DropCommit() }
+
+// DropCommit says "Delete Commit…"
+// in the language of msgs.
+func (msgs Messages) DropCommit() string {
+	return Catalog.Format(msgs.locale, "dropCommit", nil)
+}
+
+// DropCommits says "Delete {count} Commits…"
+// in the language the app shows.
+func DropCommits(count int) string { return In(i18n.Locale()).DropCommits(count) }
+
+// DropCommits says "Delete {count} Commits…"
+// in the language of msgs.
+func (msgs Messages) DropCommits(count int) string {
+	return Catalog.Format(msgs.locale, "dropCommits", map[string]any{"count": count})
+}
+
+// DropCommitTitle says "Delete commit {rev}?"
+// in the language the app shows.
+func DropCommitTitle(rev string) string { return In(i18n.Locale()).DropCommitTitle(rev) }
+
+// DropCommitTitle says "Delete commit {rev}?"
+// in the language of msgs.
+func (msgs Messages) DropCommitTitle(rev string) string {
+	return Catalog.Format(msgs.locale, "dropCommitTitle", map[string]any{"rev": rev})
+}
+
+// DropCommitsTitle says "Delete {count} commits?"
+// in the language the app shows.
+func DropCommitsTitle(count int) string { return In(i18n.Locale()).DropCommitsTitle(count) }
+
+// DropCommitsTitle says "Delete {count} commits?"
+// in the language of msgs.
+func (msgs Messages) DropCommitsTitle(count int) string {
+	return Catalog.Format(msgs.locale, "dropCommitsTitle", map[string]any{"count": count})
+}
+
+// DropCommitMessage says "Their changes leave the current branch's history, and the commits after them are rebased."
+// in the language the app shows.
+func DropCommitMessage() string { return In(i18n.Locale()).DropCommitMessage() }
+
+// DropCommitMessage says "Their changes leave the current branch's history, and the commits after them are rebased."
+// in the language of msgs.
+func (msgs Messages) DropCommitMessage() string {
+	return Catalog.Format(msgs.locale, "dropCommitMessage", nil)
 }

@@ -1343,7 +1343,7 @@
     }
   },
   "forcePushMessage": "Its rewritten commits replace the remote branch's, if nobody else updated it (--force-with-lease).",
-  "errRewordNotInHead": "Only a commit of the current branch's history can have its message edited",
+  "errRewordNotInHead": "Only commits of the current branch's history can be changed",
   "squashCommits": "Squash {count} Commits…",
   "@squashCommits": {
     "placeholders": {
@@ -1383,5 +1383,31 @@
   "foldUnchanged": "Fold Unchanged",
   "viewAsTree": "View as Tree",
   "viewAsList": "View as List",
-  "unpushed": "Not pushed yet"
+  "unpushed": "Not pushed yet",
+  "dropCommit": "Delete Commit…",
+  "dropCommits": "Delete {count} Commits…",
+  "@dropCommits": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dropCommitTitle": "Delete commit {rev}?",
+  "@dropCommitTitle": {
+    "placeholders": {
+      "rev": {
+        "type": "String"
+      }
+    }
+  },
+  "dropCommitsTitle": "Delete {count} commits?",
+  "@dropCommitsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dropCommitMessage": "Their changes leave the current branch's history, and the commits after them are rebased."
 }

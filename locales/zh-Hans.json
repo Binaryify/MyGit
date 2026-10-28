@@ -484,7 +484,7 @@
   "rewordPushed": "此提交已推送：修改消息会改写分支历史，之后需要强制推送。",
   "forcePushTitle": "强制推送 {branch}？",
   "forcePushMessage": "改写后的提交将替换远程分支上的提交（--force-with-lease：仅当没有其他人更新过远程分支时）。",
-  "errRewordNotInHead": "只能编辑当前分支历史中的提交消息",
+  "errRewordNotInHead": "只能操作当前分支历史中的提交",
   "squashCommits": "压缩 {count} 个提交…",
   "squashTitle": "将 {count} 个提交压缩为一个",
   "squash": "压缩",
@@ -496,5 +496,10 @@
   "foldUnchanged": "折叠未更改",
   "viewAsTree": "以树形式查看",
   "viewAsList": "以列表形式查看",
-  "unpushed": "未推送"
+  "unpushed": "未推送",
+  "dropCommit": "删除提交…",
+  "dropCommits": "删除 {count} 个提交…",
+  "dropCommitTitle": "删除提交 {rev}？",
+  "dropCommitsTitle": "删除 {count} 个提交？",
+  "dropCommitMessage": "这些提交的改动会从当前分支的历史中去掉，后面的提交会重新变基。"
 }

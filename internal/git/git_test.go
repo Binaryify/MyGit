@@ -704,3 +704,30 @@ func TestSquash(t *testing.T) {
 		t.Fatal("squashed a commit not in the history")
 	}
 }
+
+func TestDrop(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	for _, name := range []string{"a", "b", "c", "d"} {
+		write(t, r, name+".txt", name)
+		_ = r.Stage(ctx, name+".txt")
+		_ = r.Commit(ctx, name, false)
+	}
+	var log []Commit
+	_ = r.Log(ctx, Scope{}, 10, func(c []Commit) { log = append(log, c...) })
+	if err := r.Drop(ctx, log[2], []string{log[0].Hash}); err != nil { // b and d
+		t.Fatal(err)
+	}
+	log = nil
+	_ = r.Log(ctx, Scope{}, 10, func(c []Commit) { log = append(log, c...) })
+	var subjects []string
+	for _, c := range log {
+		subjects = append(subjects, c.Subject)
+	}
+	if !slices.Equal(subjects, []string{"c", "a"}) {
+		t.Fatalf("history %v", subjects)
+	}
+	if out, _ := r.Git(ctx, "ls-files"); out != "a.txt\nc.txt\n" {
+		t.Fatalf("files %q", out)
+	}
+}

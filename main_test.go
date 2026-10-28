@@ -499,6 +499,35 @@ func TestSquashCommits(t *testing.T) {
 	}
 }
 
+func TestDropCommit(t *testing.T) {
+	tt := newTester(t)
+	ctx := context.Background()
+	if _, err := tt.a.repo.Git(ctx, "switch", "-q", "feature"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tt.a.repo.Git(ctx, "-c", "user.name=a", "-c", "user.email=a@a", "commit", "-q", "--allow-empty", "-m", "Polish"); err != nil {
+		t.Fatal(err)
+	}
+	tt.a.refresh()
+	tt.settle()
+	if err := tt.RightClick("Add the feature"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("删除提交…"); err != nil {
+		t.Fatal(err)
+	}
+	tt.settle()
+	if !tt.a.confirm.open || tt.a.confirm.title != "删除提交 "+tt.a.commits[1].Short()+"？" {
+		t.Fatalf("asking %+v", tt.a.confirm)
+	}
+	tt.click(t, "删除")
+	tt.settle()
+	out, _ := tt.a.repo.Git(ctx, "log", "--format=%s")
+	if tt.a.errMsg != "" || out != "Polish\nStart\n" {
+		t.Fatalf("error %q, log %q", tt.a.errMsg, out)
+	}
+}
+
 func TestBlameAndParents(t *testing.T) {
 	tt := newTester(t)
 	tt.click(t, "Merge the feature")
