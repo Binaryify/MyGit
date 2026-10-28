@@ -675,9 +675,9 @@ func (a *app) showChange(c git.Change, staged bool) {
 			}
 			r.diff = textDiff(c.Path, r.old, r.new)
 			r.diff.Editable = true
-			// The whole file, as it is edited: folding the lines around the
-			// changes would move everything once a change is typed away.
-			r.diff.ExpandUnchanged = true
+			// The whole file, as it is edited, unless folded as asked: folding
+			// the lines around the changes moves them as a change is typed away.
+			r.diff.ExpandUnchanged = !prefs.FoldUnchanged
 		} else {
 			r.diff = patchDiff(files[0])
 		}

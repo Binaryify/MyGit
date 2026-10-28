@@ -24,6 +24,7 @@ type settings struct {
 	Theme            mygo.ThemeSource `json:"theme,omitempty"` // light or dark, "" for the system's
 	Unified          bool             `json:"unified"`
 	IgnoreWhitespace bool             `json:"ignoreWhitespace"`
+	FoldUnchanged    bool             `json:"foldUnchanged"` // a changed file's lines away from its changes, as it shows whole
 	SidebarW         float32          `json:"sidebarW"`
 	LogH             float32          `json:"logH"`
 	FilesW           float32          `json:"filesW"`

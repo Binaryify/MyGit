@@ -1379,5 +1379,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "foldUnchanged": "Fold Unchanged"
 }

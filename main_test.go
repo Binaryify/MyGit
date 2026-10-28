@@ -603,6 +603,51 @@ func TestPullStashesUntrackedInTheWay(t *testing.T) {
 	}
 }
 
+func TestFoldUnchanged(t *testing.T) {
+	defer func(on bool) { prefs.FoldUnchanged = on }(prefs.FoldUnchanged)
+	prefs.FoldUnchanged = false
+	tt := newTester(t)
+	ctx := context.Background()
+	var lines []string
+	for i := 1; i <= 40; i++ {
+		lines = append(lines, fmt.Sprintf("line %d", i))
+	}
+	path := filepath.Join(tt.a.repo.Dir, "long.txt")
+	if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tt.a.repo.Git(ctx, "add", "long.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tt.a.repo.Git(ctx, "-c", "user.name=a", "-c", "user.email=a@a", "commit", "-qm", "Long"); err != nil {
+		t.Fatal(err)
+	}
+	lines[29] = "line thirty"
+	if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	tt.a.refresh()
+	tt.settle()
+	tt.click(t, "long.txt")
+	tt.settle()
+	// Folded, the lines away from the change give way to separators that
+	// expand them.
+	whole := tt.Texts()
+	if !tt.a.detail.whole || !tt.a.detail.diff.ExpandUnchanged {
+		t.Fatalf("whole %v", tt.a.detail.whole)
+	}
+	tt.click(t, "折叠未更改")
+	tt.Frame()
+	if folded := tt.Texts(); !prefs.FoldUnchanged || len(folded) <= len(whole) {
+		t.Fatalf("folded %v, texts %q", prefs.FoldUnchanged, folded)
+	}
+	tt.click(t, "折叠未更改")
+	tt.Frame()
+	if prefs.FoldUnchanged || len(tt.Texts()) != len(whole) {
+		t.Fatalf("unfolded: texts %q", tt.Texts())
+	}
+}
+
 func TestWelcome(t *testing.T) {
 	dir := t.TempDir()
 	w := &welcome{recent: []string{filepath.Join(dir, "project")}}

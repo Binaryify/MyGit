@@ -4991,3 +4991,13 @@ func AndMore(count int) string { return In(i18n.Locale()).AndMore(count) }
 func (msgs Messages) AndMore(count int) string {
 	return Catalog.Format(msgs.locale, "andMore", map[string]any{"count": count})
 }
+
+// FoldUnchanged says "Fold Unchanged"
+// in the language the app shows.
+func FoldUnchanged() string { return In(i18n.Locale()).FoldUnchanged() }
+
+// FoldUnchanged says "Fold Unchanged"
+// in the language of msgs.
+func (msgs Messages) FoldUnchanged() string {
+	return Catalog.Format(msgs.locale, "foldUnchanged", nil)
+}

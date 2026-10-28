@@ -492,5 +492,6 @@
   "untrackedInTheWayMessage": "要拉取的提交里有和这些未跟踪文件同名的文件，git 不会覆盖它们：\n\n{files}\n\n可以先把它们存进 stash 再拉取，之后在 stash 列表里能找回。",
   "stashAndPull": "存入 stash 并拉取",
   "untrackedStashMessage": "拉取前存下的未跟踪文件",
-  "andMore": "等另外 {count} 个"
+  "andMore": "等另外 {count} 个",
+  "foldUnchanged": "折叠未更改"
 }

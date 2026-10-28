@@ -452,6 +452,10 @@ func (a *app) detailView(c *ui.Context) {
 				ui.Badge(c, side)
 				ui.Box(c).Grow(1)
 				a.changeNav(c)
+				if d.whole && d.diff != nil && ui.Toggle(c, &prefs.FoldUnchanged, loc.FoldUnchanged()).Changed() {
+					d.diff.ExpandUnchanged = !prefs.FoldUnchanged
+					prefs.save()
+				}
 				a.lineButtons(c)
 			})
 			a.diffView(c)
