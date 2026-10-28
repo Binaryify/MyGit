@@ -621,10 +621,13 @@ func (a *app) diffView(c *ui.Context) {
 		ui.Column(c).Fill().Center().Children(func() { ui.Text(c, loc.BinaryFile()).TextColor(t.TextMuted) })
 	case d.diff != nil:
 		a.reviewDiff(c, d.diff)
-		dv := editor.DiffView(c.Key(d.gen*1000+d.fileSel), d.diff).Fill()
-		if d.whole {
-			dv.OnShortcut(ui.Cmd, ui.KeyS, a.saveFile) // as the file is typed in
-		}
+		ui.Row(c).Fill().Children(func() {
+			dv := editor.DiffView(c.Key(d.gen*1000+d.fileSel), d.diff).Grow(1).Basis(0).AlignSelf(ui.Stretch)
+			if d.whole {
+				dv.OnShortcut(ui.Cmd, ui.KeyS, a.saveFile) // as the file is typed in
+			}
+			overview(c, d.diff)
+		})
 	default:
 		ui.Column(c).Fill().Center().Children(func() { ui.Text(c, loc.NoDiff()).TextColor(t.TextMuted) })
 	}

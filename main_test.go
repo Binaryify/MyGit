@@ -648,6 +648,45 @@ func TestFoldUnchanged(t *testing.T) {
 	}
 }
 
+func TestOverview(t *testing.T) {
+	tt := newTester(t)
+	ctx := context.Background()
+	var lines []string
+	for i := 1; i <= 60; i++ {
+		lines = append(lines, fmt.Sprintf("line %d", i))
+	}
+	path := filepath.Join(tt.a.repo.Dir, "long.txt")
+	write := func() {
+		if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write()
+	if _, err := tt.a.repo.Git(ctx, "add", "long.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tt.a.repo.Git(ctx, "-c", "user.name=a", "-c", "user.email=a@a", "commit", "-qm", "Long"); err != nil {
+		t.Fatal(err)
+	}
+	lines[4] = "line five"
+	lines = append(lines[:49], lines[50:]...) // line 50 goes
+	write()
+	tt.a.refresh()
+	tt.settle()
+	tt.click(t, "long.txt")
+	tt.settle()
+	d := tt.a.detail.diff
+	h := d.Hunks()
+	if len(h) != 2 || hunkPreview(d, h[0]) != "- line 5\n+ line five" || hunkPreview(d, h[1]) != "- line 50" {
+		t.Fatalf("hunks %+v", h)
+	}
+	tt.click(t, "第 2/2 处")
+	tt.Frame()
+	if i, inside := d.CurrentHunk(); i != 1 || !inside {
+		t.Fatalf("at change %d, inside %v", i, inside)
+	}
+}
+
 func TestWelcome(t *testing.T) {
 	dir := t.TempDir()
 	w := &welcome{recent: []string{filepath.Join(dir, "project")}}
