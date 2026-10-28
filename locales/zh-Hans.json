@@ -495,5 +495,6 @@
   "andMore": "等另外 {count} 个",
   "foldUnchanged": "折叠未更改",
   "viewAsTree": "以树形式查看",
-  "viewAsList": "以列表形式查看"
+  "viewAsList": "以列表形式查看",
+  "unpushed": "未推送"
 }

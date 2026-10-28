@@ -5021,3 +5021,13 @@ func ViewAsList() string { return In(i18n.Locale()).ViewAsList() }
 func (msgs Messages) ViewAsList() string {
 	return Catalog.Format(msgs.locale, "viewAsList", nil)
 }
+
+// Unpushed says "Not pushed yet"
+// in the language the app shows.
+func Unpushed() string { return In(i18n.Locale()).Unpushed() }
+
+// Unpushed says "Not pushed yet"
+// in the language of msgs.
+func (msgs Messages) Unpushed() string {
+	return Catalog.Format(msgs.locale, "unpushed", nil)
+}

@@ -23,6 +23,9 @@ var laneColors = []ui.Color{
 
 func laneColor(i int) ui.Color { return laneColors[i%len(laneColors)] }
 
+// unpushedColor draws the commits the upstream hasn't yet.
+var unpushedColor = ui.RGB(245, 130, 32)
+
 // logView is the history: a row per commit, with its graph, and above it
 // the search. It is the current branch's, unless a branch's or a tag's
 // menu chose its history, which a banner tells.
@@ -152,9 +155,13 @@ func (a *app) logRow(c *ui.Context, cm *git.Commit, row *graph.Row, lanes int, c
 		a.commitMenu(m, *cm)
 	}).Children(func() {
 		if lanes > 0 {
-			ui.Box(c).Size(float32(lanes*laneWidth+4), rowHeight).Draw(func(p *ui.Painter, r ui.Rect) {
-				drawRow(p, r, row)
+			unpushed := a.unpushed[cm.Hash]
+			g := ui.Box(c).Size(float32(lanes*laneWidth+4), rowHeight).Draw(func(p *ui.Painter, r ui.Rect) {
+				drawRow(p, r, row, unpushed)
 			})
+			if unpushed {
+				g.Tooltip(loc.Unpushed())
+			}
 		}
 		for _, ref := range cm.Refs {
 			if ref == "HEAD" {
@@ -181,7 +188,7 @@ func (a *app) logRow(c *ui.Context, cm *git.Commit, row *graph.Row, lanes int, c
 }
 
 // drawRow paints a row of the graph: its lines, then the commit's dot.
-func drawRow(p *ui.Painter, r ui.Rect, row *graph.Row) {
+func drawRow(p *ui.Painter, r ui.Rect, row *graph.Row, unpushed bool) {
 	x := func(lane int) float32 { return r.X + 2 + float32(lane)*laneWidth + laneWidth/2 }
 	y := func(at graph.Y) float32 { return r.Y + float32(at)*r.H/2 }
 	limit := float32(maxLanes) * laneWidth
@@ -192,6 +199,9 @@ func drawRow(p *ui.Painter, r ui.Rect, row *graph.Row) {
 		x0, y0, x1, y1 := x(l.From.Lane), y(l.From.Y), x(l.To.Lane), y(l.To.Y)
 		x0, x1 = min(x0, r.X+limit), min(x1, r.X+limit)
 		color := laneColor(l.Color)
+		if unpushed && l.From.Lane == row.Lane && l.To.Lane == row.Lane {
+			color = unpushedColor
+		}
 		if x0 == x1 {
 			p.Line(x0, y0, x1, y1, 1.6, color)
 			continue
@@ -203,7 +213,11 @@ func drawRow(p *ui.Painter, r ui.Rect, row *graph.Row) {
 	}
 	if row.Lane < maxLanes {
 		cx, cy := x(row.Lane), y(graph.Mid)
-		p.Fill(ui.Rect{X: cx - 4, Y: cy - 4, W: 8, H: 8}, laneColor(row.Color), 4)
+		color := laneColor(row.Color)
+		if unpushed {
+			color = unpushedColor
+		}
+		p.Fill(ui.Rect{X: cx - 4, Y: cy - 4, W: 8, H: 8}, color, 4)
 	}
 }
 

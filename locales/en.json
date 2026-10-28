@@ -1382,5 +1382,6 @@
   },
   "foldUnchanged": "Fold Unchanged",
   "viewAsTree": "View as Tree",
-  "viewAsList": "View as List"
+  "viewAsList": "View as List",
+  "unpushed": "Not pushed yet"
 }

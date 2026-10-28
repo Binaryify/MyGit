@@ -687,6 +687,40 @@ func TestOverview(t *testing.T) {
 	}
 }
 
+func TestUnpushedCommits(t *testing.T) {
+	tt := newTester(t)
+	ctx := context.Background()
+	origin := t.TempDir()
+	for _, args := range [][]string{{"init", "-q", "--bare", "-b", "main", origin}} {
+		if out, err := exec.Command("git", args...).CombinedOutput(); err != nil {
+			t.Fatalf("%v %s", err, out)
+		}
+	}
+	for _, args := range [][]string{
+		{"remote", "add", "origin", origin},
+		{"push", "-q", "-u", "origin", "main"},
+		{"-c", "user.name=a", "-c", "user.email=a@a", "commit", "-q", "--allow-empty", "-m", "Polish"},
+	} {
+		if _, err := tt.a.repo.Git(ctx, args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	tt.a.refresh()
+	tt.settle()
+	head, _ := tt.a.repo.Git(ctx, "rev-parse", "HEAD")
+	if len(tt.a.unpushed) != 1 || !tt.a.unpushed[strings.TrimSpace(head)] || !tt.HasText("Polish") {
+		t.Fatalf("unpushed %v", tt.a.unpushed)
+	}
+	if _, err := tt.a.repo.Git(ctx, "push", "-q"); err != nil {
+		t.Fatal(err)
+	}
+	tt.a.refresh()
+	tt.settle()
+	if len(tt.a.unpushed) != 0 {
+		t.Fatalf("unpushed after pushing %v", tt.a.unpushed)
+	}
+}
+
 func TestWelcome(t *testing.T) {
 	dir := t.TempDir()
 	w := &welcome{recent: []string{filepath.Join(dir, "project")}}

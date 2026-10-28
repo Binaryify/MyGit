@@ -66,6 +66,7 @@ type app struct {
 	stagedList, unstagedList ui.ListState
 	stagedSel, unstagedSel   int
 	stagedRow, unstagedRow   int             // the rows of the changes chosen, as the filter shows them
+	unpushed                 map[string]bool // the branch's commits its upstream hasn't, by hash
 	foldedDirs               map[string]bool // the folders folded of the lists shown as trees, by list and path
 	filter                   changeFilter
 
@@ -298,6 +299,7 @@ type snapshot struct {
 	op       git.Operation
 	stashes  []git.Stash
 	marked   map[string]bool // the changes .gitattributes marks generated
+	unpushed map[string]bool // the branch's commits its upstream hasn't, by hash
 }
 
 // refresh reads the status, and the history again when a ref moved. A
@@ -322,7 +324,11 @@ func (a *app) refresh() {
 		for i, c := range st.Changes {
 			paths[i] = c.Path
 		}
-		return snapshot{st, b, rb, tags, a.repo.Refs(ctx), a.repo.Operation(ctx), stashes, a.repo.Generated(ctx, paths)}, nil
+		var unpushed map[string]bool
+		if st.Upstream != "" && st.Ahead > 0 {
+			unpushed = a.repo.Unpushed(ctx)
+		}
+		return snapshot{st, b, rb, tags, a.repo.Refs(ctx), a.repo.Operation(ctx), stashes, a.repo.Generated(ctx, paths), unpushed}, nil
 	}, func(s snapshot, err error) {
 		a.refreshing = false
 		if a.again {
@@ -337,7 +343,7 @@ func (a *app) refresh() {
 		case a.online <- struct{}{}:
 		default:
 		}
-		a.genMarked = s.marked
+		a.genMarked, a.unpushed = s.marked, s.unpushed
 		reload := s.refs != a.refs || a.commits == nil && !a.loading
 		if s.status.Branch != a.status.Branch && a.scope.Ref != "HEAD" {
 			// Switching branches shows the new one's history.

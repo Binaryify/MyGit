@@ -131,6 +131,19 @@ func (r *Repo) IsAncestor(ctx context.Context, hash string) bool {
 	return err == nil
 }
 
+// Unpushed are the current branch's commits its upstream hasn't, by hash.
+func (r *Repo) Unpushed(ctx context.Context) map[string]bool {
+	out, err := r.Git(ctx, "rev-list", "@{upstream}..HEAD")
+	if err != nil {
+		return nil
+	}
+	hashes := map[string]bool{}
+	for _, h := range strings.Fields(out) {
+		hashes[h] = true
+	}
+	return hashes
+}
+
 // Pushed tells whether a commit is in the current branch's upstream.
 func (r *Repo) Pushed(ctx context.Context, hash string) bool {
 	_, err := r.Git(ctx, "merge-base", "--is-ancestor", hash, "@{upstream}")
