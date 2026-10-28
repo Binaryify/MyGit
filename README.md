@@ -87,7 +87,7 @@ MyGit reads what `git` prints and lets `git` itself make every change, so a repo
 - **Staging** — stage, unstage or discard files, changes or selected lines; edit and save the working tree in the diff; filter thousands of changes by path
 - **Commits** — whole messages, changed files and side-by-side diffs with syntax highlighting; a merge against any parent; compare two commits (⌘-click), a branch or the working tree
 - **History** — every branch, tag and remote with its graph, streamed as it loads; search by message, author or hash; filter by branch or path (file history)
-- **History tools** — branch, tag, check out, cherry-pick, revert, reset (soft / mixed / hard), edit a commit's message (F2) and interactive rebase (reorder, reword, edit, squash, fixup, drop)
+- **History tools** — branch, tag, check out, cherry-pick, revert, reset (soft / mixed / hard), edit a commit's message (F2), squash commits and interactive rebase (reorder, reword, edit, squash, fixup, drop)
 - **Pull requests** — open a GitHub pull request, read and reply to its threads under their lines, resolve them, and submit a review: comment, approve or request changes
 - **Conflicts** — a three-pane merge view as IntelliJ's, merging from the base itself: no conflict markers, the panes aligned and scrolling together, » « ✕ by each change, and a magic wand for conflicts of different words; continue, skip or abort a merge, rebase, cherry-pick or revert
 - **Stash, blame and remotes** — stash with untracked files, blame a file line by line, manage remotes, pull (fast-forward, rebase or merge), preview a push, force with lease

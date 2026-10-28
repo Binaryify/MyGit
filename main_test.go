@@ -460,6 +460,45 @@ func TestEditCommitMessage(t *testing.T) {
 	}
 }
 
+func TestSquashCommits(t *testing.T) {
+	tt := newTester(t)
+	ctx := context.Background()
+	if _, err := tt.a.repo.Git(ctx, "switch", "-q", "feature"); err != nil {
+		t.Fatal(err)
+	}
+	for _, msg := range []string{"Polish", "Tidy"} {
+		if _, err := tt.a.repo.Git(ctx, "-c", "user.name=a", "-c", "user.email=a@a", "commit", "-q", "--allow-empty", "-m", msg); err != nil {
+			t.Fatal(err)
+		}
+	}
+	tt.a.refresh()
+	tt.settle()
+	tt.click(t, "Add the feature")
+	if err := tt.ClickWith(ui.Cmd, "Tidy"); err != nil {
+		t.Fatal(err)
+	}
+	tt.settle()
+	if err := tt.RightClick("Tidy"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("压缩 2 个提交…"); err != nil {
+		t.Fatal(err)
+	}
+	tt.settle()
+	if p := tt.a.reword; !p.open || p.message != "Add the feature\n\nTidy" {
+		t.Fatalf("plan %+v", p)
+	}
+	tt.click(t, "压缩")
+	tt.settle()
+	out, _ := tt.a.repo.Git(ctx, "log", "--format=%s", "-3")
+	if tt.a.errMsg != "" || out != "Polish\nAdd the feature\nStart\n" || tt.a.logChosen.Len() != 0 {
+		t.Fatalf("error %q, log %q", tt.a.errMsg, out)
+	}
+	if body := tt.a.repo.Message(ctx, "HEAD~1"); body != "Add the feature\n\nTidy" {
+		t.Fatalf("message %q", body)
+	}
+}
+
 func TestBlameAndParents(t *testing.T) {
 	tt := newTester(t)
 	tt.click(t, "Merge the feature")

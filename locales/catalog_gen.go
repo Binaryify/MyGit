@@ -4880,16 +4880,6 @@ func (msgs Messages) RewordPushed() string {
 	return Catalog.Format(msgs.locale, "rewordPushed", nil)
 }
 
-// OpReword says "Edit commit message"
-// in the language the app shows.
-func OpReword() string { return In(i18n.Locale()).OpReword() }
-
-// OpReword says "Edit commit message"
-// in the language of msgs.
-func (msgs Messages) OpReword() string {
-	return Catalog.Format(msgs.locale, "opReword", nil)
-}
-
 // ForcePushTitle says "Force push {branch}?"
 // in the language the app shows.
 func ForcePushTitle(branch string) string { return In(i18n.Locale()).ForcePushTitle(branch) }
@@ -4918,4 +4908,34 @@ func ErrRewordNotInHead() string { return In(i18n.Locale()).ErrRewordNotInHead()
 // in the language of msgs.
 func (msgs Messages) ErrRewordNotInHead() string {
 	return Catalog.Format(msgs.locale, "errRewordNotInHead", nil)
+}
+
+// SquashCommits says "Squash {count} Commits…"
+// in the language the app shows.
+func SquashCommits(count int) string { return In(i18n.Locale()).SquashCommits(count) }
+
+// SquashCommits says "Squash {count} Commits…"
+// in the language of msgs.
+func (msgs Messages) SquashCommits(count int) string {
+	return Catalog.Format(msgs.locale, "squashCommits", map[string]any{"count": count})
+}
+
+// SquashTitle says "Squash {count} commits into one"
+// in the language the app shows.
+func SquashTitle(count int) string { return In(i18n.Locale()).SquashTitle(count) }
+
+// SquashTitle says "Squash {count} commits into one"
+// in the language of msgs.
+func (msgs Messages) SquashTitle(count int) string {
+	return Catalog.Format(msgs.locale, "squashTitle", map[string]any{"count": count})
+}
+
+// Squash says "Squash"
+// in the language the app shows.
+func Squash() string { return In(i18n.Locale()).Squash() }
+
+// Squash says "Squash"
+// in the language of msgs.
+func (msgs Messages) Squash() string {
+	return Catalog.Format(msgs.locale, "squash", nil)
 }

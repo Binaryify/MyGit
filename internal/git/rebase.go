@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	loc "mygit/locales"
@@ -147,17 +148,37 @@ func (r *Repo) Reword(ctx context.Context, cm Commit, message string) error {
 		_, err := r.Git(ctx, "commit", "--amend", "--only", "--allow-empty", "-m", message)
 		return err
 	}
+	return r.Squash(ctx, cm, nil, message)
+}
+
+// Squash melds commits of HEAD's history into oldest, the oldest of them,
+// as one commit with the message, where oldest is: oldest is reworded
+// and the others, moved after it, fixed up into it. What follows oldest
+// is rebased.
+func (r *Repo) Squash(ctx context.Context, oldest Commit, others []string, message string) error {
 	base := ""
-	if len(cm.Parents) > 0 {
-		base = cm.Parents[0]
+	if len(oldest.Parents) > 0 {
+		base = oldest.Parents[0]
 	}
 	steps, err := r.RebaseSteps(ctx, base)
 	if err != nil {
 		return err
 	}
-	if len(steps) == 0 || steps[0].Hash != cm.Hash {
+	if len(steps) == 0 || steps[0].Hash != oldest.Hash {
 		return errors.New(loc.ErrRewordNotInHead())
 	}
 	steps[0].Action, steps[0].Message = Reword, message
-	return r.RebaseInteractive(ctx, base, steps)
+	var melded, rest []RebaseStep
+	for _, s := range steps[1:] {
+		if slices.Contains(others, s.Hash) {
+			s.Action = Fixup
+			melded = append(melded, s)
+		} else {
+			rest = append(rest, s)
+		}
+	}
+	if len(melded) != len(others) {
+		return errors.New(loc.ErrRewordNotInHead())
+	}
+	return r.RebaseInteractive(ctx, base, slices.Concat(steps[:1], melded, rest))
 }

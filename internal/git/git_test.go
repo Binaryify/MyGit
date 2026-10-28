@@ -673,3 +673,34 @@ func TestPullStashesChanges(t *testing.T) {
 		}
 	}
 }
+
+func TestSquash(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	for _, name := range []string{"a", "b", "c", "d"} {
+		write(t, r, name+".txt", name)
+		_ = r.Stage(ctx, name+".txt")
+		_ = r.Commit(ctx, name, false)
+	}
+	var log []Commit
+	_ = r.Log(ctx, Scope{}, 10, func(c []Commit) { log = append(log, c...) })
+	// b and d, apart: d moves after b and melds into it, c follows.
+	if err := r.Squash(ctx, log[2], []string{log[0].Hash}, "b and d"); err != nil {
+		t.Fatal(err)
+	}
+	log = nil
+	_ = r.Log(ctx, Scope{}, 10, func(c []Commit) { log = append(log, c...) })
+	var subjects []string
+	for _, c := range log {
+		subjects = append(subjects, c.Subject)
+	}
+	if !slices.Equal(subjects, []string{"c", "b and d", "a"}) {
+		t.Fatalf("history %v", subjects)
+	}
+	if out, _ := r.Git(ctx, "show", "--stat", "--format=", "HEAD~1"); !strings.Contains(out, "b.txt") || !strings.Contains(out, "d.txt") {
+		t.Fatalf("squashed commit: %s", out)
+	}
+	if err := r.Squash(ctx, log[1], []string{"0123456789012345678901234567890123456789"}, "x"); err == nil {
+		t.Fatal("squashed a commit not in the history")
+	}
+}

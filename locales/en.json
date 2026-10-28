@@ -1334,7 +1334,6 @@
     }
   },
   "rewordPushed": "This commit is pushed already: a new message rewrites the branch, which then has to be force pushed.",
-  "opReword": "Edit commit message",
   "forcePushTitle": "Force push {branch}?",
   "@forcePushTitle": {
     "placeholders": {
@@ -1344,5 +1343,22 @@
     }
   },
   "forcePushMessage": "Its rewritten commits replace the remote branch's, if nobody else updated it (--force-with-lease).",
-  "errRewordNotInHead": "Only a commit of the current branch's history can have its message edited"
+  "errRewordNotInHead": "Only a commit of the current branch's history can have its message edited",
+  "squashCommits": "Squash {count} Commits…",
+  "@squashCommits": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "squashTitle": "Squash {count} commits into one",
+  "@squashTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "squash": "Squash"
 }

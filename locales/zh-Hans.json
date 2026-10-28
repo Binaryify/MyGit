@@ -482,8 +482,10 @@
   "editCommitMessage": "编辑提交消息…",
   "rewordTitle": "编辑 {rev} 的提交消息",
   "rewordPushed": "此提交已推送：修改消息会改写分支历史，之后需要强制推送。",
-  "opReword": "编辑提交消息",
   "forcePushTitle": "强制推送 {branch}？",
   "forcePushMessage": "改写后的提交将替换远程分支上的提交（--force-with-lease：仅当没有其他人更新过远程分支时）。",
-  "errRewordNotInHead": "只能编辑当前分支历史中的提交消息"
+  "errRewordNotInHead": "只能编辑当前分支历史中的提交消息",
+  "squashCommits": "压缩 {count} 个提交…",
+  "squashTitle": "将 {count} 个提交压缩为一个",
+  "squash": "压缩"
 }

@@ -121,21 +121,56 @@ func (a *app) rebaseView(c *ui.Context) {
 	})
 }
 
-// rewordPlan is a commit's message being edited.
+// rewordPlan is a commit's message being edited, or that of commits
+// being squashed into one.
 type rewordPlan struct {
 	open    bool
-	commit  git.Commit
+	title   string
+	op      string // the operation's name, and its button's
 	message string
 	pushed  bool // already upstream, so the branch is force pushed after
+	save    func(ctx context.Context, message string) error
 }
 
 // planReword opens cm's whole message to edit, if cm is in HEAD's history.
 func (a *app) planReword(cm git.Commit) {
-	work(a, func(ctx context.Context) (rewordPlan, error) {
-		if !a.repo.IsAncestor(ctx, cm.Hash) {
-			return rewordPlan{}, errors.New(loc.ErrRewordNotInHead())
+	a.planMessage(loc.RewordTitle(cm.Short()), loc.Save(), []git.Commit{cm}, func(ctx context.Context, msg string) error {
+		return a.repo.Reword(ctx, cm, msg)
+	})
+}
+
+// planSquash opens the messages of the commits chosen in the history,
+// oldest first, to squash them into one with.
+func (a *app) planSquash() {
+	var chosen []git.Commit // newest first, as the history
+	for _, cm := range a.commits {
+		if a.logChosen.Has(cm.Hash) {
+			chosen = append(chosen, cm)
 		}
-		return rewordPlan{open: true, commit: cm, message: a.repo.Message(ctx, cm.Hash), pushed: a.repo.Pushed(ctx, cm.Hash)}, nil
+	}
+	slices.Reverse(chosen)
+	oldest, others := chosen[0], make([]string, 0, len(chosen)-1)
+	for _, cm := range chosen[1:] {
+		others = append(others, cm.Hash)
+	}
+	a.planMessage(loc.SquashTitle(len(chosen)), loc.Squash(), chosen, func(ctx context.Context, msg string) error {
+		return a.repo.Squash(ctx, oldest, others, msg)
+	})
+}
+
+// planMessage opens the dialog with the commits' messages, oldest first,
+// if they are in HEAD's history.
+func (a *app) planMessage(title, op string, commits []git.Commit, save func(context.Context, string) error) {
+	work(a, func(ctx context.Context) (rewordPlan, error) {
+		var msgs []string
+		for _, cm := range commits {
+			if !a.repo.IsAncestor(ctx, cm.Hash) {
+				return rewordPlan{}, errors.New(loc.ErrRewordNotInHead())
+			}
+			msgs = append(msgs, a.repo.Message(ctx, cm.Hash))
+		}
+		return rewordPlan{open: true, title: title, op: op, message: strings.Join(msgs, "\n\n"),
+			pushed: a.repo.Pushed(ctx, commits[0].Hash), save: save}, nil
 	}, func(p rewordPlan, err error) {
 		if err != nil {
 			a.errMsg = err.Error()
@@ -152,7 +187,7 @@ func (a *app) rewordView(c *ui.Context) {
 	}
 	ui.Modal(c, &p.open, func() {
 		ui.Column(c).Gap(10).Width(560).Children(func() {
-			ui.Text(c, loc.RewordTitle(p.commit.Short())).Bold().FontSize(15)
+			ui.Text(c, p.title).Bold().FontSize(15)
 			ui.TextArea(c.Key("msg"), &p.message).Label(loc.RebaseNewMessage()).AutoFocus().Lines(4, 12)
 			if p.pushed {
 				ui.Text(c, loc.RewordPushed()).TextColor(c.Theme().Danger)
@@ -162,10 +197,11 @@ func (a *app) rewordView(c *ui.Context) {
 					p.open = false
 				}
 				msg := strings.TrimSpace(p.message)
-				if ui.PrimaryButton(c, loc.Save()).Disabled(msg == "" || a.busy != "").Clicked() {
+				if ui.PrimaryButton(c, p.op).Disabled(msg == "" || a.busy != "").Clicked() {
 					p.open = false
-					cm, pushed := p.commit, p.pushed
-					a.run(loc.OpReword(), func(ctx context.Context) error { return a.repo.Reword(ctx, cm, msg) }, func() {
+					save, pushed := p.save, p.pushed
+					a.run(p.title, func(ctx context.Context) error { return save(ctx, msg) }, func() {
+						a.logChosen.Clear()
 						if pushed {
 							a.askForcePush()
 						}
