@@ -636,7 +636,7 @@ func TestPullStashesChanges(t *testing.T) {
 	_ = r.Stage(ctx, "a.txt")
 	_ = r.Commit(ctx, "a", false)
 	origin := t.TempDir()
-	if _, err := git(ctx, Local, origin, "", nil, "init", "-q", "--bare"); err != nil {
+	if _, err := git(ctx, Local, origin, "", nil, "init", "-q", "--bare", "-b", "main"); err != nil {
 		t.Fatal(err)
 	}
 	_, _ = r.Git(ctx, "remote", "add", "origin", origin)
