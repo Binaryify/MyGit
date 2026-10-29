@@ -19,6 +19,7 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 
 	"mygit/internal/git"
+	"mygit/internal/patch"
 	loc "mygit/locales"
 )
 
@@ -225,6 +226,31 @@ func TestStageSelectedLinesAndHunks(t *testing.T) {
 	b, _ := os.ReadFile(filepath.Join(dir, "main.go"))
 	if strings.ReplaceAll(string(b), "\r\n", "\n") != index { // CRLF with core.autocrlf
 		t.Fatalf("working tree %q", b)
+	}
+}
+
+// A line chosen takes the run of changed lines it is in, and only it,
+// however long: a header rebuilt from a DLL is one run of 100k lines (#9).
+func TestWholeRuns(t *testing.T) {
+	lines := []string{" a", "-b", "+B", "\\ No newline at end of file", " c", "+d"}
+	for range 100000 {
+		lines = append(lines, "+x")
+	}
+	a := &app{}
+	a.detail.patch = &editor.FilePatch{Hunks: []editor.PatchHunk{{Lines: lines}}}
+	got := a.wholeRuns(map[patch.Line]bool{{Index: 2}: true, {Index: 50000}: true, {Index: 50001}: true})
+	for _, i := range []int{1, 2, 5, 6, 50000, len(lines) - 1} {
+		if !got[patch.Line{Index: i}] {
+			t.Errorf("line %d not chosen", i)
+		}
+	}
+	for _, i := range []int{0, 3, 4} {
+		if got[patch.Line{Index: i}] {
+			t.Errorf("line %d chosen", i)
+		}
+	}
+	if want := 2 + 100001; len(got) != want {
+		t.Errorf("%d lines chosen, want %d", len(got), want)
 	}
 }
 

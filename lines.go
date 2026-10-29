@@ -19,19 +19,20 @@ func (a *app) reviewLines(d *editor.DiffState) {
 		if a.unsaved() {
 			return // the patch is the file's as saved
 		}
-		chosen := a.hunkLines(h.Hunk)
+		// The lines only once clicked: a change of a whole file is tens of
+		// thousands of them, and the bar is built every frame.
 		bar.Gap(4).Children(func() {
 			if a.detail.staged {
 				if ui.Button(c, loc.Unstage()).Clicked() {
-					a.applyLines(chosen, lineUnstage)
+					a.applyLines(a.hunkLines(h.Hunk), lineUnstage)
 				}
 				return
 			}
 			if ui.Button(c, loc.Discard()).Clicked() {
-				a.applyLines(chosen, lineDiscard)
+				a.applyLines(a.hunkLines(h.Hunk), lineDiscard)
 			}
 			if ui.PrimaryButton(c, loc.Stage()).Clicked() {
-				a.applyLines(chosen, lineStage)
+				a.applyLines(a.hunkLines(h.Hunk), lineStage)
 			}
 		})
 	}
@@ -95,23 +96,32 @@ func (a *app) hunkLines(h editor.DiffHunk) map[patch.Line]bool {
 
 // wholeRuns widens lines to the runs of changed lines they are in, as git
 // cut the patch: a change at a time, as the diff and git may place a
-// change's lines a line apart.
+// change's lines a line apart. Each run is walked once, from the first of
+// its lines met: a whole file changed is one run of all its lines.
 func (a *app) wholeRuns(chosen map[patch.Line]bool) map[patch.Line]bool {
 	hunks := a.detail.patch.Hunks
+	runs := map[patch.Line]bool{}
+	in := func(lines []string, i int) bool { return lines[i] != "" && lines[i][0] != ' ' }
 	for l := range chosen {
+		if runs[l] {
+			continue
+		}
 		lines := hunks[l.Hunk].Lines
-		for i := l.Index - 1; i >= 0 && lines[i] != "" && lines[i][0] != ' '; i-- {
+		from, to := l.Index, l.Index+1
+		for from > 0 && in(lines, from-1) {
+			from--
+		}
+		for to < len(lines) && in(lines, to) {
+			to++
+		}
+		for i := from; i < to; i++ {
 			if lines[i][0] != '\\' {
-				chosen[patch.Line{Hunk: l.Hunk, Index: i}] = true
+				runs[patch.Line{Hunk: l.Hunk, Index: i}] = true
 			}
 		}
-		for i := l.Index + 1; i < len(lines) && lines[i] != "" && lines[i][0] != ' '; i++ {
-			if lines[i][0] != '\\' {
-				chosen[patch.Line{Hunk: l.Hunk, Index: i}] = true
-			}
-		}
+		runs[l] = true
 	}
-	return chosen
+	return runs
 }
 
 // selectedLines are the changed lines whose numbers are selected on one
