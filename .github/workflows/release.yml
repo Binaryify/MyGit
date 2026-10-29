@@ -45,7 +45,7 @@ jobs:
           mkdir dist
           # The downloads keep one name in every release, so the site can link
           # to releases/latest/download/<name>.
-          cp "build/darwin-arm64/MyGit $VERSION arm64.dmg" dist/MyGit-macos-arm64.dmg
+          cp build/darwin-arm64/*.dmg dist/MyGit-macos-arm64.dmg
           cp build/linux-amd64/*.deb dist/MyGit-linux-amd64.deb
           cp build/linux-amd64/install.sh dist/
           # The updates keep their names: the manifests point at them.
@@ -80,7 +80,7 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           mkdir dist
-          cp build/windows-amd64/*Setup*.exe dist/MyGit-windows-amd64-setup.exe
+          cp build/windows-amd64/*-setup-*.exe dist/MyGit-windows-amd64-setup.exe
           (cd build/windows-amd64 && 7z a -bd ../../dist/MyGit-windows-amd64.zip MyGit.exe icon.png > /dev/null)
           cp build/windows-amd64/mygit-*.tar.gz build/windows-amd64/update-*.json dist/
           cp build/windows-amd64/*.delta dist/ 2>/dev/null || true
