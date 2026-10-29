@@ -216,8 +216,8 @@ func (a *app) showPull(pr *pullReview) {
 	c := git.Commit{Hash: pr.base + ".." + pr.head, Subject: pr.pull.Title}
 	base, head := pr.base, pr.head
 	a.detail.commit = nil // shown again, though the same commits
-	a.showPatch(c, func(ctx context.Context) (string, error) {
-		return a.repo.DiffFrom(ctx, base, head, prefs.IgnoreWhitespace)
+	a.showPatch(c, func(ctx context.Context, ws git.Whitespace) (string, error) {
+		return a.repo.DiffFrom(ctx, base, head, ws)
 	})
 	a.detail.pr = pr
 	a.loadThreads(pr)

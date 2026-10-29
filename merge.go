@@ -121,7 +121,7 @@ func newMerger(path string, t mergeTexts) *merger {
 	lf := func(s string) string { return strings.ReplaceAll(s, "\r\n", "\n") }
 	crlf := strings.Contains(t.ours, "\r\n")
 	t.base, t.ours, t.theirs, t.work = lf(t.base), lf(t.ours), lf(t.theirs), lf(t.work)
-	m := &merger{path: path, texts: t, model: conflict.New(t.base, t.ours, t.theirs, prefs.IgnoreWhitespace), lh: 20, split1: 30, split2: 57}
+	m := &merger{path: path, texts: t, model: conflict.New(t.base, t.ours, t.theirs, prefs.IgnoreSpace), lh: 20, split1: 30, split2: 57}
 	result := m.model.Result()
 	if t.kind() == "" && t.work != "" && t.work != result && !hasMarkers(t.work) {
 		m.model.Sync(t.work)
@@ -259,7 +259,7 @@ func (m *merger) undoIgnore() bool {
 func (m *merger) remerge(keep bool) {
 	m.sync()
 	text := m.panes[paneResult].Buffer.String()
-	m.model = conflict.New(m.texts.base, m.texts.ours, m.texts.theirs, prefs.IgnoreWhitespace)
+	m.model = conflict.New(m.texts.base, m.texts.ours, m.texts.theirs, prefs.IgnoreSpace)
 	m.ignored, m.note = nil, ""
 	if keep {
 		m.model.Sync(text)
@@ -542,8 +542,8 @@ func (a *app) mergeView(c *ui.Context, m *merger) {
 					a.takeSide(m.path, git.TheirsStage)
 				}
 				menu.Separator()
-				if menu.Item(loc.IgnoreWhitespace()).Checked(prefs.IgnoreWhitespace).Chosen() {
-					prefs.IgnoreWhitespace = !prefs.IgnoreWhitespace
+				if menu.Item(loc.IgnoreSpace()).Checked(prefs.IgnoreSpace).Chosen() {
+					prefs.IgnoreSpace = !prefs.IgnoreSpace
 					prefs.save()
 					m.remerge(true)
 				}

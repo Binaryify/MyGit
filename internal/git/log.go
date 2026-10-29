@@ -131,14 +131,27 @@ func splitNUL(data []byte, atEOF bool) (int, []byte, error) {
 
 // Show is the patch a commit made to its first parent, or to nothing for
 // a root commit.
-func (r *Repo) Show(ctx context.Context, hash string, ignoreSpace bool) (string, error) {
-	return r.Git(ctx, space([]string{"show", "--format=", "--patch", "-M", "--diff-merges=first-parent"}, ignoreSpace, hash)...)
+func (r *Repo) Show(ctx context.Context, hash string, ws Whitespace) (string, error) {
+	return r.Git(ctx, ws.with([]string{"show", "--format=", "--patch", "-M", "--diff-merges=first-parent"}, hash)...)
 }
 
-// space adds -w, ignoring whitespace changes, when asked, then args.
-func space(cmd []string, ignore bool, args ...string) []string {
-	if ignore {
+// Whitespace is what a diff leaves out of whitespace changes.
+type Whitespace struct {
+	Space      bool // changes of spaces within lines, as -w
+	BlankLines bool // blank lines added or removed, as --ignore-blank-lines
+}
+
+// Any tells whether some is left out, when a diff's lines no longer make
+// up the file's change.
+func (w Whitespace) Any() bool { return w.Space || w.BlankLines }
+
+// with adds to cmd the options leaving out what's asked, then args.
+func (w Whitespace) with(cmd []string, args ...string) []string {
+	if w.Space {
 		cmd = append(cmd, "-w")
+	}
+	if w.BlankLines {
+		cmd = append(cmd, "--ignore-blank-lines")
 	}
 	return append(cmd, args...)
 }
@@ -151,13 +164,13 @@ func (r *Repo) Message(ctx context.Context, hash string) string {
 
 // DiffFrom is the patch from a commit to another, as a merge's change
 // against its second parent.
-func (r *Repo) DiffFrom(ctx context.Context, from, to string, ignoreSpace bool) (string, error) {
-	return r.Git(ctx, space([]string{"diff", "-M", "--no-ext-diff"}, ignoreSpace, from, to)...)
+func (r *Repo) DiffFrom(ctx context.Context, from, to string, ws Whitespace) (string, error) {
+	return r.Git(ctx, ws.with([]string{"diff", "-M", "--no-ext-diff"}, from, to)...)
 }
 
 // DiffWorktree is the patch from a commit to the working tree.
-func (r *Repo) DiffWorktree(ctx context.Context, rev string, ignoreSpace bool) (string, error) {
-	return r.Git(ctx, space([]string{"diff", "-M", "--no-ext-diff"}, ignoreSpace, rev)...)
+func (r *Repo) DiffWorktree(ctx context.Context, rev string, ws Whitespace) (string, error) {
+	return r.Git(ctx, ws.with([]string{"diff", "-M", "--no-ext-diff"}, rev)...)
 }
 
 // Outgoing are the commits a push would send: those after the upstream,

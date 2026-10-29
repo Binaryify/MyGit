@@ -133,6 +133,7 @@ type detail struct {
 	diff      *editor.DiffState
 	merge     *merger           // a file in conflict's
 	blame     *blame            // a file's, shown in place of the diff
+	load      patchLoad         // reads the commit's patch
 	message   string            // the commit's whole message
 	parent    int               // the merge's parent its change is against
 	raw       string            // the change's patch as git printed it
@@ -480,7 +481,7 @@ func (a *app) showCommit(i int) {
 		return
 	}
 	c := a.commits[i]
-	a.showPatch(c, func(ctx context.Context) (string, error) { return a.repo.Show(ctx, c.Hash, prefs.IgnoreWhitespace) })
+	a.showPatch(c, func(ctx context.Context, ws git.Whitespace) (string, error) { return a.repo.Show(ctx, c.Hash, ws) })
 }
 
 // showCompare shows the change from one revision to another, the working
@@ -490,12 +491,11 @@ func (a *app) showCompare(label, from, to string) {
 		return
 	}
 	c := git.Commit{Hash: from + ".." + to, Subject: label}
-	ignore := prefs.IgnoreWhitespace
-	a.showPatch(c, func(ctx context.Context) (string, error) {
+	a.showPatch(c, func(ctx context.Context, ws git.Whitespace) (string, error) {
 		if to == "" {
-			return a.repo.DiffWorktree(ctx, from, ignore)
+			return a.repo.DiffWorktree(ctx, from, ws)
 		}
-		return a.repo.DiffFrom(ctx, from, to, ignore)
+		return a.repo.DiffFrom(ctx, from, to, ws)
 	})
 }
 
@@ -508,17 +508,21 @@ func (a *app) showStash(s git.Stash) {
 		return
 	}
 	c := git.Commit{Hash: s.Hash, Time: s.Time, Subject: s.Subject, Refs: []string{s.Ref}}
-	a.showPatch(c, func(ctx context.Context) (string, error) { return a.repo.StashShow(ctx, s.Ref) })
+	a.showPatch(c, func(ctx context.Context, ws git.Whitespace) (string, error) { return a.repo.StashShow(ctx, s.Ref, ws) })
 }
+
+// patchLoad reads a commit's patch, leaving out the whitespace changes ws
+// says.
+type patchLoad func(ctx context.Context, ws git.Whitespace) (string, error)
 
 // showPatch loads the files of a commit's patch, which load reads, and
 // its message.
-func (a *app) showPatch(c git.Commit, load func(ctx context.Context) (string, error)) {
+func (a *app) showPatch(c git.Commit, load patchLoad) {
 	if a.detail.commit != nil && a.detail.commit.Hash == c.Hash && a.detail.blame == nil {
 		return
 	}
 	a.detail = detail{commit: &c, gen: a.detail.gen + 1, loading: true}
-	a.loadPatch(load)
+	a.loadPatch(load, "")
 }
 
 // showParent shows a merge's change against another of its parents.
@@ -526,20 +530,23 @@ func (a *app) showParent(i int) {
 	c := *a.detail.commit
 	parent := c.Parents[i]
 	a.detail = detail{commit: &c, parent: i, message: a.detail.message, gen: a.detail.gen + 1, loading: true}
-	a.loadPatch(func(ctx context.Context) (string, error) {
-		return a.repo.DiffFrom(ctx, parent, c.Hash, prefs.IgnoreWhitespace)
-	})
+	a.loadPatch(func(ctx context.Context, ws git.Whitespace) (string, error) {
+		return a.repo.DiffFrom(ctx, parent, c.Hash, ws)
+	}, "")
 }
 
-func (a *app) loadPatch(load func(ctx context.Context) (string, error)) {
-	gen, hash := a.detail.gen, a.detail.commit.Hash
+// loadPatch loads the commit's patch with load, showing the file named
+// keep when it has it.
+func (a *app) loadPatch(load patchLoad, keep string) {
+	gen, hash, ws := a.detail.gen, a.detail.commit.Hash, prefs.whitespace()
+	a.detail.load = load
 	type result struct {
 		files   []editor.FilePatch
 		message string
 		marked  map[string]bool
 	}
 	work(a, func(ctx context.Context) (result, error) {
-		out, err := load(ctx)
+		out, err := load(ctx, ws)
 		if err != nil {
 			return result{}, err
 		}
@@ -568,8 +575,11 @@ func (a *app) loadPatch(load func(ctx context.Context) (string, error)) {
 			a.detail.generated[i] = isGenerated(fileName(r.files[i]), r.marked, &r.files[i], nil)
 		}
 		a.detail.fileSel = -1
+		kept := slices.IndexFunc(r.files, func(f editor.FilePatch) bool { return fileName(f) == keep })
 		// The first file people wrote, past lockfiles and the like.
-		if first := slices.Index(a.detail.generated, false); first >= 0 {
+		if kept >= 0 {
+			a.showFile(kept)
+		} else if first := slices.Index(a.detail.generated, false); first >= 0 {
 			a.showFile(first)
 		} else if len(r.files) > 0 {
 			a.showFile(0)
@@ -631,12 +641,12 @@ func (a *app) showChange(c git.Change, staged bool) {
 		a.detail = detail{change: &c, staged: staged, gen: a.detail.gen + 1, loading: true}
 	}
 	gen := a.detail.gen
-	ignoreSpace := prefs.IgnoreWhitespace
+	ws := prefs.whitespace()
 	byName := isGenerated(c.Path, a.genMarked, nil, nil)
 	unfolded := a.unfolded[foldKey("", c.Path)]
 	// The working tree's file, whole and editable, when it is changed in
 	// place and its patch, all of it, can be cut for staging.
-	whole := !staged && c.Work == 'M' && !ignoreSpace
+	whole := !staged && c.Work == 'M' && !ws.Any()
 	type result struct {
 		raw      string
 		patch    *editor.FilePatch
@@ -659,7 +669,7 @@ func (a *app) showChange(c git.Change, staged bool) {
 			}
 			return result{raw: text, diff: textDiff(c.Path, "", text)}, nil
 		}
-		out, err := a.repo.Diff(ctx, c.Path, staged, ignoreSpace)
+		out, err := a.repo.Diff(ctx, c.Path, staged, ws)
 		if err != nil {
 			return result{}, err
 		}
@@ -719,7 +729,7 @@ func (a *app) showChange(c git.Change, staged bool) {
 		a.detail.raw, a.detail.patch, a.detail.diff, a.detail.whole = r.raw, r.patch, r.diff, whole && r.diff != nil
 		a.detail.folded, a.detail.binary, a.detail.disk = r.folded, r.binary, r.new
 		a.detail.change = &c
-		if r.patch != nil && patch.Partial(*r.patch) && !ignoreSpace {
+		if r.patch != nil && patch.Partial(*r.patch) && !ws.Any() {
 			a.reviewLines(r.diff)
 		}
 		// The file opens at its first change, or its last when ⇧F7 came
@@ -921,7 +931,15 @@ func (a *app) reloadDiff() {
 	case d.change != nil && d.merge == nil:
 		a.detail = detail{gen: d.gen}
 		a.showChange(*d.change, d.staged)
-	case d.commit != nil && d.fileSel >= 0 && d.fileSel < len(d.files):
-		a.showFile(d.fileSel)
+	case d.commit != nil && d.load != nil && d.blame == nil:
+		// Read again, as what it leaves out may have changed, the file
+		// shown staying while it loads.
+		keep := ""
+		if d.fileSel >= 0 && d.fileSel < len(d.files) {
+			keep = fileName(d.files[d.fileSel])
+		}
+		a.detail.gen++
+		a.detail.loading = true
+		a.loadPatch(d.load, keep)
 	}
 }

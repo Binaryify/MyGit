@@ -90,17 +90,14 @@ func change(xy, path string) Change {
 }
 
 // Diff is the patch of a change: the index against HEAD when staged, else
-// the working tree against the index; ignoring whitespace changes when
+// the working tree against the index; leaving out the whitespace changes
 // asked.
-func (r *Repo) Diff(ctx context.Context, path string, staged, ignoreSpace bool) (string, error) {
+func (r *Repo) Diff(ctx context.Context, path string, staged bool, ws Whitespace) (string, error) {
 	args := []string{"diff", "-M", "--no-ext-diff"}
 	if staged {
 		args = append(args, "--cached")
 	}
-	if ignoreSpace {
-		args = append(args, "-w")
-	}
-	return r.Git(ctx, append(args, "--", path)...)
+	return r.Git(ctx, ws.with(args, "--", path)...)
 }
 
 // ReadIndex reads a file as the index holds it, "" for one not in it.

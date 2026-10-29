@@ -2672,14 +2672,24 @@ func (msgs Messages) DiffUnified() string {
 	return Catalog.Format(msgs.locale, "diffUnified", nil)
 }
 
-// IgnoreWhitespace says "Ignore whitespace changes"
+// IgnoreSpace says "Ignore Whitespace"
 // in the language the app shows.
-func IgnoreWhitespace() string { return In(i18n.Locale()).IgnoreWhitespace() }
+func IgnoreSpace() string { return In(i18n.Locale()).IgnoreSpace() }
 
-// IgnoreWhitespace says "Ignore whitespace changes"
+// IgnoreSpace says "Ignore Whitespace"
 // in the language of msgs.
-func (msgs Messages) IgnoreWhitespace() string {
-	return Catalog.Format(msgs.locale, "ignoreWhitespace", nil)
+func (msgs Messages) IgnoreSpace() string {
+	return Catalog.Format(msgs.locale, "ignoreSpace", nil)
+}
+
+// IgnoreBlankLines says "Ignore Blank Lines"
+// in the language the app shows.
+func IgnoreBlankLines() string { return In(i18n.Locale()).IgnoreBlankLines() }
+
+// IgnoreBlankLines says "Ignore Blank Lines"
+// in the language of msgs.
+func (msgs Messages) IgnoreBlankLines() string {
+	return Catalog.Format(msgs.locale, "ignoreBlankLines", nil)
 }
 
 // Language says "Language"
@@ -5000,6 +5010,36 @@ func FoldUnchanged() string { return In(i18n.Locale()).FoldUnchanged() }
 // in the language of msgs.
 func (msgs Messages) FoldUnchanged() string {
 	return Catalog.Format(msgs.locale, "foldUnchanged", nil)
+}
+
+// WhitespaceChanges says "Whitespace changes"
+// in the language the app shows.
+func WhitespaceChanges() string { return In(i18n.Locale()).WhitespaceChanges() }
+
+// WhitespaceChanges says "Whitespace changes"
+// in the language of msgs.
+func (msgs Messages) WhitespaceChanges() string {
+	return Catalog.Format(msgs.locale, "whitespaceChanges", nil)
+}
+
+// WhitespaceKept says "Do Not Ignore"
+// in the language the app shows.
+func WhitespaceKept() string { return In(i18n.Locale()).WhitespaceKept() }
+
+// WhitespaceKept says "Do Not Ignore"
+// in the language of msgs.
+func (msgs Messages) WhitespaceKept() string {
+	return Catalog.Format(msgs.locale, "whitespaceKept", nil)
+}
+
+// IgnoreSpaceAndBlankLines says "Ignore Whitespace and Blank Lines"
+// in the language the app shows.
+func IgnoreSpaceAndBlankLines() string { return In(i18n.Locale()).IgnoreSpaceAndBlankLines() }
+
+// IgnoreSpaceAndBlankLines says "Ignore Whitespace and Blank Lines"
+// in the language of msgs.
+func (msgs Messages) IgnoreSpaceAndBlankLines() string {
+	return Catalog.Format(msgs.locale, "ignoreSpaceAndBlankLines", nil)
 }
 
 // ViewAsTree says "View as Tree"

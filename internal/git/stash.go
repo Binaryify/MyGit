@@ -81,6 +81,6 @@ func (r *Repo) StashBranch(ctx context.Context, name, ref string) error {
 }
 
 // StashShow is the patch a stash holds, its untracked files included.
-func (r *Repo) StashShow(ctx context.Context, ref string) (string, error) {
-	return r.Git(ctx, "stash", "show", "--patch", "--include-untracked", "-M", ref)
+func (r *Repo) StashShow(ctx context.Context, ref string, ws Whitespace) (string, error) {
+	return r.Git(ctx, ws.with([]string{"stash", "show", "--patch", "--include-untracked", "-M"}, ref)...)
 }

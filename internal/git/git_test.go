@@ -112,7 +112,7 @@ func TestStageCommitLog(t *testing.T) {
 	if len(st.Changes) != 1 || st.Changes[0].Work != 'M' || st.Changes[0].Staged != 0 {
 		t.Fatalf("modified file: %+v", st.Changes)
 	}
-	if d, err := r.Diff(ctx, "a.txt", false, false); err != nil || !slices.Contains(lines(d), "+two") {
+	if d, err := r.Diff(ctx, "a.txt", false, Whitespace{}); err != nil || !slices.Contains(lines(d), "+two") {
 		t.Fatalf("diff %q, %v", d, err)
 	}
 	if err := r.Stage(ctx, "a.txt"); err != nil {
@@ -132,7 +132,7 @@ func TestStageCommitLog(t *testing.T) {
 		len(all[0].Parents) != 1 || all[0].Parents[0] != all[1].Hash || !slices.Contains(all[0].Refs, "main") {
 		t.Fatalf("log %+v", all)
 	}
-	if p, err := r.Show(ctx, all[0].Hash, false); err != nil || !slices.Contains(lines(p), "+two") {
+	if p, err := r.Show(ctx, all[0].Hash, Whitespace{}); err != nil || !slices.Contains(lines(p), "+two") {
 		t.Fatalf("show %q, %v", p, err)
 	}
 	if r.LastMessage(ctx) != "second" {
@@ -276,7 +276,7 @@ func TestStashAndOperations(t *testing.T) {
 	if err != nil || len(list) != 1 || list[0].Ref != "stash@{0}" || !strings.HasSuffix(list[0].Subject, "half done") {
 		t.Fatalf("stashes %+v, %v", list, err)
 	}
-	if p, err := r.StashShow(ctx, "stash@{0}"); err != nil || !strings.Contains(p, "+wip") || !strings.Contains(p, "+new") {
+	if p, err := r.StashShow(ctx, "stash@{0}", Whitespace{}); err != nil || !strings.Contains(p, "+wip") || !strings.Contains(p, "+new") {
 		t.Fatalf("stash patch %q, %v", p, err)
 	}
 	if err := r.StashApply(ctx, "stash@{0}", true); err != nil {
@@ -729,5 +729,37 @@ func TestDrop(t *testing.T) {
 	}
 	if out, _ := r.Git(ctx, "ls-files"); out != "a.txt\nc.txt\n" {
 		t.Fatalf("files %q", out)
+	}
+}
+
+func TestWhitespace(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	// Far apart, as git leaves out blank lines only in a change of them alone.
+	middle := strings.Repeat("x\n", 10)
+	write(t, r, "a.txt", "one\n"+middle+"two\n")
+	if err := r.Stage(ctx, "a.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Commit(ctx, "first", false); err != nil {
+		t.Fatal(err)
+	}
+	write(t, r, "a.txt", "one  \n"+middle+"\ntwo\n") // spaces after one, a blank line before two
+	for _, c := range []struct {
+		ws          Whitespace
+		space, line bool // the changes shown: one's spaces, the blank line
+	}{
+		{Whitespace{}, true, true},
+		{Whitespace{Space: true}, false, true},
+		{Whitespace{BlankLines: true}, true, false},
+		{Whitespace{Space: true, BlankLines: true}, false, false},
+	} {
+		d, err := r.Diff(ctx, "a.txt", false, c.ws)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if l := lines(d); slices.Contains(l, "+one  ") != c.space || slices.Contains(l, "+") != c.line {
+			t.Errorf("%+v: diff %q", c.ws, d)
+		}
 	}
 }

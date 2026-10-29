@@ -478,6 +478,7 @@ func (a *app) detailView(c *ui.Context) {
 					d.diff.ExpandUnchanged = !prefs.FoldUnchanged
 					prefs.save()
 				}
+				a.whitespaceMenu(c)
 				a.lineButtons(c)
 			})
 			a.diffView(c)
@@ -495,7 +496,11 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 	ui.Column(c).Padding(8, 12).Gap(3).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 		ui.Text(c, cm.Subject).Bold().SingleLine()
 		if comparing(cm) {
-			ui.Text(c, loc.FilesDiffer(len(d.files))).TextColor(t.TextMuted)
+			ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
+				ui.Text(c, loc.FilesDiffer(len(d.files))).TextColor(t.TextMuted)
+				ui.Box(c).Grow(1)
+				a.whitespaceMenu(c)
+			})
 			return
 		}
 		ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
@@ -504,6 +509,7 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 			ui.Text(c, cm.Time.Format("2006-01-02 15:04")).TextColor(t.TextMuted)
 			ui.Box(c).Grow(1)
 			a.changeNav(c)
+			a.whitespaceMenu(c)
 			if n := len(cm.Parents); n > 1 {
 				labels := make([]string, n)
 				for i, p := range cm.Parents {
@@ -517,6 +523,41 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 		})
 		if body := strings.TrimSpace(strings.TrimPrefix(d.message, cm.Subject)); body != "" {
 			ui.Text(c, body).TextColor(t.TextMuted).Wrap().MaxLines(6)
+		}
+	})
+}
+
+// whitespaceMenu is a pop-up button over the diff, as IntelliJ's, naming
+// what the diffs leave out of whitespace changes and choosing it.
+func (a *app) whitespaceMenu(c *ui.Context) {
+	label := loc.WhitespaceKept()
+	switch ws := prefs.whitespace(); {
+	case ws.Space && ws.BlankLines:
+		label = loc.IgnoreSpaceAndBlankLines()
+	case ws.Space:
+		label = loc.IgnoreSpace()
+	case ws.BlankLines:
+		label = loc.IgnoreBlankLines()
+	}
+	b := ui.ButtonBase(c.Key("whitespace")).Padding(3, 6).Gap(2).Radius(5).AlignItems(ui.Center).Shrink(0).
+		Tooltip(loc.WhitespaceChanges()).Cursor(ui.CursorPointer)
+	if b.Hovered() {
+		b.Background(c.Theme().Text.Alpha(0.12))
+	}
+	b.Children(func() {
+		ui.Text(c, label).SingleLine()
+		ui.Icon(c, icons["chevron-down"]).Size(12, 12)
+	})
+	b.Menu(func(m *ui.Menu) {
+		for _, o := range []struct {
+			on    *bool
+			label string
+		}{{&prefs.IgnoreSpace, loc.IgnoreSpace()}, {&prefs.IgnoreBlankLines, loc.IgnoreBlankLines()}} {
+			if m.Item(o.label).Checked(*o.on).Chosen() {
+				*o.on = !*o.on
+				prefs.save()
+				a.reloadDiff()
+			}
 		}
 	})
 }
@@ -698,7 +739,7 @@ func (a *app) lineButtons(c *ui.Context) {
 		}
 		c.OnShortcut(ui.Cmd, ui.KeyS, a.saveFile)
 	}
-	if a.detail.patch == nil || !patch.Partial(*a.detail.patch) || prefs.IgnoreWhitespace {
+	if a.detail.patch == nil || !patch.Partial(*a.detail.patch) || prefs.whitespace().Any() {
 		return
 	}
 	chosen := a.selectedLines()

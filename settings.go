@@ -12,6 +12,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
+	"mygit/internal/git"
 	"mygit/internal/sysproxy"
 	loc "mygit/locales"
 )
@@ -23,7 +24,8 @@ type settings struct {
 	Language         string           `json:"language"`        // the language chosen, "" for the system's
 	Theme            mygo.ThemeSource `json:"theme,omitempty"` // light or dark, "" for the system's
 	Unified          bool             `json:"unified"`
-	IgnoreWhitespace bool             `json:"ignoreWhitespace"`
+	IgnoreSpace      bool             `json:"ignoreWhitespace"`         // changes of spaces within lines, in diffs and merges
+	IgnoreBlankLines bool             `json:"ignoreBlankLines"`         // blank lines added or removed, in diffs
 	FoldUnchanged    bool             `json:"foldUnchanged"`            // a changed file's lines away from its changes, as it shows whole
 	FoldedBranches   map[string]bool  `json:"foldedBranches,omitempty"` // the branches' popover's sections folded, by kind
 	TreeView         bool             `json:"treeView"`                 // the lists of files show as trees
@@ -35,6 +37,11 @@ type settings struct {
 	Remotes          []string         `json:"remotes,omitempty"` // repositories on other computers opened lately, host:dir
 	Recent           []string         `json:"recent,omitempty"`  // the folders opened lately here and there, the latest first
 	path             string
+}
+
+// whitespace is what the diffs leave out of whitespace changes.
+func (s *settings) whitespace() git.Whitespace {
+	return git.Whitespace{Space: s.IgnoreSpace, BlankLines: s.IgnoreBlankLines}
 }
 
 var prefs = &settings{SidebarW: 300, LogH: 360, FilesW: 260, StagedPct: 30}
@@ -135,7 +142,8 @@ func (d *settingsDialog) view(c *ui.Context, withShortcuts bool, closed func()) 
 				themeSelect(c)
 				ui.Text(c, loc.DiffSection()).Bold().TextColor(t.TextMuted)
 				ui.Checkbox(c, &prefs.Unified, loc.DiffUnified())
-				ui.Checkbox(c, &prefs.IgnoreWhitespace, loc.IgnoreWhitespace())
+				ui.Checkbox(c, &prefs.IgnoreSpace, loc.IgnoreSpace())
+				ui.Checkbox(c, &prefs.IgnoreBlankLines, loc.IgnoreBlankLines())
 				ui.Text(c, loc.NetworkSection()).Bold().TextColor(t.TextMuted)
 				if ui.TextInput(c, &prefs.Proxy).Placeholder(loc.ProxyPlaceholder()).Label(loc.Proxy()).Changed() {
 					d.proxyErr = ""

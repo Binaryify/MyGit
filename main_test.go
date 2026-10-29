@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -1283,5 +1284,82 @@ func TestStepChange(t *testing.T) {
 		if got := at(); got != step.want {
 			t.Fatalf("back %v: at change %d, want %d", step.back, got, step.want)
 		}
+	}
+}
+
+func TestWhitespaceMenu(t *testing.T) {
+	defer func(space, blank bool) { prefs.IgnoreSpace, prefs.IgnoreBlankLines = space, blank }(prefs.IgnoreSpace, prefs.IgnoreBlankLines)
+	prefs.IgnoreSpace, prefs.IgnoreBlankLines = false, false
+	tt := newTester(t)
+	ctx := context.Background()
+	var lines []string
+	for i := 1; i <= 20; i++ {
+		lines = append(lines, fmt.Sprintf("line %d", i))
+	}
+	path := filepath.Join(tt.a.repo.Dir, "long.txt")
+	write := func() {
+		if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write()
+	if _, err := tt.a.repo.Git(ctx, "add", "long.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tt.a.repo.Git(ctx, "-c", "user.name=a", "-c", "user.email=a@a", "commit", "-qm", "Long"); err != nil {
+		t.Fatal(err)
+	}
+	// Spaces after the first line, a blank line before the last, far apart.
+	lines[0] += "  "
+	lines = slices.Insert(lines, 19, "")
+	write()
+	hunks := func() int {
+		if tt.a.detail.diff == nil {
+			return 0
+		}
+		return len(tt.a.detail.diff.Hunks())
+	}
+	choose := func(button, item string) {
+		t.Helper()
+		tt.click(t, button)
+		if err := tt.ChooseMenuItem(item); err != nil {
+			t.Fatalf("%v; menu %q", err, tt.Menu())
+		}
+		tt.Frame()
+		tt.settle()
+	}
+	tt.a.refresh()
+	tt.settle()
+	tt.click(t, "long.txt")
+	tt.settle()
+	if n := hunks(); n != 2 || !tt.a.detail.whole {
+		t.Fatalf("%d changes, whole %v", n, tt.a.detail.whole)
+	}
+	choose("不忽略空白", "忽略空格")
+	if n := hunks(); !prefs.IgnoreSpace || n != 1 || tt.a.detail.whole || !tt.HasText("忽略空格") {
+		t.Fatalf("ignoring spaces: %d changes, whole %v", n, tt.a.detail.whole)
+	}
+	choose("忽略空格", "忽略空行")
+	if n := hunks(); !prefs.IgnoreBlankLines || n != 0 || !tt.HasText("忽略空格和空行") {
+		t.Fatalf("ignoring both: %d changes", n)
+	}
+	// A commit's diff is read again as well, its file staying shown.
+	if _, err := tt.a.repo.Git(ctx, "-c", "user.name=a", "-c", "user.email=a@a", "commit", "-qam", "Spaces"); err != nil {
+		t.Fatal(err)
+	}
+	tt.a.refresh()
+	tt.settle()
+	tt.click(t, "Spaces")
+	tt.settle()
+	if len(tt.a.detail.files) != 0 {
+		t.Fatalf("ignoring both, files %d", len(tt.a.detail.files))
+	}
+	choose("忽略空格和空行", "忽略空格")
+	if n := hunks(); prefs.IgnoreSpace || len(tt.a.detail.files) != 1 || n != 1 {
+		t.Fatalf("ignoring blank lines: files %d, %d changes", len(tt.a.detail.files), n)
+	}
+	choose("忽略空行", "忽略空行")
+	if n := hunks(); n != 2 || !tt.HasText("不忽略空白") {
+		t.Fatalf("ignoring none: %d changes", n)
 	}
 }
