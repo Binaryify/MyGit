@@ -1,0 +1,31 @@
+name: Website
+
+# The website branch is what the site serves in production: every tag
+# moves it to the tagged commit. It only fast-forwards, so a tag of an
+# older commit fails here instead of rolling the site back.
+on:
+  push:
+    tags: ["**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: website
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write # push the website branch
+    steps:
+      # The whole history, without files' contents: git refuses to push
+      # over a branch tip it does not have ("fetch first"), and a shallow
+      # clone has only the tagged commit.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - name: Fast-forward the website branch
+        run: git push origin "${GITHUB_SHA}:refs/heads/website"

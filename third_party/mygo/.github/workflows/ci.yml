@@ -1,0 +1,190 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - LICENSE
+  pull_request:
+    paths-ignore:
+      - "**/*.md"
+      - LICENSE
+
+permissions:
+  contents: read
+
+# A push supersedes the runs before it, on main as on a pull request: the
+# newest commit's run covers theirs. A release commit runs on its own, so
+# that it is neither queued behind nor canceled by others, as its tag waits
+# for its run.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}${{ startsWith(github.event.head_commit.message, 'Release ') && format('-{0}', github.sha) || '' }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      LINUX_PACKAGES: libwebkit2gtk-4.1-0 libayatana-appindicator3-1 xvfb xauth dbus-x11 libgl1-mesa-dri libglx-mesa0 libegl-mesa0
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: macOS, os: macos-latest }
+          - { name: Linux, os: ubuntu-latest }
+          - { name: Windows, os: windows-latest }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: oven-sh/setup-bun@v2
+      # Ubuntu's mirrors are slow now and then (9 minutes for these packages
+      # once), so the packages are kept in the Actions cache, under a key of
+      # the files apt would download for them.
+      - name: List the packages for WebKitGTK and a virtual display
+        if: runner.os == 'Linux'
+        id: apt
+        run: |
+          sudo apt-get update
+          debs=$(apt-get install --print-uris -qq -y --no-install-recommends $LINUX_PACKAGES | awk '{print $2}' | sort | sha256sum | cut -c1-16)
+          echo "prefix=apt-$ImageOS-${{ runner.arch }}-" >> "$GITHUB_OUTPUT"
+          echo "key=apt-$ImageOS-${{ runner.arch }}-$debs" >> "$GITHUB_OUTPUT"
+      - name: Restore the packages
+        if: runner.os == 'Linux'
+        id: apt-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/apt-archives
+          key: ${{ steps.apt.outputs.key }}
+          restore-keys: ${{ steps.apt.outputs.prefix }}
+      - name: Install WebKitGTK and a virtual display
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p ~/.cache/apt-archives/partial
+          apt="-o Dir::Cache::Archives=$HOME/.cache/apt-archives -o APT::Sandbox::User=root"
+          sudo apt-get install -y --no-install-recommends $apt $LINUX_PACKAGES
+          # Drops what a restored older cache has that the mirror no longer does.
+          sudo apt-get autoclean $apt
+          sudo chown -R "$USER" ~/.cache/apt-archives
+      - name: Save the packages
+        if: runner.os == 'Linux' && steps.apt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.cache/apt-archives
+          key: ${{ steps.apt.outputs.key }}
+      - run: bun install --frozen-lockfile
+      - name: Build the JavaScript packages
+        run: bun run build
+      - name: Build and vet every platform
+        if: runner.os == 'Linux'
+        run: |
+          for os in darwin linux windows; do
+            GOOS=$os go build ./...
+            GOOS=$os go vet ./...
+            # Production builds leave the inspector of native UI out.
+            GOOS=$os go vet -tags mygo_noinspector ./...
+          done
+          GOOS=freebsd go build ./...
+          # 32-bit Windows and Linux have no backend, but compile.
+          GOOS=windows GOARCH=386 go build ./...
+          GOOS=linux GOARCH=386 go build ./...
+          # Browsers run native UI; the CLI is for desktops.
+          export GOOS=js GOARCH=wasm
+          go build $(go list -f '{{if .GoFiles}}{{.ImportPath}}{{end}}' ./... | grep -v /cmd/mygo)
+          go vet $(go list ./... | grep -v /cmd/mygo)
+          go test -exec "$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./internal/web ./internal/gpu/gl
+      # The plugins' tests load the native libraries their mygo-plugin.json
+      # pins, and on Windows the installer tests run the NSIS that
+      # internal/nsis pins, all of which they download into the user's cache
+      # when it lacks them. Downloading them here, before the tests, and
+      # keeping them in the Actions cache under a key of what pins them,
+      # keeps the tests off the network and its hosts' passing failures.
+      - name: Restore the downloads of the tests
+        id: downloads
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            ${{ runner.os == 'Windows' && '~/AppData/Local' || runner.os == 'macOS' && '~/Library/Caches' || '~/.cache' }}/mygo/natives
+            ${{ runner.os == 'Windows' && '~/AppData/Local' || runner.os == 'macOS' && '~/Library/Caches' || '~/.cache' }}/mygo/nsis-*
+          key: downloads-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('plugins/*/mygo-plugin.json', 'internal/nsis/nsis.go') }}
+      - name: Download what the tests need
+        run: go run ./internal/prefetch
+      - name: Save the downloads of the tests
+        if: steps.downloads.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ${{ runner.os == 'Windows' && '~/AppData/Local' || runner.os == 'macOS' && '~/Library/Caches' || '~/.cache' }}/mygo/natives
+            ${{ runner.os == 'Windows' && '~/AppData/Local' || runner.os == 'macOS' && '~/Library/Caches' || '~/.cache' }}/mygo/nsis-*
+          key: ${{ steps.downloads.outputs.cache-primary-key }}
+      - run: go test ./...
+      - name: Test without the inspector, as production builds
+        if: runner.os == 'Linux'
+        run: go test -tags mygo_noinspector ./ui .
+      - run: bun run test
+      - run: bun run typecheck
+      - name: GUI tests
+        if: runner.os != 'Linux'
+        env:
+          MYGO_E2E: 1
+        run: go test ./internal/e2e
+      - name: GUI tests
+        if: runner.os == 'Linux'
+        env:
+          MYGO_E2E: 1
+          XDG_DATA_HOME: ${{ runner.temp }}/xdg-data
+          XDG_CONFIG_HOME: ${{ runner.temp }}/xdg-config
+        run: xvfb-run -a dbus-run-session -- go test ./internal/e2e
+      # Runners have no GPU, so native UI draws on the CPU above; MYGO_GPU=1
+      # draws it with OpenGL all the same, on Mesa's llvmpipe.
+      - name: GUI tests of native UI drawn with OpenGL
+        if: runner.os == 'Linux'
+        env:
+          MYGO_E2E: 1
+          MYGO_GPU: 1
+        run: xvfb-run -a dbus-run-session -- go test -run 'TestContentWindow' ./internal/e2e
+
+  # Windows on ARM64, which no machine of the maintainers runs: DirectWrite's
+  # methods taking floats go through purego, which sets the floating point
+  # registers syscall leaves alone there, and Direct3D 11 draws native UI.
+  # The JavaScript packages are the same everywhere, so Bun is left out.
+  windows-arm64:
+    name: Windows ARM64
+    runs-on: windows-11-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      # As in the job above.
+      - name: Restore the downloads of the tests
+        id: downloads
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            ${{ runner.os == 'Windows' && '~/AppData/Local' || runner.os == 'macOS' && '~/Library/Caches' || '~/.cache' }}/mygo/natives
+            ${{ runner.os == 'Windows' && '~/AppData/Local' || runner.os == 'macOS' && '~/Library/Caches' || '~/.cache' }}/mygo/nsis-*
+          key: downloads-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('plugins/*/mygo-plugin.json', 'internal/nsis/nsis.go') }}
+      - name: Download what the tests need
+        run: go run ./internal/prefetch
+      - name: Save the downloads of the tests
+        if: steps.downloads.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ${{ runner.os == 'Windows' && '~/AppData/Local' || runner.os == 'macOS' && '~/Library/Caches' || '~/.cache' }}/mygo/natives
+            ${{ runner.os == 'Windows' && '~/AppData/Local' || runner.os == 'macOS' && '~/Library/Caches' || '~/.cache' }}/mygo/nsis-*
+          key: ${{ steps.downloads.outputs.cache-primary-key }}
+      - run: go test ./...
+      - name: Test without the inspector, as production builds
+        if: runner.os == 'Linux'
+        run: go test -tags mygo_noinspector ./ui .
+      - name: GUI tests of native UI
+        env:
+          MYGO_E2E: 1
+        run: go test -run 'TestContentWindow' ./internal/e2e

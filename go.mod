@@ -17,3 +17,8 @@ require (
 	golang.org/x/net v0.59.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 )
+
+// mygo v0.7.2, without its docs, site, examples and tests, and with the
+// diff's fillers painted only in sight (egoist/mygo#904): the commit after
+// the one adding it is the patch. Back to the release once it has the fix.
+replace github.com/egoist/mygo => ./third_party/mygo
