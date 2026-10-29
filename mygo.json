@@ -1,7 +1,7 @@
 {
   "name": "MyGit",
   "identifier": "io.github.binaryify.mygit",
-  "version": "0.3.18-dev",
+  "version": "0.3.19-dev",
   "copyright": "Copyright © 2026 binaryify",
   "out": "build",
   "macos": {
