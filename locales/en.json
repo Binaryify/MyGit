@@ -1384,6 +1384,7 @@
   "foldUnchanged": "Fold Unchanged",
   "whitespaceChanges": "Whitespace changes",
   "whitespaceKept": "Do Not Ignore",
+  "trimWhitespace": "Trim Whitespace",
   "ignoreSpaceAndBlankLines": "Ignore Whitespace and Blank Lines",
   "viewAsTree": "View as Tree",
   "viewAsList": "View as List",

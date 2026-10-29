@@ -137,18 +137,22 @@ func (r *Repo) Show(ctx context.Context, hash string, ws Whitespace) (string, er
 
 // Whitespace is what a diff leaves out of whitespace changes.
 type Whitespace struct {
+	Trim       bool // changes of how much space, at the lines' ends too, as -b
 	Space      bool // changes of spaces within lines, as -w
 	BlankLines bool // blank lines added or removed, as --ignore-blank-lines
 }
 
 // Any tells whether some is left out, when a diff's lines no longer make
 // up the file's change.
-func (w Whitespace) Any() bool { return w.Space || w.BlankLines }
+func (w Whitespace) Any() bool { return w.Trim || w.Space || w.BlankLines }
 
 // with adds to cmd the options leaving out what's asked, then args.
 func (w Whitespace) with(cmd []string, args ...string) []string {
-	if w.Space {
+	switch {
+	case w.Space:
 		cmd = append(cmd, "-w")
+	case w.Trim:
+		cmd = append(cmd, "-b")
 	}
 	if w.BlankLines {
 		cmd = append(cmd, "--ignore-blank-lines")

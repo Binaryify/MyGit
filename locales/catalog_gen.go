@@ -5032,6 +5032,16 @@ func (msgs Messages) WhitespaceKept() string {
 	return Catalog.Format(msgs.locale, "whitespaceKept", nil)
 }
 
+// TrimWhitespace says "Trim Whitespace"
+// in the language the app shows.
+func TrimWhitespace() string { return In(i18n.Locale()).TrimWhitespace() }
+
+// TrimWhitespace says "Trim Whitespace"
+// in the language of msgs.
+func (msgs Messages) TrimWhitespace() string {
+	return Catalog.Format(msgs.locale, "trimWhitespace", nil)
+}
+
 // IgnoreSpaceAndBlankLines says "Ignore Whitespace and Blank Lines"
 // in the language the app shows.
 func IgnoreSpaceAndBlankLines() string { return In(i18n.Locale()).IgnoreSpaceAndBlankLines() }

@@ -121,7 +121,7 @@ func newMerger(path string, t mergeTexts) *merger {
 	lf := func(s string) string { return strings.ReplaceAll(s, "\r\n", "\n") }
 	crlf := strings.Contains(t.ours, "\r\n")
 	t.base, t.ours, t.theirs, t.work = lf(t.base), lf(t.ours), lf(t.theirs), lf(t.work)
-	m := &merger{path: path, texts: t, model: conflict.New(t.base, t.ours, t.theirs, prefs.IgnoreSpace), lh: 20, split1: 30, split2: 57}
+	m := &merger{path: path, texts: t, model: conflict.New(t.base, t.ours, t.theirs, mergeIgnoresSpace()), lh: 20, split1: 30, split2: 57}
 	result := m.model.Result()
 	if t.kind() == "" && t.work != "" && t.work != result && !hasMarkers(t.work) {
 		m.model.Sync(t.work)
@@ -259,7 +259,7 @@ func (m *merger) undoIgnore() bool {
 func (m *merger) remerge(keep bool) {
 	m.sync()
 	text := m.panes[paneResult].Buffer.String()
-	m.model = conflict.New(m.texts.base, m.texts.ours, m.texts.theirs, prefs.IgnoreSpace)
+	m.model = conflict.New(m.texts.base, m.texts.ours, m.texts.theirs, mergeIgnoresSpace())
 	m.ignored, m.note = nil, ""
 	if keep {
 		m.model.Sync(text)
@@ -542,9 +542,10 @@ func (a *app) mergeView(c *ui.Context, m *merger) {
 					a.takeSide(m.path, git.TheirsStage)
 				}
 				menu.Separator()
-				if menu.Item(loc.IgnoreSpace()).Checked(prefs.IgnoreSpace).Chosen() {
-					prefs.IgnoreSpace = !prefs.IgnoreSpace
-					prefs.save()
+				if menu.Item(loc.IgnoreSpace()).Checked(mergeIgnoresSpace()).Chosen() {
+					ws := prefs.whitespace()
+					ws.Space, ws.Trim = !mergeIgnoresSpace(), false
+					prefs.setWhitespace(ws)
 					m.remerge(true)
 				}
 				if menu.Item(loc.CompareBaseLeft()).Chosen() {
@@ -781,4 +782,12 @@ func (a *app) saveResolution(m *merger) {
 		return
 	}
 	save()
+}
+
+// mergeIgnoresSpace tells whether merges take lines alike but for their
+// spaces as alike, as the diffs leave out spaces' changes; they don't
+// leave out blank lines.
+func mergeIgnoresSpace() bool {
+	ws := prefs.whitespace()
+	return ws.Space || ws.Trim
 }

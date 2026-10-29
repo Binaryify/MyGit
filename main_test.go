@@ -1288,8 +1288,8 @@ func TestStepChange(t *testing.T) {
 }
 
 func TestWhitespaceMenu(t *testing.T) {
-	defer func(space, blank bool) { prefs.IgnoreSpace, prefs.IgnoreBlankLines = space, blank }(prefs.IgnoreSpace, prefs.IgnoreBlankLines)
-	prefs.IgnoreSpace, prefs.IgnoreBlankLines = false, false
+	defer func(mode string) { prefs.Whitespace = mode }(prefs.Whitespace)
+	prefs.Whitespace = ""
 	tt := newTester(t)
 	ctx := context.Background()
 	var lines []string
@@ -1335,12 +1335,12 @@ func TestWhitespaceMenu(t *testing.T) {
 	if n := hunks(); n != 2 || !tt.a.detail.whole {
 		t.Fatalf("%d changes, whole %v", n, tt.a.detail.whole)
 	}
-	choose("不忽略空白", "忽略空格")
-	if n := hunks(); !prefs.IgnoreSpace || n != 1 || tt.a.detail.whole || !tt.HasText("忽略空格") {
-		t.Fatalf("ignoring spaces: %d changes, whole %v", n, tt.a.detail.whole)
+	choose("不忽略", "修剪空白")
+	if n := hunks(); prefs.Whitespace != "trim" || n != 1 || tt.a.detail.whole || !tt.HasText("修剪空白") {
+		t.Fatalf("trimming: %d changes, whole %v", n, tt.a.detail.whole)
 	}
-	choose("忽略空格", "忽略空行")
-	if n := hunks(); !prefs.IgnoreBlankLines || n != 0 || !tt.HasText("忽略空格和空行") {
+	choose("修剪空白", "忽略空格和空行")
+	if n := hunks(); prefs.Whitespace != "all" || n != 0 || !tt.HasText("忽略空格和空行") {
 		t.Fatalf("ignoring both: %d changes", n)
 	}
 	// A commit's diff is read again as well, its file staying shown.
@@ -1354,12 +1354,27 @@ func TestWhitespaceMenu(t *testing.T) {
 	if len(tt.a.detail.files) != 0 {
 		t.Fatalf("ignoring both, files %d", len(tt.a.detail.files))
 	}
-	choose("忽略空格和空行", "忽略空格")
-	if n := hunks(); prefs.IgnoreSpace || len(tt.a.detail.files) != 1 || n != 1 {
+	choose("忽略空格和空行", "忽略空行")
+	if n := hunks(); prefs.Whitespace != "blank" || len(tt.a.detail.files) != 1 || n != 1 {
 		t.Fatalf("ignoring blank lines: files %d, %d changes", len(tt.a.detail.files), n)
 	}
-	choose("忽略空行", "忽略空行")
-	if n := hunks(); n != 2 || !tt.HasText("不忽略空白") {
+	choose("忽略空行", "不忽略")
+	if n := hunks(); n != 2 || prefs.Whitespace != "" {
 		t.Fatalf("ignoring none: %d changes", n)
+	}
+}
+
+func TestWhitespaceSettingsKept(t *testing.T) {
+	for data, want := range map[string]string{
+		`{}`:                        "",
+		`{"ignoreWhitespace":true}`: "space",
+		`{"ignoreBlankLines":true}`: "blank",
+		`{"ignoreWhitespace":true,"ignoreBlankLines":true}`: "all",
+		`{"whitespace":"trim","ignoreWhitespace":true}`:     "trim",
+	} {
+		var s settings
+		if s.read([]byte(data)); s.Whitespace != want {
+			t.Errorf("%s: mode %q, want %q", data, s.Whitespace, want)
+		}
 	}
 }

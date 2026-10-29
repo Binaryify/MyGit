@@ -528,33 +528,23 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 }
 
 // whitespaceMenu is a pop-up button over the diff, as IntelliJ's, naming
-// what the diffs leave out of whitespace changes and choosing it.
+// what the diffs leave out of whitespace changes and choosing one of the
+// modes.
 func (a *app) whitespaceMenu(c *ui.Context) {
-	label := loc.WhitespaceKept()
-	switch ws := prefs.whitespace(); {
-	case ws.Space && ws.BlankLines:
-		label = loc.IgnoreSpaceAndBlankLines()
-	case ws.Space:
-		label = loc.IgnoreSpace()
-	case ws.BlankLines:
-		label = loc.IgnoreBlankLines()
-	}
 	b := ui.ButtonBase(c.Key("whitespace")).Padding(3, 6).Gap(2).Radius(5).AlignItems(ui.Center).Shrink(0).
 		Tooltip(loc.WhitespaceChanges()).Cursor(ui.CursorPointer)
 	if b.Hovered() {
 		b.Background(c.Theme().Text.Alpha(0.12))
 	}
+	chosen := prefs.whitespaceMode()
 	b.Children(func() {
-		ui.Text(c, label).SingleLine()
+		ui.Text(c, chosen.label()).SingleLine()
 		ui.Icon(c, icons["chevron-down"]).Size(12, 12)
 	})
 	b.Menu(func(m *ui.Menu) {
-		for _, o := range []struct {
-			on    *bool
-			label string
-		}{{&prefs.IgnoreSpace, loc.IgnoreSpace()}, {&prefs.IgnoreBlankLines, loc.IgnoreBlankLines()}} {
-			if m.Item(o.label).Checked(*o.on).Chosen() {
-				*o.on = !*o.on
+		for _, mode := range whitespaceModes {
+			if m.Item(mode.label()).Checked(mode.key == chosen.key).Chosen() && mode.key != chosen.key {
+				prefs.Whitespace = mode.key
 				prefs.save()
 				a.reloadDiff()
 			}

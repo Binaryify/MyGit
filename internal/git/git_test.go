@@ -750,6 +750,7 @@ func TestWhitespace(t *testing.T) {
 		space, line bool // the changes shown: one's spaces, the blank line
 	}{
 		{Whitespace{}, true, true},
+		{Whitespace{Trim: true}, false, true},
 		{Whitespace{Space: true}, false, true},
 		{Whitespace{BlankLines: true}, true, false},
 		{Whitespace{Space: true, BlankLines: true}, false, false},
@@ -761,5 +762,24 @@ func TestWhitespace(t *testing.T) {
 		if l := lines(d); slices.Contains(l, "+one  ") != c.space || slices.Contains(l, "+") != c.line {
 			t.Errorf("%+v: diff %q", c.ws, d)
 		}
+	}
+}
+
+func TestTrimKeepsNewSpaces(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	write(t, r, "a.txt", "ab\n")
+	if err := r.Stage(ctx, "a.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Commit(ctx, "first", false); err != nil {
+		t.Fatal(err)
+	}
+	write(t, r, "a.txt", "a b\n") // a space where there was none
+	if d, _ := r.Diff(ctx, "a.txt", false, Whitespace{Trim: true}); !slices.Contains(lines(d), "+a b") {
+		t.Errorf("trimming: diff %q", d)
+	}
+	if d, _ := r.Diff(ctx, "a.txt", false, Whitespace{Space: true}); d != "" {
+		t.Errorf("ignoring spaces: diff %q", d)
 	}
 }

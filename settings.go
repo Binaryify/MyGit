@@ -20,28 +20,58 @@ import (
 // settings are the choices kept between launches, shared by the windows,
 // in a JSON file.
 type settings struct {
-	Editor           string           `json:"editor"`          // the command opening files, "" for the system's app
-	Language         string           `json:"language"`        // the language chosen, "" for the system's
-	Theme            mygo.ThemeSource `json:"theme,omitempty"` // light or dark, "" for the system's
-	Unified          bool             `json:"unified"`
-	IgnoreSpace      bool             `json:"ignoreWhitespace"`         // changes of spaces within lines, in diffs and merges
-	IgnoreBlankLines bool             `json:"ignoreBlankLines"`         // blank lines added or removed, in diffs
-	FoldUnchanged    bool             `json:"foldUnchanged"`            // a changed file's lines away from its changes, as it shows whole
-	FoldedBranches   map[string]bool  `json:"foldedBranches,omitempty"` // the branches' popover's sections folded, by kind
-	TreeView         bool             `json:"treeView"`                 // the lists of files show as trees
-	SidebarW         float32          `json:"sidebarW"`
-	LogH             float32          `json:"logH"`
-	FilesW           float32          `json:"filesW"`
-	StagedPct        float32          `json:"stagedPct"`         // of the changes' room, the staged changes', in percent
-	Proxy            string           `json:"proxy,omitempty"`   // the downloads', "" for the system's
-	Remotes          []string         `json:"remotes,omitempty"` // repositories on other computers opened lately, host:dir
-	Recent           []string         `json:"recent,omitempty"`  // the folders opened lately here and there, the latest first
-	path             string
+	Editor         string           `json:"editor"`          // the command opening files, "" for the system's app
+	Language       string           `json:"language"`        // the language chosen, "" for the system's
+	Theme          mygo.ThemeSource `json:"theme,omitempty"` // light or dark, "" for the system's
+	Unified        bool             `json:"unified"`
+	Whitespace     string           `json:"whitespace,omitempty"`     // what the diffs leave out of whitespace changes, a whitespaceModes' key
+	FoldUnchanged  bool             `json:"foldUnchanged"`            // a changed file's lines away from its changes, as it shows whole
+	FoldedBranches map[string]bool  `json:"foldedBranches,omitempty"` // the branches' popover's sections folded, by kind
+	TreeView       bool             `json:"treeView"`                 // the lists of files show as trees
+	SidebarW       float32          `json:"sidebarW"`
+	LogH           float32          `json:"logH"`
+	FilesW         float32          `json:"filesW"`
+	StagedPct      float32          `json:"stagedPct"`         // of the changes' room, the staged changes', in percent
+	Proxy          string           `json:"proxy,omitempty"`   // the downloads', "" for the system's
+	Remotes        []string         `json:"remotes,omitempty"` // repositories on other computers opened lately, host:dir
+	Recent         []string         `json:"recent,omitempty"`  // the folders opened lately here and there, the latest first
+	path           string
+}
+
+// whitespaceMode is a choice of what the diffs leave out of whitespace
+// changes, kept by its key.
+type whitespaceMode struct {
+	key   string
+	ws    git.Whitespace
+	label func() string
+}
+
+// whitespaceModes are IntelliJ's choices, with blank lines alone besides.
+var whitespaceModes = []whitespaceMode{
+	{"", git.Whitespace{}, loc.WhitespaceKept},
+	{"trim", git.Whitespace{Trim: true}, loc.TrimWhitespace},
+	{"space", git.Whitespace{Space: true}, loc.IgnoreSpace},
+	{"blank", git.Whitespace{BlankLines: true}, loc.IgnoreBlankLines},
+	{"all", git.Whitespace{Space: true, BlankLines: true}, loc.IgnoreSpaceAndBlankLines},
+}
+
+// whitespaceMode is the mode chosen, not leaving out any for a key unknown.
+func (s *settings) whitespaceMode() whitespaceMode {
+	i := slices.IndexFunc(whitespaceModes, func(m whitespaceMode) bool { return m.key == s.Whitespace })
+	return whitespaceModes[max(i, 0)]
 }
 
 // whitespace is what the diffs leave out of whitespace changes.
-func (s *settings) whitespace() git.Whitespace {
-	return git.Whitespace{Space: s.IgnoreSpace, BlankLines: s.IgnoreBlankLines}
+func (s *settings) whitespace() git.Whitespace { return s.whitespaceMode().ws }
+
+// setWhitespace chooses the mode leaving out ws, saving it.
+func (s *settings) setWhitespace(ws git.Whitespace) {
+	for _, m := range whitespaceModes {
+		if m.ws == ws {
+			s.Whitespace = m.key
+		}
+	}
+	s.save()
 }
 
 var prefs = &settings{SidebarW: 300, LogH: 360, FilesW: 260, StagedPct: 30}
@@ -53,10 +83,23 @@ func loadSettings() {
 	}
 	prefs.path = filepath.Join(dir, "MyGit", "settings.json")
 	if data, err := os.ReadFile(prefs.path); err == nil {
-		_ = json.Unmarshal(data, prefs)
+		prefs.read(data)
 	}
 	_ = sysproxy.Set(prefs.Proxy)
 	applyTheme(prefs.Theme) // the app starts in it
+}
+
+// read takes the settings from their file's data, the whitespace left out
+// as 0.3.16 and those before kept it too.
+func (s *settings) read(data []byte) {
+	_ = json.Unmarshal(data, s)
+	var old struct {
+		Space bool `json:"ignoreWhitespace"`
+		Blank bool `json:"ignoreBlankLines"`
+	}
+	if json.Unmarshal(data, &old) == nil && s.Whitespace == "" {
+		s.setWhitespace(git.Whitespace{Space: old.Space, BlankLines: old.Blank})
+	}
 }
 
 // applyTheme makes the app light, dark or the system's; tests replace it,
@@ -142,8 +185,7 @@ func (d *settingsDialog) view(c *ui.Context, withShortcuts bool, closed func()) 
 				themeSelect(c)
 				ui.Text(c, loc.DiffSection()).Bold().TextColor(t.TextMuted)
 				ui.Checkbox(c, &prefs.Unified, loc.DiffUnified())
-				ui.Checkbox(c, &prefs.IgnoreSpace, loc.IgnoreSpace())
-				ui.Checkbox(c, &prefs.IgnoreBlankLines, loc.IgnoreBlankLines())
+				whitespaceSelect(c)
 				ui.Text(c, loc.NetworkSection()).Bold().TextColor(t.TextMuted)
 				if ui.TextInput(c, &prefs.Proxy).Placeholder(loc.ProxyPlaceholder()).Label(loc.Proxy()).Changed() {
 					d.proxyErr = ""
@@ -219,6 +261,19 @@ func themeSelect(c *ui.Context) {
 		}
 		prefs.save()
 		applyTheme(prefs.Theme)
+	}
+}
+
+// whitespaceSelect picks what the diffs leave out of whitespace changes.
+func whitespaceSelect(c *ui.Context) {
+	labels := make([]string, len(whitespaceModes))
+	for i, m := range whitespaceModes {
+		labels[i] = m.label()
+	}
+	choice := prefs.whitespaceMode().label()
+	if ui.Select(c.Key("whitespace"), &choice, labels).Label(loc.WhitespaceChanges()).Changed() {
+		prefs.Whitespace = whitespaceModes[slices.Index(labels, choice)].key
+		prefs.save()
 	}
 }
 
