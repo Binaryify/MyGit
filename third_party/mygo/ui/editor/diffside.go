@@ -2,6 +2,7 @@ package editor
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 
@@ -120,9 +121,20 @@ func (s *diffSide) paintBlock(p *ui.Painter, ed *editor, b *block, r ui.Rect) {
 		// A filler: hatched at -45°, every 8 DIPs, as Pierre's.
 		text := ui.Rect{X: r.X + ed.gutterW, Y: r.Y, W: r.W - ed.gutterW, H: r.H}
 		p.Clip(text, 0, func() {
+			// Only the stripes, and the pieces of them, in sight: a filler
+			// across a whole file added is millions of DIPs high.
+			v := p.Visible()
+			y0, y1 := float64(max(text.Y, v.Y)), float64(min(text.Y+text.H, v.Y+v.H))
+			if y0 >= y1 {
+				return
+			}
 			c := ct.Text.Alpha(0.07)
-			for x := text.X - r.H; x < text.X+text.W; x += 8 {
-				p.Line(x, r.Y+r.H, x+r.H, r.Y, 1, c)
+			// A stripe from x at the bottom is at x+(bottom-y) at height y.
+			bottom, start := float64(r.Y+r.H), float64(text.X-r.H)
+			lo := float64(text.X) - (bottom - y0)
+			hi := float64(text.X+text.W) - (bottom - y1)
+			for x := start + 8*math.Ceil((lo-start)/8); x < hi; x += 8 {
+				p.StrokePolyline([][2]float32{{float32(x + bottom - y1), float32(y1)}, {float32(x + bottom - y0), float32(y0)}}, 1, c)
 			}
 		})
 	case blockDeleted:
