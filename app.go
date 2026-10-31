@@ -839,6 +839,51 @@ func (a *app) discard(c git.Change) {
 	})
 }
 
+// discardAll throws away the whole list of changes, or with a filter the
+// changes it shows, once the user says so; a file in conflict stays for
+// its sides to choose.
+func (a *app) discardAll() {
+	changes := a.changes(false)
+	rows := a.shownRows(false)
+	var chosen []git.Change
+	for i, c := range changes {
+		if !c.Conflict && (rows == nil || slices.Contains(rows, i)) {
+			chosen = append(chosen, c)
+		}
+	}
+	if len(chosen) == 0 {
+		return
+	}
+	a.ask(loc.DiscardAllTitle(), loc.DiscardAllMessage(len(chosen)), loc.Discard(), func() {
+		a.run(loc.OpDiscard(), func(ctx context.Context) error { return a.discardChanges(ctx, chosen) }, nil)
+	})
+}
+
+// discardChanges throws the changes away: tracked files go back to the
+// index, untracked ones to the trash, where there is one.
+func (a *app) discardChanges(ctx context.Context, changes []git.Change) error {
+	var tracked, untracked []string
+	for _, c := range changes {
+		if c.Work == '?' {
+			untracked = append(untracked, c.Path)
+		} else {
+			tracked = append(tracked, c.Path)
+		}
+	}
+	if err := a.repo.Restore(ctx, tracked...); err != nil {
+		return err
+	}
+	if !a.local() { // no trash to reach over SSH: deleted
+		return a.repo.Remove(ctx, untracked...)
+	}
+	for _, p := range untracked {
+		if err := trash(a.repo.Path(p)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // stageAll and unstageAll act on a whole list, or with a filter on the
 // changes it shows.
 func (a *app) stageAll() {

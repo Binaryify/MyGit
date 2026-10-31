@@ -117,6 +117,28 @@ func TestScenarioDiscardTheChangeShown(t *testing.T) {
 	}
 }
 
+func TestScenarioDiscardAllChanges(t *testing.T) {
+	tt := newTester(t)
+	old := trash
+	trash = os.Remove // what the trash does, without the trash
+	t.Cleanup(func() { trash = old })
+	tt.write(t, map[string]string{"main.go": "package main\n\n// changed\n", "new.txt": "new\n"})
+	tt.click(t, "丢弃全部更改")
+	tt.Frame()
+	tt.Key(0, ui.KeyEnter) // Discard, the default
+	tt.settle()
+	if len(tt.a.unstaged) != 0 || tt.a.errMsg != "" {
+		t.Fatalf("after discarding all: %v, %q", tt.a.unstaged, tt.a.errMsg)
+	}
+	b, err := os.ReadFile(filepath.Join(tt.a.repo.Dir, "main.go"))
+	if err != nil || string(b) != "package main\n\nfunc main() {}\n" {
+		t.Fatalf("main.go %q, %v", b, err)
+	}
+	if _, err := os.Stat(filepath.Join(tt.a.repo.Dir, "new.txt")); !os.IsNotExist(err) {
+		t.Fatalf("new.txt still there: %v", err)
+	}
+}
+
 func TestScenarioCommitEverything(t *testing.T) {
 	tt := newTester(t)
 	tt.click(t, "notes.txt")

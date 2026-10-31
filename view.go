@@ -276,8 +276,13 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 				if iconButton(c, "minus", loc.UnstageAll()) && idle {
 					a.unstageAll()
 				}
-			} else if iconButton(c, "plus", loc.StageAll()) && idle {
-				a.stageAll()
+			} else {
+				if iconButton(c, "undo", loc.DiscardAll()) && idle {
+					a.discardAll()
+				}
+				if iconButton(c, "plus", loc.StageAll()) && idle {
+					a.stageAll()
+				}
 			}
 		}
 	})

@@ -841,6 +841,16 @@
   "changes": "Changes",
   "unstageAll": "Unstage All",
   "stageAll": "Stage All",
+  "discardAll": "Discard All Changes",
+  "discardAllTitle": "Discard all changes?",
+  "discardAllMessage": "{count, plural, one {The change to # file will be discarded. This can't be undone.} other {The changes to # files will be discarded. This can't be undone.}}",
+  "@discardAllMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "openFile": "Open File",
   "discardChanges": "Discard Changes",
   "discardMenu": "Discard Changes…",

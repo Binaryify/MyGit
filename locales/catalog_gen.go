@@ -3204,6 +3204,36 @@ func (msgs Messages) StageAll() string {
 	return Catalog.Format(msgs.locale, "stageAll", nil)
 }
 
+// DiscardAll says "Discard All Changes"
+// in the language the app shows.
+func DiscardAll() string { return In(i18n.Locale()).DiscardAll() }
+
+// DiscardAll says "Discard All Changes"
+// in the language of msgs.
+func (msgs Messages) DiscardAll() string {
+	return Catalog.Format(msgs.locale, "discardAll", nil)
+}
+
+// DiscardAllTitle says "Discard all changes?"
+// in the language the app shows.
+func DiscardAllTitle() string { return In(i18n.Locale()).DiscardAllTitle() }
+
+// DiscardAllTitle says "Discard all changes?"
+// in the language of msgs.
+func (msgs Messages) DiscardAllTitle() string {
+	return Catalog.Format(msgs.locale, "discardAllTitle", nil)
+}
+
+// DiscardAllMessage says "{count, plural, one {The change to # file will be discarded. This can't be undone.} other {The changes to # files wil…"
+// in the language the app shows.
+func DiscardAllMessage(count int) string { return In(i18n.Locale()).DiscardAllMessage(count) }
+
+// DiscardAllMessage says "{count, plural, one {The change to # file will be discarded. This can't be undone.} other {The changes to # files wil…"
+// in the language of msgs.
+func (msgs Messages) DiscardAllMessage(count int) string {
+	return Catalog.Format(msgs.locale, "discardAllMessage", map[string]any{"count": count})
+}
+
 // OpenFile says "Open File"
 // in the language the app shows.
 func OpenFile() string { return In(i18n.Locale()).OpenFile() }

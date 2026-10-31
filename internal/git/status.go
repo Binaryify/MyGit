@@ -125,9 +125,14 @@ func (r *Repo) ReadBytes(ctx context.Context, path string) ([]byte, error) {
 	return r.run.ReadFile(ctx, r.Path(path))
 }
 
-// Remove deletes a file or a folder of the working tree.
-func (r *Repo) Remove(ctx context.Context, path string) error {
-	return r.run.RemoveAll(ctx, r.Path(path))
+// Remove deletes files or folders of the working tree.
+func (r *Repo) Remove(ctx context.Context, paths ...string) error {
+	for _, p := range paths {
+		if err := r.run.RemoveAll(ctx, r.Path(p)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Stage adds the files' changes to the index, deletions included.
@@ -218,8 +223,16 @@ func (r *Repo) Discard(ctx context.Context, c Change) error {
 	if c.Work == '?' {
 		return r.Remove(ctx, c.Path)
 	}
-	_, err := r.Git(ctx, "restore", "--worktree", "--", c.Path)
-	return err
+	return r.Restore(ctx, c.Path)
+}
+
+// Restore brings files of the working tree back to the index, throwing
+// away the changes they have.
+func (r *Repo) Restore(ctx context.Context, paths ...string) error {
+	return inBatches(paths, func(batch []string) error {
+		_, err := r.Git(ctx, append([]string{"restore", "--worktree", "--"}, batch...)...)
+		return err
+	})
 }
 
 // Stage is a version of a file in conflict, as the index holds it.
