@@ -149,7 +149,7 @@ go test ./...         # 测试，界面测试也不需要窗口
 go tool mygo build -platform darwin/arm64,windows/amd64,linux/amd64
 ```
 
-界面文字在 [`locales/`](locales) 里：`en.json` 是源语言，`zh-Hans.json` 是简体中文，改完运行 `go tool mygo generate`。欢迎贡献其他语言的翻译：新增 `locales/<语言标签>.json` 即可。
+界面文字在 [`locales/`](locales) 里：`en.json` 是源语言，`zh-Hans.json` 和 `zh-Hant.json` 分别是简体中文和繁体中文（台湾用语），改完运行 `go tool mygo generate`。欢迎贡献其他语言的翻译：新增 `locales/<语言标签>.json` 即可。
 
 发布：在 [`CHANGELOG.md`](CHANGELOG.md) 写好这个版本的说明（会成为 Release 的说明，缺了发布会失败），再推送 `v0.2.0` 这样的标签。CI 会用仓库 Secret `MYGO_UPDATER_PRIVATE_KEY` 给更新包签名，打包 macOS 磁盘镜像、Windows 安装程序和 zip、Linux 安装包，并创建 Release。签名私钥在本机 `~/Library/Application Support/mygo/update-keys/mygit/`，丢失后已安装的应用就收不到更新了。仓库是私有的时候，已安装的应用下载不到 Release 里的更新包，测试自动更新前要先把仓库公开，或者把更新包放到公开地址。
 

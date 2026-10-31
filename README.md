@@ -149,7 +149,7 @@ go test ./...         # the tests, the UI's included, need no window
 go tool mygo build -platform darwin/arm64,windows/amd64,linux/amd64
 ```
 
-The texts live in [`locales/`](locales): `en.json` is the source and `zh-Hans.json` its Chinese. After changing them, run `go tool mygo generate`. Translations into other languages are welcome: add `locales/<tag>.json`.
+The texts live in [`locales/`](locales): `en.json` is the source, with `zh-Hans.json` and `zh-Hant.json` its Simplified and Traditional Chinese. After changing them, run `go tool mygo generate`. Translations into other languages are welcome: add `locales/<tag>.json`.
 
 To release, describe the version in [`CHANGELOG.md`](CHANGELOG.md), whose section becomes the release notes, and push a tag such as `v0.2.0`: CI signs the updates with the `MYGO_UPDATER_PRIVATE_KEY` secret, builds the macOS disk image, the Windows installer and zip, and the Linux package, and publishes them in a release.
 

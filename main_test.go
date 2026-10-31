@@ -1020,6 +1020,27 @@ func TestEnglish(t *testing.T) {
 	}
 }
 
+// In Traditional Chinese the window says everything in Traditional
+// Chinese, translated for Taiwan.
+func TestTraditionalChinese(t *testing.T) {
+	i18n.SetLocaleFunc(func() string { return "zh-Hant" })
+	defer i18n.SetLocaleFunc(func() string { return "zh-Hans" })
+	tt := newTester(t)
+	for _, s := range []string{"暫存的更改", "更改", "提交訊息", "全部暫存", "丟棄全部更改", "歷史", "儲存庫"} {
+		if !tt.HasText(s) {
+			t.Fatalf("no %q in %q", s, tt.Texts())
+		}
+	}
+	for _, s := range []string{"暂存的更改", "丢弃全部更改", "提交说明", "仓库"} {
+		if tt.HasText(s) {
+			t.Fatalf("simplified %q in %q", s, tt.Texts())
+		}
+	}
+	if got := loc.In("zh-Hant").CommitCount(3); got != "3 個提交" {
+		t.Fatal("plural", got)
+	}
+}
+
 // TestSaveWithKeys saves the file typed in, in the diff, with ⌘S (Ctrl+S
 // elsewhere), the editor holding the keys' focus.
 func TestSaveWithKeys(t *testing.T) {
