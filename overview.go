@@ -14,12 +14,13 @@ const previewLines = 8
 
 // overview is a strip beside a diff with a mark for each of its changes
 // where it is in the file, as VS Code's overview ruler: a click goes to
-// the change, and pointing at it previews its lines.
+// the change, and pointing at it previews its lines. Its left edge drags
+// to make it wider or narrower.
 func overview(c *ui.Context, d *editor.DiffState) {
 	hunks := d.Hunks() // none still keeps the strip, lest the diff widen as the last goes
 	t := c.Theme()
 	total := max(d.New.LineCount(), 1)
-	ui.Column(c).Width(14).AlignSelf(ui.Stretch).Padding(2).BorderWidth(0, 0, 0, 1).BorderColor(t.Border).Children(func() {
+	ui.Column(c).Width(overviewWidth()).AlignSelf(ui.Stretch).Padding(2).BorderWidth(0, 0, 0, 1).BorderColor(t.Border).Children(func() {
 		at := 0
 		space := func(lines int) {
 			if lines > 0 {
@@ -49,6 +50,32 @@ func overview(c *ui.Context, d *editor.DiffState) {
 			at = h.NewStart + n
 		}
 		space(total - at)
+		overviewGrip(c) // last, over the marks, to take the pointer at its edge
+	})
+}
+
+// overviewResizing is set while the pointer drags the overview strip's
+// edge, to save its width once it lets go.
+var overviewResizing bool
+
+// overviewGrip is the strip's left edge, which the pointer drags to make
+// the strip wider or narrower, as the edge of a column.
+func overviewGrip(c *ui.Context) {
+	t := c.Theme()
+	grip := ui.Box(c).Absolute().Left(0).Top(0).Bottom(0).Width(5).
+		Cursor(ui.CursorResizeEW).Tooltip(loc.OverviewWidthTip()).Label(loc.OverviewWidthTip())
+	if dx, _, held := grip.Dragged(); held && dx != 0 {
+		prefs.OverviewW = min(max(overviewWidth()-dx, 8), 64)
+		overviewResizing = true
+	}
+	if overviewResizing && !grip.Dragging() {
+		prefs.save()
+		overviewResizing = false
+	}
+	grip.Draw(func(p *ui.Painter, r ui.Rect) {
+		if grip.Hovered() || grip.Dragging() {
+			p.Fill(ui.Rect{X: r.X + r.W - 1, Y: r.Y, W: 1, H: r.H}, t.Accent, 0)
+		}
 	})
 }
 

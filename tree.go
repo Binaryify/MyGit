@@ -108,10 +108,10 @@ func (a *app) toggleFolder(list, dir string) {
 
 // folderRow is a folder's row of a list shown as a tree: a chevron that
 // says whether it is folded, and its name.
-func (a *app) folderRow(c *ui.Context, list string, r treeRow) {
+func (a *app) folderRow(c *ui.Context, list string, r treeRow) ui.Element {
 	t := c.Theme()
 	icon := map[bool]string{true: "chevron-right", false: "chevron-down"}[a.folded(list, r.dir)]
-	ui.Row(c).Height(24).Padding(0, 8, 0, 6+float32(r.depth)*treeIndent).Gap(4).AlignItems(ui.Center).
+	return ui.Row(c).Height(24).Padding(0, 8, 0, 6+float32(r.depth)*treeIndent).Gap(4).AlignItems(ui.Center).
 		Tooltip(r.dir).Children(func() {
 		ui.Icon(c, icons[icon]).Size(12, 12).TextColor(t.TextMuted)
 		ui.Icon(c, icons["folder"]).Size(13, 13).TextColor(t.TextMuted)

@@ -1820,6 +1820,138 @@ func (msgs Messages) History() string {
 	return Catalog.Format(msgs.locale, "history", nil)
 }
 
+// HistoryColumns says "History Columns"
+// in the language the app shows.
+func HistoryColumns() string { return In(i18n.Locale()).HistoryColumns() }
+
+// HistoryColumns says "History Columns"
+// in the language of msgs.
+func (msgs Messages) HistoryColumns() string {
+	return Catalog.Format(msgs.locale, "historyColumns", nil)
+}
+
+// HistoryShowHash says "Show Commit Hash"
+// in the language the app shows.
+func HistoryShowHash() string { return In(i18n.Locale()).HistoryShowHash() }
+
+// HistoryShowHash says "Show Commit Hash"
+// in the language of msgs.
+func (msgs Messages) HistoryShowHash() string {
+	return Catalog.Format(msgs.locale, "historyShowHash", nil)
+}
+
+// HistoryShowTags says "Show Tags"
+// in the language the app shows.
+func HistoryShowTags() string { return In(i18n.Locale()).HistoryShowTags() }
+
+// HistoryShowTags says "Show Tags"
+// in the language of msgs.
+func (msgs Messages) HistoryShowTags() string {
+	return Catalog.Format(msgs.locale, "historyShowTags", nil)
+}
+
+// HistoryShowBranches says "Show Branches"
+// in the language the app shows.
+func HistoryShowBranches() string { return In(i18n.Locale()).HistoryShowBranches() }
+
+// HistoryShowBranches says "Show Branches"
+// in the language of msgs.
+func (msgs Messages) HistoryShowBranches() string {
+	return Catalog.Format(msgs.locale, "historyShowBranches", nil)
+}
+
+// HistoryRefsRight says "Show Hash and Refs After the Subject"
+// in the language the app shows.
+func HistoryRefsRight() string { return In(i18n.Locale()).HistoryRefsRight() }
+
+// HistoryRefsRight says "Show Hash and Refs After the Subject"
+// in the language of msgs.
+func (msgs Messages) HistoryRefsRight() string {
+	return Catalog.Format(msgs.locale, "historyRefsRight", nil)
+}
+
+// OverviewWidthTip says "Drag to resize"
+// in the language the app shows.
+func OverviewWidthTip() string { return In(i18n.Locale()).OverviewWidthTip() }
+
+// OverviewWidthTip says "Drag to resize"
+// in the language of msgs.
+func (msgs Messages) OverviewWidthTip() string {
+	return Catalog.Format(msgs.locale, "overviewWidthTip", nil)
+}
+
+// DiscardFolderMenu says "Discard Changes in Folder…"
+// in the language the app shows.
+func DiscardFolderMenu() string { return In(i18n.Locale()).DiscardFolderMenu() }
+
+// DiscardFolderMenu says "Discard Changes in Folder…"
+// in the language of msgs.
+func (msgs Messages) DiscardFolderMenu() string {
+	return Catalog.Format(msgs.locale, "discardFolderMenu", nil)
+}
+
+// DiscardFolderTitle says "Discard This Folder's Changes?"
+// in the language the app shows.
+func DiscardFolderTitle() string { return In(i18n.Locale()).DiscardFolderTitle() }
+
+// DiscardFolderTitle says "Discard This Folder's Changes?"
+// in the language of msgs.
+func (msgs Messages) DiscardFolderTitle() string {
+	return Catalog.Format(msgs.locale, "discardFolderTitle", nil)
+}
+
+// DiscardFolderMessage says "{count, plural, one {The change to # file in {folder} will be discarded. This can't be undone.} other {The changes to…"
+// in the language the app shows.
+func DiscardFolderMessage(count int, folder string) string {
+	return In(i18n.Locale()).DiscardFolderMessage(count, folder)
+}
+
+// DiscardFolderMessage says "{count, plural, one {The change to # file in {folder} will be discarded. This can't be undone.} other {The changes to…"
+// in the language of msgs.
+func (msgs Messages) DiscardFolderMessage(count int, folder string) string {
+	return Catalog.Format(msgs.locale, "discardFolderMessage", map[string]any{"count": count, "folder": folder})
+}
+
+// HideRepoMenu says "Hide from Workspace"
+// in the language the app shows.
+func HideRepoMenu() string { return In(i18n.Locale()).HideRepoMenu() }
+
+// HideRepoMenu says "Hide from Workspace"
+// in the language of msgs.
+func (msgs Messages) HideRepoMenu() string {
+	return Catalog.Format(msgs.locale, "hideRepoMenu", nil)
+}
+
+// HiddenReposCount says "{count, plural, one {# repository hidden} other {# repositories hidden}}"
+// in the language the app shows.
+func HiddenReposCount(count int) string { return In(i18n.Locale()).HiddenReposCount(count) }
+
+// HiddenReposCount says "{count, plural, one {# repository hidden} other {# repositories hidden}}"
+// in the language of msgs.
+func (msgs Messages) HiddenReposCount(count int) string {
+	return Catalog.Format(msgs.locale, "hiddenReposCount", map[string]any{"count": count})
+}
+
+// HiddenReposTip says "The repositories hidden from this workspace, to show again"
+// in the language the app shows.
+func HiddenReposTip() string { return In(i18n.Locale()).HiddenReposTip() }
+
+// HiddenReposTip says "The repositories hidden from this workspace, to show again"
+// in the language of msgs.
+func (msgs Messages) HiddenReposTip() string {
+	return Catalog.Format(msgs.locale, "hiddenReposTip", nil)
+}
+
+// ShowAllRepos says "Show All Repositories"
+// in the language the app shows.
+func ShowAllRepos() string { return In(i18n.Locale()).ShowAllRepos() }
+
+// ShowAllRepos says "Show All Repositories"
+// in the language of msgs.
+func (msgs Messages) ShowAllRepos() string {
+	return Catalog.Format(msgs.locale, "showAllRepos", nil)
+}
+
 // CommitsMatching says "{matches} / {count, plural, one {# commit} other {# commits}}"
 // in the language the app shows.
 func CommitsMatching(matches int, count int) string {

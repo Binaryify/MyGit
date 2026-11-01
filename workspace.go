@@ -265,6 +265,14 @@ func openWorkspace(host, dir string, repos []*git.Repo) {
 		a.ws = ws
 		ws.apps = append(ws.apps, a)
 	}
+	// Repositories hidden the last time stay hidden, and one that is not
+	// shows when the one worked in last is hidden.
+	for i := range ws.apps {
+		if !ws.hidden(i) {
+			ws.active = i
+			break
+		}
+	}
 	ws.win = mygo.NewWindow(customTitleBar(mygo.WindowOptions{
 		Title:     title,
 		Width:     1200,
@@ -317,10 +325,90 @@ func (ws *workspace) view(c *ui.Context) { ws.apps[ws.active].view(c) }
 func (ws *workspace) sidebar(c *ui.Context) {
 	ui.Scroll(c).Fill().Children(func() {
 		for i, a := range ws.apps {
+			if ws.hidden(i) {
+				continue
+			}
 			ws.section(c, i, a)
 		}
+		ws.hiddenRow(c)
 	})
 	c.OnShortcut(ui.Cmd, ui.KeyEnter, ws.apps[ws.active].commit)
+}
+
+// hidden reports whether repository i is hidden from the workspace.
+func (ws *workspace) hidden(i int) bool {
+	return prefs.HiddenRepos[ws.apps[i].repo.Location()]
+}
+
+// hide hides a repository from the workspace, as VS Code's source control
+// leaves out those it doesn't show, and makes another the one worked in.
+func (ws *workspace) hide(a *app) {
+	i := slices.Index(ws.apps, a)
+	if i < 0 {
+		return
+	}
+	if prefs.HiddenRepos == nil {
+		prefs.HiddenRepos = map[string]bool{}
+	}
+	prefs.HiddenRepos[a.repo.Location()] = true
+	prefs.save()
+	if ws.active != i {
+		return
+	}
+	for j := range ws.apps {
+		if !ws.hidden(j) {
+			ws.activate(j)
+			return
+		}
+	}
+}
+
+// unhide shows a hidden repository again.
+func (ws *workspace) unhide(i int) {
+	delete(prefs.HiddenRepos, ws.apps[i].repo.Location())
+	prefs.save()
+}
+
+func (ws *workspace) unhideAll() {
+	for i := range ws.apps {
+		delete(prefs.HiddenRepos, ws.apps[i].repo.Location())
+	}
+	prefs.save()
+}
+
+// hiddenRow says how many repositories are hidden, and shows them again
+// from its menu.
+func (ws *workspace) hiddenRow(c *ui.Context) {
+	t := c.Theme()
+	var hidden []int
+	for i := range ws.apps {
+		if ws.hidden(i) {
+			hidden = append(hidden, i)
+		}
+	}
+	if len(hidden) == 0 {
+		return
+	}
+	b := ui.ButtonBase(c).Key("hidden").Height(30).PaddingX(8).Gap(6).AlignItems(ui.Center).
+		Cursor(ui.CursorPointer).Label(loc.HiddenReposCount(len(hidden))).Tooltip(loc.HiddenReposTip())
+	if b.Hovered() {
+		b.Background(t.Text.Alpha(0.08))
+	}
+	b.Children(func() {
+		ui.Icon(c, icons["chevron-down"]).Size(12, 12).TextColor(t.TextMuted)
+		ui.Text(c, loc.HiddenReposCount(len(hidden))).FontSize(11).TextColor(t.TextMuted).Grow(1).Basis(0)
+	})
+	b.Menu(func(m *ui.Menu) {
+		for _, i := range hidden {
+			if m.Item(ws.apps[i].repo.Name()).Chosen() {
+				ws.unhide(i)
+			}
+		}
+		m.Separator()
+		if len(hidden) > 1 && m.Item(loc.ShowAllRepos()).Chosen() {
+			ws.unhideAll()
+		}
+	})
 }
 
 // section is a repository of the workspace: its name, its branch and its

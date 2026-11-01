@@ -523,6 +523,36 @@
   },
   "addToGitignore": "Add to .gitignore",
   "history": "History",
+  "historyColumns": "History Columns",
+  "historyShowHash": "Show Commit Hash",
+  "historyShowTags": "Show Tags",
+  "historyShowBranches": "Show Branches",
+  "historyRefsRight": "Show Hash and Refs After the Subject",
+  "overviewWidthTip": "Drag to resize",
+  "discardFolderMenu": "Discard Changes in Folder…",
+  "discardFolderTitle": "Discard This Folder's Changes?",
+  "discardFolderMessage": "{count, plural, one {The change to # file in {folder} will be discarded. This can't be undone.} other {The changes to # files in {folder} will be discarded. This can't be undone.}}",
+  "@discardFolderMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "hideRepoMenu": "Hide from Workspace",
+  "hiddenReposCount": "{count, plural, one {# repository hidden} other {# repositories hidden}}",
+  "@hiddenReposCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hiddenReposTip": "The repositories hidden from this workspace, to show again",
+  "showAllRepos": "Show All Repositories",
   "commitsMatching": "{matches} / {count, plural, one {# commit} other {# commits}}",
   "@commitsMatching": {
     "placeholders": {

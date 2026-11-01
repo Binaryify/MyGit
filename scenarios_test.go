@@ -139,6 +139,41 @@ func TestScenarioDiscardAllChanges(t *testing.T) {
 	}
 }
 
+// A folder's row in a tree of changes discards the changes under it, and
+// those of other folders stay, as VS Code's source control lets a folder
+// be discarded whole.
+func TestScenarioDiscardFolderChanges(t *testing.T) {
+	tt := newTester(t)
+	old := trash
+	trash = os.Remove // what the trash does, without the trash
+	t.Cleanup(func() { trash = old })
+	oldTree := prefs.TreeView
+	prefs.TreeView = true
+	t.Cleanup(func() { prefs.TreeView = oldTree })
+	tt.commitFiles(t, "Two", map[string]string{"dir/a.txt": "a\n", "dir/b.txt": "b\n", "other.txt": "o\n"})
+	tt.write(t, map[string]string{"dir/a.txt": "a changed\n", "dir/b.txt": "b changed\n", "other.txt": "o changed\n"})
+	if err := tt.RightClick("dir"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem(loc.DiscardFolderMenu()); err != nil {
+		t.Fatal(err)
+	}
+	tt.Key(0, ui.KeyEnter) // Discard, the default
+	tt.settle()
+	for _, name := range []string{"dir/a.txt", "dir/b.txt"} {
+		b, err := os.ReadFile(filepath.Join(tt.a.repo.Dir, filepath.FromSlash(name)))
+		if err != nil || string(b) == "" || strings.Contains(string(b), "changed") {
+			t.Fatalf("%s after discarding its folder: %q, %v", name, b, err)
+		}
+		if _, ok := find(tt.a.unstaged, name); ok {
+			t.Fatalf("%s still a change", name)
+		}
+	}
+	if _, ok := find(tt.a.unstaged, "other.txt"); !ok {
+		t.Fatalf("other.txt discarded too: %v", tt.a.unstaged)
+	}
+}
+
 func TestScenarioCommitEverything(t *testing.T) {
 	tt := newTester(t)
 	tt.click(t, "notes.txt")

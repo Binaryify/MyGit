@@ -288,7 +288,16 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 	})
 	l := ui.List(c.Key(title), list, n, func(i int) {
 		if at(i) < 0 {
-			a.folderRow(c, key, tree[i])
+			row := a.folderRow(c, key, tree[i])
+			if !staged {
+				folder := tree[i].dir
+				row.ContextMenu(func(m *ui.Menu) {
+					chosen := folderChanges(changes, items, folder)
+					if len(chosen) > 0 && m.Item(loc.DiscardFolderMenu()).Chosen() {
+						a.discardFolder(folder, chosen)
+					}
+				})
+			}
 			return
 		}
 		ch := changes[at(i)]

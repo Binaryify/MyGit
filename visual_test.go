@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -12,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -633,6 +635,90 @@ func TestDumpTags(t *testing.T) {
 // worktree of its own (worktrees), and the dialog checking a branch out
 // in another (worktree-new), which says the superproject keeps its
 // submodule.
+// TestDumpIssue10 renders what issue #10 asked for into MYGIT_DUMP: the
+// history's columns, the overview strip made wider, the changes shown as
+// a tree with a folder's changes about to be discarded, and a workspace
+// with a repository hidden.
+func TestDumpIssue10(t *testing.T) {
+	out := os.Getenv("MYGIT_DUMP")
+	if out == "" {
+		t.Skip()
+	}
+	save := func(tt *ui.Tester, name string) {
+		t.Helper()
+		tt.Frame()
+		f, err := os.Create(filepath.Join(out, name+".png"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+		if err := png.Encode(f, tt.Image()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	defer func(hash, tags, branches, right bool, w float32, tree bool, hidden map[string]bool) {
+		prefs.HistoryHash, prefs.HideHistoryTags, prefs.HideHistoryBranches, prefs.HistoryRefsRight = hash, tags, branches, right
+		prefs.OverviewW, prefs.TreeView, prefs.HiddenRepos = w, tree, hidden
+	}(prefs.HistoryHash, prefs.HideHistoryTags, prefs.HideHistoryBranches, prefs.HistoryRefsRight,
+		prefs.OverviewW, prefs.TreeView, prefs.HiddenRepos)
+
+	// The hash and the tag after the subject, the branches left out.
+	prefs.HistoryHash, prefs.HideHistoryTags, prefs.HideHistoryBranches, prefs.HistoryRefsRight = true, false, true, true
+	tt := newTester(t)
+	tt.SetDark(true)
+	if _, err := tt.a.repo.Git(context.Background(), "tag", "-a", "-m", "Release", "v1.0"); err != nil {
+		t.Fatal(err)
+	}
+	tt.a.refresh()
+	tt.settle()
+	tt.click(t, "Merge the feature")
+	save(tt.Tester, "issue10-history-columns")
+
+	// A wider overview strip, its edge under the pointer.
+	prefs.HistoryHash, prefs.HideHistoryBranches, prefs.HistoryRefsRight = false, false, false
+	prefs.OverviewW = 30
+	tt = newTester(t)
+	tt.SetDark(true)
+	var lines []string
+	for i := 1; i <= 80; i++ {
+		lines = append(lines, fmt.Sprintf("line %d", i))
+	}
+	tt.commitFiles(t, "Long", map[string]string{"long.txt": strings.Join(lines, "\n") + "\n"})
+	lines[9], lines[49] = "line ten changed", "line fifty changed"
+	tt.write(t, map[string]string{"long.txt": strings.Join(lines, "\n") + "\n"})
+	tt.click(t, "long.txt")
+	if r, ok := tt.Find(loc.OverviewWidthTip()); ok {
+		tt.Move(r.X+r.W/2, r.Y+r.H/2)
+	}
+	save(tt.Tester, "issue10-overview-width")
+
+	// The changes as a tree, a folder's changes about to go.
+	prefs.TreeView = true
+	tt = newTester(t)
+	tt.SetDark(true)
+	tt.commitFiles(t, "Two folders", map[string]string{
+		"src/a.go": "package src\n", "src/b.go": "package src\n", "docs/readme.md": "# Notes\n"})
+	tt.write(t, map[string]string{
+		"src/a.go": "package src\n\n// changed\n", "src/b.go": "package src\n\n// changed\n", "docs/readme.md": "# Notes changed\n"})
+	if err := tt.RightClick("src"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem(loc.DiscardFolderMenu()); err != nil {
+		t.Fatal(err)
+	}
+	save(tt.Tester, "issue10-discard-folder")
+
+	// A workspace with a repository hidden and the count of them below.
+	prefs.TreeView = false
+	prefs.HiddenRepos = nil
+	ws, wt, settle := newWorkspace(t, workspaceDir(t))
+	wt.SetDark(true)
+	art := ws.apps[slices.IndexFunc(ws.apps, func(a *app) bool { return a.repo.Name() == "artcraft" })]
+	ws.hide(art)
+	settle()
+	save(wt, "issue10-workspace-hidden")
+}
+
 func TestDumpWorktrees(t *testing.T) {
 	sc := newShowcase(t)
 	orbit := orbitRepo(t)

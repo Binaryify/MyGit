@@ -28,14 +28,23 @@ type settings struct {
 	FoldUnchanged  bool             `json:"foldUnchanged"`            // a changed file's lines away from its changes, as it shows whole
 	FoldedBranches map[string]bool  `json:"foldedBranches,omitempty"` // the branches' popover's sections folded, by kind
 	TreeView       bool             `json:"treeView"`                 // the lists of files show as trees
-	SidebarW       float32          `json:"sidebarW"`
-	LogH           float32          `json:"logH"`
-	FilesW         float32          `json:"filesW"`
-	StagedPct      float32          `json:"stagedPct"`         // of the changes' room, the staged changes', in percent
-	Proxy          string           `json:"proxy,omitempty"`   // the downloads', "" for the system's
-	Remotes        []string         `json:"remotes,omitempty"` // repositories on other computers opened lately, host:dir
-	Recent         []string         `json:"recent,omitempty"`  // the folders opened lately here and there, the latest first
-	path           string
+	// The history's columns, as its menu sets them: the commit hash,
+	// tags and branches, and whether they show before the subject or
+	// after it.
+	HistoryHash         bool            `json:"historyHash,omitempty"`
+	HideHistoryTags     bool            `json:"hideHistoryTags,omitempty"`
+	HideHistoryBranches bool            `json:"hideHistoryBranches,omitempty"`
+	HistoryRefsRight    bool            `json:"historyRefsRight,omitempty"`
+	OverviewW           float32         `json:"overviewW,omitempty"`   // the overview strip's width, 0 for the default
+	HiddenRepos         map[string]bool `json:"hiddenRepos,omitempty"` // the workspace's repositories hidden, by location
+	SidebarW            float32         `json:"sidebarW"`
+	LogH                float32         `json:"logH"`
+	FilesW              float32         `json:"filesW"`
+	StagedPct           float32         `json:"stagedPct"`         // of the changes' room, the staged changes', in percent
+	Proxy               string          `json:"proxy,omitempty"`   // the downloads', "" for the system's
+	Remotes             []string        `json:"remotes,omitempty"` // repositories on other computers opened lately, host:dir
+	Recent              []string        `json:"recent,omitempty"`  // the folders opened lately here and there, the latest first
+	path                string
 }
 
 // whitespaceMode is a choice of what the diffs leave out of whitespace
@@ -124,6 +133,15 @@ func diffLayout() editor.DiffLayout {
 		return editor.DiffUnified
 	}
 	return editor.DiffSplit
+}
+
+// overviewWidth is the overview strip's width, in DIPs: wider than it
+// was by default, and as the pointer dragged its edge.
+func overviewWidth() float32 {
+	if prefs.OverviewW <= 0 {
+		return 18
+	}
+	return min(max(prefs.OverviewW, 8), 64)
 }
 
 // editorChoices are the editors to choose, the first the system's default

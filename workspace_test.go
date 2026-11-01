@@ -172,6 +172,37 @@ func TestWorkspace(t *testing.T) {
 	}
 }
 
+// A repository of the workspace hides from its menu, with the count of
+// those hidden below, and shows again from theirs.
+func TestWorkspaceHideRepository(t *testing.T) {
+	defer func(m map[string]bool) { prefs.HiddenRepos = m }(prefs.HiddenRepos)
+	prefs.HiddenRepos = nil
+	ws, tt, settle := newWorkspace(t, workspaceDir(t))
+	if len(ws.apps) != 3 {
+		t.Fatalf("%d repositories", len(ws.apps))
+	}
+	art := ws.apps[slices.IndexFunc(ws.apps, func(a *app) bool { return a.repo.Name() == "artcraft" })]
+	ws.hide(art)
+	settle()
+	if tt.HasText("brush.ts") {
+		t.Fatalf("a hidden repository's changes show: %q", tt.Texts())
+	}
+	if !tt.HasText("已隐藏 1 个仓库") || ws.hidden(ws.active) {
+		t.Fatalf("hidden row %v, active %d", tt.Texts(), ws.active)
+	}
+	// The count shows the hidden ones again.
+	if err := tt.Click("已隐藏 1 个仓库"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("artcraft"); err != nil {
+		t.Fatal(err)
+	}
+	settle()
+	if !tt.HasText("brush.ts") || ws.hidden(slices.Index(ws.apps, art)) || tt.HasText("已隐藏") {
+		t.Fatalf("shown again: %q, hidden %v", tt.Texts(), prefs.HiddenRepos)
+	}
+}
+
 // Over SSH, the folders are the helper's listings.
 func TestFindReposOnHost(t *testing.T) {
 	old := listFolder

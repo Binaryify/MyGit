@@ -743,6 +743,68 @@ func TestOverview(t *testing.T) {
 	}
 }
 
+// The history's menu leaves out the tags and branches, or puts the hash
+// and refs after the subject, as IntelliJ's columns let it.
+func TestHistoryColumns(t *testing.T) {
+	defer func(hash, tags, branches, right bool) {
+		prefs.HistoryHash, prefs.HideHistoryTags, prefs.HideHistoryBranches, prefs.HistoryRefsRight = hash, tags, branches, right
+	}(prefs.HistoryHash, prefs.HideHistoryTags, prefs.HideHistoryBranches, prefs.HistoryRefsRight)
+	prefs.HistoryHash, prefs.HideHistoryTags, prefs.HideHistoryBranches, prefs.HistoryRefsRight = false, false, false, false
+	tt := newTester(t)
+	out, err := tt.a.repo.Git(context.Background(), "rev-parse", "HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	hash := strings.TrimSpace(out)[:8] // as Commit.Short shows it
+	if _, ok := tt.Find(hash); ok {
+		t.Fatalf("the hash shows before it is asked for: %q", tt.Texts())
+	}
+	columns := func(item string) {
+		t.Helper()
+		if err := tt.Click(loc.HistoryColumns()); err != nil {
+			t.Fatal(err)
+		}
+		if err := tt.ChooseMenuItem(item); err != nil {
+			t.Fatal(err)
+		}
+		tt.Frame()
+	}
+	columns(loc.HistoryShowHash())
+	if _, ok := tt.Find(hash); !ok || !prefs.HistoryHash {
+		t.Fatalf("the hash doesn't show: %q", tt.Texts())
+	}
+	// On the right, the hash comes after the subject.
+	columns(loc.HistoryRefsRight())
+	hbox, ok := tt.Find(hash)
+	subject, subjectOK := tt.Find("Merge the feature")
+	if !ok || !subjectOK || hbox.X <= subject.X {
+		t.Fatalf("hash at %v, subject at %v", hbox, subject)
+	}
+	// The branches leave out, the tags stay.
+	columns(loc.HistoryShowBranches())
+	if _, ok := tt.Find("feature"); ok || !prefs.HideHistoryBranches {
+		t.Fatalf("branches still show: %q", tt.Texts())
+	}
+}
+
+// The overview strip is wider than it was, and its edge drags to resize
+// it, within limits.
+func TestOverviewWidth(t *testing.T) {
+	defer func(w float32) { prefs.OverviewW = w }(prefs.OverviewW)
+	prefs.OverviewW = 0
+	if w := overviewWidth(); w != 18 {
+		t.Errorf("default width %v", w)
+	}
+	prefs.OverviewW = 100
+	if w := overviewWidth(); w != 64 {
+		t.Errorf("wide %v", w)
+	}
+	prefs.OverviewW = 2
+	if w := overviewWidth(); w != 8 {
+		t.Errorf("narrow %v", w)
+	}
+}
+
 func TestUnpushedCommits(t *testing.T) {
 	tt := newTester(t)
 	ctx := context.Background()

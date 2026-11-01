@@ -44,6 +44,7 @@ func (a *app) logView(c *ui.Context) {
 				ui.Spinner(c).Size(12, 12)
 			}
 			ui.Box(c).Grow(1)
+			a.historyColumns(c)
 			a.searchField(c)
 		})
 		if a.scope.Ref != "HEAD" {
@@ -151,6 +152,35 @@ func (a *app) visibleLanes() int {
 func (a *app) logRow(c *ui.Context, cm *git.Commit, row *graph.Row, lanes int, chosen bool) {
 	t := c.Theme()
 	head := false
+	for _, ref := range cm.Refs {
+		if ref == "HEAD" {
+			head = true
+		}
+	}
+	muted := t.TextMuted
+	if chosen { // on the accent, muted text would hardly show
+		muted = t.AccentText.Alpha(0.8)
+	}
+	refs := func() {
+		for _, ref := range cm.Refs {
+			if ref == "HEAD" {
+				continue
+			}
+			name, tag := refLabel(ref)
+			if tag && prefs.HideHistoryTags || !tag && prefs.HideHistoryBranches {
+				continue
+			}
+			b := ui.Badge(c, name)
+			if tag {
+				b.Background(ui.RGB(251, 188, 4).Alpha(0.25))
+			}
+		}
+	}
+	hash := func() {
+		if prefs.HistoryHash {
+			ui.Text(c, cm.Short()).Font("monospace").FontSize(11).TextColor(muted).Width(56).Tooltip(cm.Hash)
+		}
+	}
 	ui.Row(c).Height(rowHeight).PaddingX(4).Gap(6).AlignItems(ui.Center).ContextMenu(func(m *ui.Menu) {
 		a.commitMenu(m, *cm)
 	}).Children(func() {
@@ -163,27 +193,45 @@ func (a *app) logRow(c *ui.Context, cm *git.Commit, row *graph.Row, lanes int, c
 				g.Tooltip(loc.Unpushed())
 			}
 		}
-		for _, ref := range cm.Refs {
-			if ref == "HEAD" {
-				head = true
-				continue
-			}
-			name, tag := refLabel(ref)
-			b := ui.Badge(c, name)
-			if tag {
-				b.Background(ui.RGB(251, 188, 4).Alpha(0.25))
-			}
+		if !prefs.HistoryRefsRight {
+			refs()
+			hash()
 		}
 		subject := ui.Text(c, cm.Subject).SingleLine().Grow(1).Basis(0)
 		if head {
 			subject.Bold()
 		}
-		muted := t.TextMuted
-		if chosen { // on the accent, muted text would hardly show
-			muted = t.AccentText.Alpha(0.8)
+		if prefs.HistoryRefsRight {
+			refs()
+			hash()
 		}
 		ui.Text(c, cm.Author).TextColor(muted).SingleLine().Width(120)
 		ui.Text(c, cm.Time.Format("2006-01-02 15:04")).TextColor(muted).Font("monospace").FontSize(11).Width(110)
+	})
+}
+
+// historyColumns is the history's menu of its columns, as IntelliJ's: the
+// commit hash, the tags and the branches can be shown or left out, and
+// shown after the subject rather than before it.
+func (a *app) historyColumns(c *ui.Context) {
+	iconMenu(c, "more", loc.HistoryColumns(), func(m *ui.Menu) {
+		if m.Item(loc.HistoryShowHash()).Checked(prefs.HistoryHash).Chosen() {
+			prefs.HistoryHash = !prefs.HistoryHash
+			prefs.save()
+		}
+		if m.Item(loc.HistoryShowTags()).Checked(!prefs.HideHistoryTags).Chosen() {
+			prefs.HideHistoryTags = !prefs.HideHistoryTags
+			prefs.save()
+		}
+		if m.Item(loc.HistoryShowBranches()).Checked(!prefs.HideHistoryBranches).Chosen() {
+			prefs.HideHistoryBranches = !prefs.HideHistoryBranches
+			prefs.save()
+		}
+		m.Separator()
+		if m.Item(loc.HistoryRefsRight()).Checked(prefs.HistoryRefsRight).Chosen() {
+			prefs.HistoryRefsRight = !prefs.HistoryRefsRight
+			prefs.save()
+		}
 	})
 }
 

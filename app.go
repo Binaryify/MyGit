@@ -884,6 +884,29 @@ func (a *app) discardChanges(ctx context.Context, changes []git.Change) error {
 	return nil
 }
 
+// folderChanges are the changes of a folder in a list of them, those it
+// can discard: a file in conflict stays for its sides to choose.
+func folderChanges(changes []git.Change, items []int, dir string) []git.Change {
+	prefix := dir + "/"
+	var out []git.Change
+	for _, i := range items {
+		if c := changes[i]; !c.Conflict && strings.HasPrefix(c.Path, prefix) {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// discardFolder throws away a folder's changes, once the user says so.
+func (a *app) discardFolder(dir string, changes []git.Change) {
+	if len(changes) == 0 {
+		return
+	}
+	a.ask(loc.DiscardFolderTitle(), loc.DiscardFolderMessage(len(changes), path.Base(dir)), loc.Discard(), func() {
+		a.run(loc.OpDiscard(), func(ctx context.Context) error { return a.discardChanges(ctx, changes) }, nil)
+	})
+}
+
 // stageAll and unstageAll act on a whole list, or with a filter on the
 // changes it shows.
 func (a *app) stageAll() {
