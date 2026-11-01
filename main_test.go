@@ -1153,8 +1153,10 @@ func TestEditKeepsItsPlace(t *testing.T) {
 		t.Fatalf("expanded %v, caret on line %d", d.ExpandUnchanged, d.CursorPos().Line)
 	}
 	tt.Frame()
-	// The lines above the change, as they show.
-	above := image.Rect(760, 450, 1180, 610)
+	// The lines above the change, as they show, less the diff's scroll
+	// bar at the right edge: MyGo v0.7.4 shows its slider as the pointer
+	// comes over the view, and the overview strip leaves it left of 1170.
+	above := image.Rect(760, 450, 1170, 610)
 	before := image.NewRGBA(above)
 	draw.Draw(before, above, tt.Image(), above.Min, draw.Src)
 	// Type the change away, from the end of its line, the caret's.

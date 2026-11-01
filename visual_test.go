@@ -719,6 +719,65 @@ func TestDumpIssue10(t *testing.T) {
 	save(wt, "issue10-workspace-hidden")
 }
 
+// TestDumpMygo074 renders the app on MyGo 0.7.4 into MYGIT_DUMP: the window
+// in both themes, a diff's scroll bar as the pointer comes over it, which
+// v0.7.4 shows and TestEditKeepsItsPlace leaves out, and a filler across
+// an added file, which the vendored copy had patched and the release has.
+func TestDumpMygo074(t *testing.T) {
+	out := os.Getenv("MYGIT_DUMP")
+	if out == "" {
+		t.Skip()
+	}
+	save := func(tt *ui.Tester, name string) {
+		t.Helper()
+		tt.Frame()
+		f, err := os.Create(filepath.Join(out, name+".png"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+		if err := png.Encode(f, tt.Image()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	defer func(tree, fold bool, w float32) { prefs.TreeView, prefs.FoldUnchanged, prefs.OverviewW = tree, fold, w }(
+		prefs.TreeView, prefs.FoldUnchanged, prefs.OverviewW)
+	prefs.TreeView, prefs.FoldUnchanged, prefs.OverviewW = false, false, 0
+
+	tt := newTester(t)
+	tt.SetDark(true)
+	tt.click(t, "Merge the feature")
+	save(tt.Tester, "mygo074-window-dark")
+	tt.SetDark(false)
+	save(tt.Tester, "mygo074-window-light")
+	tt.SetDark(true)
+
+	// A diff with the pointer over it: v0.7.4 shows the scroll bar's
+	// slider then.
+	var lines []string
+	for i := 1; i <= 200; i++ {
+		lines = append(lines, fmt.Sprintf("line %d", i))
+	}
+	tt = newTester(t)
+	tt.SetDark(true)
+	tt.commitFiles(t, "Long", map[string]string{"long.txt": strings.Join(lines, "\n") + "\n"})
+	for i := 10; i < 200; i += 40 {
+		lines[i] = fmt.Sprintf("line %d changed", i+1)
+	}
+	tt.write(t, map[string]string{"long.txt": strings.Join(lines, "\n") + "\n"})
+	tt.click(t, "long.txt")
+	tt.Move(1000, 620)
+	save(tt.Tester, "mygo074-scrollbar")
+
+	// An added file: the old side is a filler, hatched, as the vendored
+	// copy painted only in sight.
+	tt = newTester(t)
+	tt.SetDark(true)
+	tt.write(t, map[string]string{"new.txt": strings.Join(lines, "\n") + "\n"})
+	tt.click(t, "new.txt")
+	save(tt.Tester, "mygo074-filler")
+}
+
 func TestDumpWorktrees(t *testing.T) {
 	sc := newShowcase(t)
 	orbit := orbitRepo(t)
