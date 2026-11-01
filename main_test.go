@@ -130,6 +130,51 @@ func TestHistory(t *testing.T) {
 	}
 }
 
+func TestChangeCheckboxStages(t *testing.T) {
+	tt := newTester(t)
+	if len(tt.a.unstaged) != 1 {
+		t.Fatalf("unstaged %v", tt.a.unstaged)
+	}
+	tt.click(t, loc.StageFile("notes.txt"))
+	if len(tt.a.staged) != 1 || tt.a.staged[0].Path != "notes.txt" || len(tt.a.unstaged) != 0 {
+		t.Fatalf("after its box: staged %v, unstaged %v", tt.a.staged, tt.a.unstaged)
+	}
+	tt.click(t, loc.UnstageFile("notes.txt"))
+	if len(tt.a.staged) != 0 || len(tt.a.unstaged) != 1 {
+		t.Fatalf("after its box again: staged %v, unstaged %v", tt.a.staged, tt.a.unstaged)
+	}
+}
+
+func TestFolderActions(t *testing.T) {
+	defer func(tree bool) { prefs.TreeView = tree }(prefs.TreeView)
+	prefs.TreeView = true
+	tt := newTester(t)
+	tt.write(t, map[string]string{
+		"pkg/a.go": "package pkg\n",
+		"pkg/b.go": "package pkg\n",
+	})
+	r, ok := tt.Find("pkg")
+	if !ok {
+		t.Fatalf("no folder row in %q", tt.Texts())
+	}
+	tt.Move(r.X+r.W/2, r.Y+r.H/2)
+	tt.Frame()
+	tt.click(t, loc.StageFolder())
+	if len(tt.a.staged) != 2 || len(tt.a.unstaged) != 1 { // notes.txt stays
+		t.Fatalf("after staging its folder: staged %v, unstaged %v", tt.a.staged, tt.a.unstaged)
+	}
+	// The folder of what is staged now acts to unstage it.
+	if r, ok = tt.Find("pkg"); !ok {
+		t.Fatalf("no staged folder row in %q", tt.Texts())
+	}
+	tt.Move(r.X+r.W/2, r.Y+r.H/2)
+	tt.Frame()
+	tt.click(t, loc.UnstageFolder())
+	if len(tt.a.staged) != 0 || len(tt.a.unstaged) != 3 {
+		t.Fatalf("after unstaging its folder: staged %v, unstaged %v", tt.a.staged, tt.a.unstaged)
+	}
+}
+
 func TestStageAndCommit(t *testing.T) {
 	tt := newTester(t)
 	tt.click(t, "notes.txt")

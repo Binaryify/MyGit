@@ -778,6 +778,51 @@ func TestDumpMygo074(t *testing.T) {
 	save(tt.Tester, "mygo074-filler")
 }
 
+// TestDumpChanges renders the changes list's check boxes and a folder's
+// actions while the pointer is over it, and the diff's minimap, into
+// MYGIT_DUMP.
+func TestDumpChanges(t *testing.T) {
+	out := os.Getenv("MYGIT_DUMP")
+	if out == "" {
+		t.Skip()
+	}
+	save := func(tt *ui.Tester, name string) {
+		t.Helper()
+		tt.Frame()
+		f, err := os.Create(filepath.Join(out, name+".png"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+		if err := png.Encode(f, tt.Image()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	defer func(tree bool) { prefs.TreeView = tree }(prefs.TreeView)
+	prefs.TreeView = true
+
+	tt := newTester(t)
+	tt.SetDark(true)
+	var lines []string
+	for i := 1; i <= 160; i++ {
+		lines = append(lines, fmt.Sprintf("\tif done[%d] { return %d }", i, i))
+	}
+	tt.commitFiles(t, "Long", map[string]string{"pkg/long.go": strings.Join(lines, "\n") + "\n"})
+	for i := 20; i < 160; i += 17 {
+		lines[i] = fmt.Sprintf("\tif done[%d] { return 0 } // changed", i+1)
+	}
+	tt.write(t, map[string]string{
+		"pkg/long.go":  strings.Join(lines, "\n") + "\n",
+		"pkg/short.go": "package pkg\n",
+	})
+	if r, ok := tt.Find("pkg"); ok {
+		tt.Move(r.X+r.W/2, r.Y+r.H/2)
+	}
+	save(tt.Tester, "changes-hover")
+	tt.click(t, "long.go")
+	save(tt.Tester, "changes-minimap")
+}
+
 func TestDumpWorktrees(t *testing.T) {
 	sc := newShowcase(t)
 	orbit := orbitRepo(t)

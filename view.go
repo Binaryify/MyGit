@@ -288,9 +288,30 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 	})
 	l := ui.List(c.Key(title), list, n, func(i int) {
 		if at(i) < 0 {
+			// A folder, with the actions of its files while the pointer
+			// is over it, as VS Code's changes tree: to stage or unstage
+			// what is in it, or to discard it.
+			folder := tree[i].dir
 			row := a.folderRow(c, key, tree[i])
+			if row.Hovered() {
+				row.Children(func() {
+					if staged {
+						if iconButton(c, "minus", loc.UnstageFolder()) {
+							a.unstagePaths(folderPaths(changes, items, folder)...)
+						}
+						return
+					}
+					if iconButton(c, "undo", loc.DiscardFolder()) {
+						if chosen := folderChanges(changes, items, folder); len(chosen) > 0 {
+							a.discardFolder(folder, chosen)
+						}
+					}
+					if iconButton(c, "plus", loc.StageFolder()) {
+						a.stagePaths(folderPaths(changes, items, folder)...)
+					}
+				})
+			}
 			if !staged {
-				folder := tree[i].dir
 				row.ContextMenu(func(m *ui.Menu) {
 					chosen := folderChanges(changes, items, folder)
 					if len(chosen) > 0 && m.Item(loc.DiscardFolderMenu()).Chosen() {
@@ -304,16 +325,25 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		chosen := i == *row
 		// As VS Code's: the name, its folder, the actions while the
 		// pointer is over the row, and the change's letter at the end;
-		// in a tree, the name alone, in from its folder's.
-		indent := float32(10)
+		// in a tree, the name alone, in from its folder's. A check box
+		// leads the row, as IDEA's commit dialog: checked when the
+		// change is staged, so a click stages or unstages it.
+		indent := float32(8)
 		if tree != nil {
-			indent = 22 + float32(tree[i].depth)*treeIndent
+			indent = 6 + float32(tree[i].depth)*treeIndent
 		}
 		row := ui.Row(c).Height(24).Padding(0, 8, 0, indent).Gap(6).AlignItems(ui.Center)
 		if chosen {
 			row.TextColor(t.AccentText)
 		}
 		row.Children(func() {
+			label := loc.StageFile(ch.Path)
+			if staged {
+				label = loc.UnstageFile(ch.Path)
+			}
+			if changeCheckbox(c, staged, chosen, label) {
+				a.toggleStage(ch, staged)
+			}
 			code := ch.Work
 			if staged {
 				code = ch.Staged
@@ -402,6 +432,35 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		list.Handle.OnShortcut(c, 0, ui.KeyBackspace, discard)
 		list.Handle.OnShortcut(c, 0, ui.KeyDelete, discard)
 	}
+}
+
+// changeCheckbox is the check box that leads a change's row: checked
+// when the change is staged, as the commit dialog of IDEA checks the
+// changes to commit, and a click stages it or unstages it. A chosen row
+// is white on the accent, so the box turns with it.
+func changeCheckbox(c *ui.Context, staged, chosen bool, label string) bool {
+	t := c.Theme()
+	on := staged // the click flips it; the change itself is staged after
+	box := ui.CheckboxBase(c, &on).Size(14, 14).Radius(3).Center().Shrink(0).
+		Label(label).Tooltip(label).Cursor(ui.CursorPointer)
+	mark, ink := t.Accent, t.AccentText
+	if chosen {
+		mark, ink = t.AccentText, t.Accent
+	}
+	if on {
+		box.Background(mark)
+	} else {
+		box.Border(1, t.Border.Mix(t.Text, 0.25))
+		if box.Hovered() || chosen {
+			box.BorderColor(mark)
+		}
+	}
+	box.Children(func() {
+		if on {
+			ui.Icon(c, icons["check"]).Size(10, 10).TextColor(ink)
+		}
+	})
+	return box.Changed()
 }
 
 func (a *app) toggleStage(ch git.Change, staged bool) {

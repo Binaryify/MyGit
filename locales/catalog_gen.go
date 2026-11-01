@@ -706,6 +706,26 @@ func (msgs Messages) Unstage() string {
 	return Catalog.Format(msgs.locale, "unstage", nil)
 }
 
+// StageFile says "Stage {file}"
+// in the language the app shows.
+func StageFile(file string) string { return In(i18n.Locale()).StageFile(file) }
+
+// StageFile says "Stage {file}"
+// in the language of msgs.
+func (msgs Messages) StageFile(file string) string {
+	return Catalog.Format(msgs.locale, "stageFile", map[string]any{"file": file})
+}
+
+// UnstageFile says "Unstage {file}"
+// in the language the app shows.
+func UnstageFile(file string) string { return In(i18n.Locale()).UnstageFile(file) }
+
+// UnstageFile says "Unstage {file}"
+// in the language of msgs.
+func (msgs Messages) UnstageFile(file string) string {
+	return Catalog.Format(msgs.locale, "unstageFile", map[string]any{"file": file})
+}
+
 // Discard says "Discard"
 // in the language the app shows.
 func Discard() string { return In(i18n.Locale()).Discard() }
@@ -1888,6 +1908,36 @@ func DiscardFolderMenu() string { return In(i18n.Locale()).DiscardFolderMenu() }
 // in the language of msgs.
 func (msgs Messages) DiscardFolderMenu() string {
 	return Catalog.Format(msgs.locale, "discardFolderMenu", nil)
+}
+
+// DiscardFolder says "Discard Changes in Folder"
+// in the language the app shows.
+func DiscardFolder() string { return In(i18n.Locale()).DiscardFolder() }
+
+// DiscardFolder says "Discard Changes in Folder"
+// in the language of msgs.
+func (msgs Messages) DiscardFolder() string {
+	return Catalog.Format(msgs.locale, "discardFolder", nil)
+}
+
+// StageFolder says "Stage Folder"
+// in the language the app shows.
+func StageFolder() string { return In(i18n.Locale()).StageFolder() }
+
+// StageFolder says "Stage Folder"
+// in the language of msgs.
+func (msgs Messages) StageFolder() string {
+	return Catalog.Format(msgs.locale, "stageFolder", nil)
+}
+
+// UnstageFolder says "Unstage Folder"
+// in the language the app shows.
+func UnstageFolder() string { return In(i18n.Locale()).UnstageFolder() }
+
+// UnstageFolder says "Unstage Folder"
+// in the language of msgs.
+func (msgs Messages) UnstageFolder() string {
+	return Catalog.Format(msgs.locale, "unstageFolder", nil)
 }
 
 // DiscardFolderTitle says "Discard This Folder's Changes?"

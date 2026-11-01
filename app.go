@@ -884,15 +884,35 @@ func (a *app) discardChanges(ctx context.Context, changes []git.Change) error {
 	return nil
 }
 
+// folderItems are the indices, of a list's items, of a folder's changes.
+func folderItems(changes []git.Change, items []int, dir string) []int {
+	prefix := dir + "/"
+	var out []int
+	for _, i := range items {
+		if strings.HasPrefix(changes[i].Path, prefix) {
+			out = append(out, i)
+		}
+	}
+	return out
+}
+
 // folderChanges are the changes of a folder in a list of them, those it
 // can discard: a file in conflict stays for its sides to choose.
 func folderChanges(changes []git.Change, items []int, dir string) []git.Change {
-	prefix := dir + "/"
 	var out []git.Change
-	for _, i := range items {
-		if c := changes[i]; !c.Conflict && strings.HasPrefix(c.Path, prefix) {
+	for _, i := range folderItems(changes, items, dir) {
+		if c := changes[i]; !c.Conflict {
 			out = append(out, c)
 		}
+	}
+	return out
+}
+
+// folderPaths are the paths of a folder's changes, for staging them.
+func folderPaths(changes []git.Change, items []int, dir string) []string {
+	var out []string
+	for _, i := range folderItems(changes, items, dir) {
+		out = append(out, changes[i].Path)
 	}
 	return out
 }
@@ -909,16 +929,26 @@ func (a *app) discardFolder(dir string, changes []git.Change) {
 
 // stageAll and unstageAll act on a whole list, or with a filter on the
 // changes it shows.
-func (a *app) stageAll() {
-	if a.savingFirst(a.stageAll) {
+func (a *app) stageAll() { a.stagePaths(a.shownPaths(false)...) }
+
+func (a *app) unstageAll() { a.unstagePaths(a.shownPaths(true)...) }
+
+// stagePaths and unstagePaths stage or unstage the changes of a folder,
+// or of a whole list, as the buttons of their rows and headers do.
+func (a *app) stagePaths(paths ...string) {
+	if len(paths) == 0 {
 		return
 	}
-	paths := a.shownPaths(false)
+	if a.savingFirst(func() { a.stagePaths(paths...) }) {
+		return
+	}
 	a.run(loc.OpStage(), func(ctx context.Context) error { return a.repo.Stage(ctx, paths...) }, nil)
 }
 
-func (a *app) unstageAll() {
-	paths := a.shownPaths(true)
+func (a *app) unstagePaths(paths ...string) {
+	if len(paths) == 0 {
+		return
+	}
 	a.run(loc.OpUnstage(), func(ctx context.Context) error { return a.repo.Unstage(ctx, paths...) }, nil)
 }
 
