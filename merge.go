@@ -287,7 +287,7 @@ func (m *merger) compareBase(p int, title string) {
 		}
 		return b
 	}
-	m.compare, m.compareTitle = &editor.DiffState{Old: buf(m.texts.base), New: buf(side)}, title
+	m.compare, m.compareTitle = &editor.DiffState{Old: buf(m.texts.base), New: buf(side), Wrap: prefs.Wrap}, title
 }
 
 // take resolves the chunk shown with a side's change, or both's.
@@ -704,6 +704,9 @@ func (m *merger) compareView(c *ui.Context) {
 			ui.Text(c, m.path).Bold().SingleLine().Shrink(0)
 			ui.Text(c, m.compareTitle).TextColor(t.TextMuted).SingleLine()
 			ui.Box(c).Grow(1)
+			if m.compare != nil {
+				wrapToggle(c, m.compare)
+			}
 			if ui.Button(c, loc.BackToMerge()).Clicked() {
 				m.compare = nil
 			}

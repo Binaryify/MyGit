@@ -775,7 +775,7 @@ func (a *app) save(over bool) {
 }
 
 func patchDiff(p editor.FilePatch) *editor.DiffState {
-	d := &editor.DiffState{Layout: diffLayout()}
+	d := &editor.DiffState{Layout: diffLayout(), Wrap: prefs.Wrap}
 	d.SetPatch(p)
 	if lang := editor.LanguageFor(fileName(p)); lang != nil {
 		d.Old.SetLanguage(lang)
@@ -785,7 +785,7 @@ func patchDiff(p editor.FilePatch) *editor.DiffState {
 }
 
 func textDiff(name, old, new string) *editor.DiffState {
-	d := &editor.DiffState{Old: editor.NewBuffer(old), New: editor.NewBuffer(new), Layout: diffLayout()}
+	d := &editor.DiffState{Old: editor.NewBuffer(old), New: editor.NewBuffer(new), Layout: diffLayout(), Wrap: prefs.Wrap}
 	if lang := editor.LanguageFor(name); lang != nil {
 		d.Old.SetLanguage(lang)
 		d.New.SetLanguage(lang)

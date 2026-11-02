@@ -26,6 +26,7 @@ type settings struct {
 	Unified        bool             `json:"unified"`
 	Whitespace     string           `json:"whitespace,omitempty"`     // what the diffs leave out of whitespace changes, a whitespaceModes' key
 	FoldUnchanged  bool             `json:"foldUnchanged"`            // a changed file's lines away from its changes, as it shows whole
+	Wrap           bool             `json:"wrap"`                     // the diffs wrap long lines rather than scrolling them sideways
 	FoldedBranches map[string]bool  `json:"foldedBranches,omitempty"` // the branches' popover's sections folded, by kind
 	TreeView       bool             `json:"treeView"`                 // the lists of files show as trees
 	// The history's columns, as its menu sets them: the commit hash,

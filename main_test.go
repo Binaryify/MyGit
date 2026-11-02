@@ -175,6 +175,25 @@ func TestFolderActions(t *testing.T) {
 	}
 }
 
+func TestWrapToggle(t *testing.T) {
+	defer func(w bool) { prefs.Wrap = w }(prefs.Wrap)
+	prefs.Wrap = false
+	tt := newTester(t)
+	tt.click(t, "notes.txt")
+	if tt.a.detail.diff == nil {
+		t.Fatal("no diff")
+	}
+	tt.click(t, loc.WrapLines())
+	if !prefs.Wrap || !tt.a.detail.diff.Wrap {
+		t.Fatalf("after its toggle: pref %v, diff %v", prefs.Wrap, tt.a.detail.diff.Wrap)
+	}
+	// The diffs opened next wrap too.
+	tt.click(t, "Merge the feature")
+	if d := tt.a.detail.diff; d == nil || !d.Wrap {
+		t.Fatalf("the commit's diff %+v", d)
+	}
+}
+
 func TestStageAndCommit(t *testing.T) {
 	tt := newTester(t)
 	tt.click(t, "notes.txt")
@@ -778,7 +797,8 @@ func TestOverview(t *testing.T) {
 	tt.settle()
 	d := tt.a.detail.diff
 	h := d.Hunks()
-	if len(h) != 2 || hunkPreview(d, h[0]) != "- line 5\n+ line five" || hunkPreview(d, h[1]) != "- line 50" {
+	if len(h) != 2 || d.Old.Line(h[0].OldStart) != "line 5" || d.New.Line(h[0].NewStart) != "line five" ||
+		d.Old.Line(h[1].OldStart) != "line 50" || h[1].NewEnd != h[1].NewStart {
 		t.Fatalf("hunks %+v", h)
 	}
 	tt.click(t, "第 2/2 处")

@@ -823,6 +823,47 @@ func TestDumpChanges(t *testing.T) {
 	save(tt.Tester, "changes-minimap")
 }
 
+// TestDumpMinimapPreview renders the bubble the minimap shows under the
+// pointer and a diff with wrapping on, into MYGIT_DUMP.
+func TestDumpMinimapPreview(t *testing.T) {
+	out := os.Getenv("MYGIT_DUMP")
+	if out == "" {
+		t.Skip()
+	}
+	save := func(tt *ui.Tester, name string) {
+		t.Helper()
+		tt.Frame()
+		f, err := os.Create(filepath.Join(out, name+".png"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+		if err := png.Encode(f, tt.Image()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	defer func(tree, wrap bool) { prefs.TreeView, prefs.Wrap = tree, wrap }(prefs.TreeView, prefs.Wrap)
+	prefs.TreeView, prefs.Wrap = false, false
+
+	tt := newTester(t)
+	tt.SetDark(true)
+	var lines []string
+	for i := 1; i <= 120; i++ {
+		lines = append(lines, fmt.Sprintf("line %d: the quick brown fox jumps over the lazy dog, again and again and again and again", i))
+	}
+	tt.commitFiles(t, "Long", map[string]string{"long.txt": strings.Join(lines, "\n") + "\n"})
+	for i := 30; i < 120; i += 25 {
+		lines[i] = fmt.Sprintf("line %d: changed, the quick brown fox jumps over the lazy dog, again and again and again and again", i+1)
+	}
+	tt.write(t, map[string]string{"long.txt": strings.Join(lines, "\n") + "\n"})
+	tt.click(t, "long.txt")
+	// The strip is the last 18 DIPs of the window; its left 5 resize it.
+	tt.Move(1192, 540)
+	save(tt.Tester, "minimap-bubble")
+	tt.click(t, loc.WrapLines())
+	save(tt.Tester, "diff-wrap")
+}
+
 func TestDumpWorktrees(t *testing.T) {
 	sc := newShowcase(t)
 	orbit := orbitRepo(t)

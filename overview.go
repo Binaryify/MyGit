@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
@@ -9,19 +10,16 @@ import (
 	loc "mygit/locales"
 )
 
-// previewLines is how many lines of each side a change's preview shows.
-const previewLines = 8
-
 // overview is a strip beside a diff with a mark for each of its changes
 // where it is in the file, as VS Code's overview ruler, over a minimap of
 // the file's lines, as CodeGlance: a click goes to the change, and
-// pointing at it previews its lines. Its left edge drags to make it wider
-// or narrower.
+// pointing at it shows the lines there. Its left edge drags to make it
+// wider or narrower.
 func overview(c *ui.Context, d *editor.DiffState) {
 	hunks := d.Hunks() // none still keeps the strip, lest the diff widen as the last goes
 	t := c.Theme()
 	total := max(d.New.LineCount(), 1)
-	ui.Column(c).Width(overviewWidth()).AlignSelf(ui.Stretch).Padding(2).BorderWidth(0, 0, 0, 1).BorderColor(t.Border).Children(func() {
+	col := ui.Column(c).Width(overviewWidth()).AlignSelf(ui.Stretch).Padding(2).BorderWidth(0, 0, 0, 1).BorderColor(t.Border).Children(func() {
 		at := 0
 		space := func(lines int) {
 			if lines > 0 {
@@ -39,7 +37,7 @@ func overview(c *ui.Context, d *editor.DiffState) {
 				code = 'D'
 			}
 			mark := ui.ButtonBase(c.Key(i)).Grow(float32(n)).Basis(0).MinHeight(4).Radius(2).
-				Label(loc.ChangeOf(i+1, len(hunks))).Tooltip(hunkPreview(d, h)).Cursor(ui.CursorPointer)
+				Label(loc.ChangeOf(i+1, len(hunks))).Cursor(ui.CursorPointer)
 			color := changeColor(t, code, false)
 			if !mark.Hovered() {
 				color = color.Alpha(0.7)
@@ -52,7 +50,67 @@ func overview(c *ui.Context, d *editor.DiffState) {
 		}
 		space(total - at)
 		overviewGrip(c) // last, over the marks, to take the pointer at its edge
-	}).Draw(minimap(t, d, hunks))
+	})
+	col.Draw(minimap(t, d, hunks))
+	if x, y, over := col.PointerPosition(); over && !overviewResizing {
+		minimapPreview(c, t, d, hunks, col, x, y)
+	}
+}
+
+// The preview bubble's shape, in DIPs: the lines it shows, its width, the
+// height of a line and its padding.
+const (
+	previewRows = 15
+	previewW    = 400
+	previewLine = 15
+	previewPad  = 6
+)
+
+// minimapPreview shows the lines of the new side around the pointer's
+// place in the strip, changed or not, as CodeGlance's bubble beside its
+// minimap.
+func minimapPreview(c *ui.Context, t *ui.Theme, d *editor.DiffState, hunks []editor.DiffHunk, strip ui.Element, x, y float32) {
+	b := strip.Bounds()
+	n := d.New.LineCount()
+	if n == 0 || b.H < previewLine+2*previewPad || x < 7 { // the left edge drags the strip wider
+		return
+	}
+	line := min(n-1, max(0, int((y-1)/(b.H-2)*float32(n))))
+	from := min(max(0, line-previewRows/2), max(0, n-previewRows))
+	height := float32(min(previewRows, n)*previewLine + 2*previewPad)
+	top := min(max(b.Y+y-height/2, b.Y), b.Y+b.H-height)
+	left := max(8, b.X-previewW-8)
+	at := 0 // the first change from the line on
+	ui.Overlay(c, func() {
+		ui.Box(c).Absolute().Left(left).Top(top).Width(previewW).Padding(previewPad).
+			Radius(8).Background(t.Surface).Border(1, t.Border).
+			Shadow(0, 6, 20, 0, ui.RGB(0, 0, 0).Alpha(0.3)).Children(func() {
+			for i := from; i < min(n, from+previewRows); i++ {
+				for at < len(hunks) && hunks[at].NewEnd <= i {
+					at++
+				}
+				color := t.Text
+				if at < len(hunks) && hunks[at].NewStart <= i {
+					code := byte('M')
+					switch {
+					case hunks[at].OldEnd == hunks[at].OldStart:
+						code = 'A'
+					case hunks[at].NewEnd == hunks[at].NewStart:
+						code = 'D'
+					}
+					color = changeColor(t, code, false)
+				}
+				row := ui.Row(c).Key(i).Height(previewLine).Padding(0, 4).Gap(8).AlignItems(ui.Center)
+				if i == line {
+					row.Background(t.SurfaceHover)
+				}
+				row.Children(func() {
+					ui.Text(c, strconv.Itoa(i+1)).Font("monospace").FontSize(9).TextColor(t.TextMuted).Width(30).TextAlign(ui.End)
+					ui.Text(c, strings.ReplaceAll(d.New.Line(i), "\t", "    ")).Font("monospace").FontSize(10).TextColor(color).SingleLine()
+				})
+			}
+		})
+	})
 }
 
 // minimap paints the strip behind its marks as a minimap of the file, as
@@ -140,21 +198,4 @@ func overviewGrip(c *ui.Context) {
 			p.Fill(ui.Rect{X: r.X + r.W - 1, Y: r.Y, W: 1, H: r.H}, t.Accent, 0)
 		}
 	})
-}
-
-// hunkPreview is a change's lines, as a patch shows them: the old ones
-// with -, the new ones with +, a few of each.
-func hunkPreview(d *editor.DiffState, h editor.DiffHunk) string {
-	var b strings.Builder
-	side := func(buf *editor.Buffer, from, to int, sign string) {
-		for i := from; i < min(to, from+previewLines); i++ {
-			b.WriteString(sign + buf.Line(i) + "\n")
-		}
-		if to-from > previewLines {
-			b.WriteString(loc.AndMore(to-from-previewLines) + "\n")
-		}
-	}
-	side(d.Old, h.OldStart, h.OldEnd, "- ")
-	side(d.New, h.NewStart, h.NewEnd, "+ ")
-	return strings.TrimSuffix(b.String(), "\n")
 }

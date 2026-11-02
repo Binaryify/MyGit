@@ -516,6 +516,7 @@
   "untrackedStashMessage": "拉取前存下的未追蹤檔案",
   "andMore": "等另外 {count} 個",
   "foldUnchanged": "摺疊未更改",
+  "wrapLines": "自動換行",
   "whitespaceChanges": "空白的改動",
   "whitespaceKept": "不忽略",
   "trimWhitespace": "修剪空白",

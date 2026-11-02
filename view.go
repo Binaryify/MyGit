@@ -551,6 +551,9 @@ func (a *app) detailView(c *ui.Context) {
 					d.diff.ExpandUnchanged = !prefs.FoldUnchanged
 					prefs.save()
 				}
+				if d.diff != nil {
+					wrapToggle(c, d.diff)
+				}
 				a.whitespaceMenu(c)
 				a.lineButtons(c)
 			})
@@ -573,6 +576,9 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 				ui.Text(c, loc.FilesDiffer(len(d.files))).TextColor(t.TextMuted)
 				ui.Box(c).Grow(1)
 				a.whitespaceMenu(c)
+				if d.diff != nil {
+					wrapToggle(c, d.diff)
+				}
 			})
 			return
 		}
@@ -583,6 +589,9 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 			ui.Box(c).Grow(1)
 			a.changeNav(c)
 			a.whitespaceMenu(c)
+			if d.diff != nil {
+				wrapToggle(c, d.diff)
+			}
 			if n := len(cm.Parents); n > 1 {
 				labels := make([]string, n)
 				for i, p := range cm.Parents {
@@ -623,6 +632,15 @@ func (a *app) whitespaceMenu(c *ui.Context) {
 			}
 		}
 	})
+}
+
+// wrapToggle turns wrapping on or off for the diff shown, kept for the
+// diffs opened next too.
+func wrapToggle(c *ui.Context, d *editor.DiffState) {
+	if ui.Toggle(c, &prefs.Wrap, loc.WrapLines()).Changed() {
+		d.Wrap = prefs.Wrap
+		prefs.save()
+	}
 }
 
 // fileMenu is a file's context menu, of a commit's files or the changes.

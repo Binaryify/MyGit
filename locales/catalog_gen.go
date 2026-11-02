@@ -5226,6 +5226,16 @@ func (msgs Messages) FoldUnchanged() string {
 	return Catalog.Format(msgs.locale, "foldUnchanged", nil)
 }
 
+// WrapLines says "Wrap Lines"
+// in the language the app shows.
+func WrapLines() string { return In(i18n.Locale()).WrapLines() }
+
+// WrapLines says "Wrap Lines"
+// in the language of msgs.
+func (msgs Messages) WrapLines() string {
+	return Catalog.Format(msgs.locale, "wrapLines", nil)
+}
+
 // WhitespaceChanges says "Whitespace changes"
 // in the language the app shows.
 func WhitespaceChanges() string { return In(i18n.Locale()).WhitespaceChanges() }
