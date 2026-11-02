@@ -3296,6 +3296,46 @@ func (msgs Messages) Refresh() string {
 	return Catalog.Format(msgs.locale, "refresh", nil)
 }
 
+// Sidebar says "Sidebar"
+// in the language the app shows.
+func Sidebar() string { return In(i18n.Locale()).Sidebar() }
+
+// Sidebar says "Sidebar"
+// in the language of msgs.
+func (msgs Messages) Sidebar() string {
+	return Catalog.Format(msgs.locale, "sidebar", nil)
+}
+
+// HideSidebar says "Hide Sidebar"
+// in the language the app shows.
+func HideSidebar() string { return In(i18n.Locale()).HideSidebar() }
+
+// HideSidebar says "Hide Sidebar"
+// in the language of msgs.
+func (msgs Messages) HideSidebar() string {
+	return Catalog.Format(msgs.locale, "hideSidebar", nil)
+}
+
+// ShowSidebar says "Show Sidebar"
+// in the language the app shows.
+func ShowSidebar() string { return In(i18n.Locale()).ShowSidebar() }
+
+// ShowSidebar says "Show Sidebar"
+// in the language of msgs.
+func (msgs Messages) ShowSidebar() string {
+	return Catalog.Format(msgs.locale, "showSidebar", nil)
+}
+
+// ToggleSidebar says "Show or hide the sidebar"
+// in the language the app shows.
+func ToggleSidebar() string { return In(i18n.Locale()).ToggleSidebar() }
+
+// ToggleSidebar says "Show or hide the sidebar"
+// in the language of msgs.
+func (msgs Messages) ToggleSidebar() string {
+	return Catalog.Format(msgs.locale, "toggleSidebar", nil)
+}
+
 // MessagePlaceholder says "Commit message ({shortcut} to commit)"
 // in the language the app shows.
 func MessagePlaceholder(shortcut string) string {

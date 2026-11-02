@@ -123,6 +123,9 @@ func (a *app) repoMenu(m *ui.Menu) {
 	if a.ws != nil && m.Item(loc.HideRepoMenu()).Chosen() {
 		a.ws.hide(a)
 	}
+	if m.Item(loc.Sidebar()).Checked(!prefs.SidebarHidden).Chosen() {
+		a.toggleSidebar()
+	}
 	m.Separator()
 	if m.Item(loc.MenuOpenRepo()).Chosen() {
 		showWelcome()

@@ -54,6 +54,31 @@ func TestDumpThemes(t *testing.T) {
 	}
 }
 
+// TestDumpSidebar renders the window with its sidebar folded away and
+// shown again into MYGIT_DUMP, as TestDumpThemes does.
+func TestDumpSidebar(t *testing.T) {
+	out := os.Getenv("MYGIT_DUMP")
+	if out == "" {
+		t.Skip()
+	}
+	defer func(h bool) { prefs.SidebarHidden = h }(prefs.SidebarHidden)
+	prefs.SidebarHidden = false
+	tt := newTester(t)
+	tt.SetDark(true)
+	tt.click(t, "Merge the feature")
+	save := func(name string) {
+		tt.Frame()
+		f, _ := os.Create(out + "/" + name + ".png")
+		png.Encode(f, tt.Image())
+		f.Close()
+	}
+	save("sidebar-shown")
+	tt.a.toggleSidebar()
+	save("sidebar-hidden")
+	tt.a.toggleSidebar()
+	save("sidebar-back")
+}
+
 // TestDumpFeatures renders the views of the review features into
 // MYGIT_DUMP, as TestDumpThemes does: a generated file folded, a picture's
 // change, and the files of a commit some of them viewed.

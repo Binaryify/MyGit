@@ -39,6 +39,7 @@ type settings struct {
 	OverviewW           float32         `json:"overviewW,omitempty"`   // the overview strip's width, 0 for the default
 	HiddenRepos         map[string]bool `json:"hiddenRepos,omitempty"` // the workspace's repositories hidden, by location
 	SidebarW            float32         `json:"sidebarW"`
+	SidebarHidden       bool            `json:"sidebarHidden,omitempty"` // the sidebar folded away, for the room its changes need
 	LogH                float32         `json:"logH"`
 	FilesW              float32         `json:"filesW"`
 	StagedPct           float32         `json:"stagedPct"`         // of the changes' room, the staged changes', in percent
@@ -202,6 +203,12 @@ func (d *settingsDialog) view(c *ui.Context, withShortcuts bool, closed func()) 
 				languageSelect(c)
 				ui.Text(c, loc.Appearance()).Bold().TextColor(t.TextMuted)
 				themeSelect(c)
+				// The sidebar's way back for those who never learn the key.
+				shown := !prefs.SidebarHidden
+				if ui.Toggle(c, &shown, loc.Sidebar()).Changed() {
+					prefs.SidebarHidden = !shown
+					prefs.save()
+				}
 				ui.Text(c, loc.DiffSection()).Bold().TextColor(t.TextMuted)
 				ui.Checkbox(c, &prefs.Unified, loc.DiffUnified())
 				whitespaceSelect(c)
@@ -253,6 +260,7 @@ func shortcuts() []keyBinding {
 		{shortcut("K"), loc.ShortcutCommands()},
 		{shortcut("P"), strings.TrimSuffix(loc.GoToFile(), "…")},
 		{shortcut("F"), loc.SearchHistory()},
+		{shortcut("B"), loc.ToggleSidebar()},
 		{shortcut("↩"), loc.Commit()},
 		{shortcut("S"), loc.ShortcutSave()},
 		{"F7", loc.NextChange()},

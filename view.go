@@ -50,15 +50,22 @@ func (a *app) view(c *ui.Context) {
 			})
 		}
 		a.operationBar(c)
-		ui.Split(c, &a.sidebarW, func() {
-			if a.ws != nil {
-				a.ws.sidebar(c)
-			} else {
-				a.leftPanel(c)
-			}
-		}, func() {
+		// The sidebar is left out rather than narrowed: a split keeps a
+		// strip of its own, with a divider to drag, however small its size.
+		history := func() {
 			ui.SplitVertical(c, &a.logH, func() { a.logView(c) }, func() { a.detailView(c) }).Fill()
-		}).Grow(1)
+		}
+		if prefs.SidebarHidden {
+			ui.Column(c).Grow(1).Basis(0).Children(history)
+		} else {
+			ui.Split(c, &a.sidebarW, func() {
+				if a.ws != nil {
+					a.ws.sidebar(c)
+				} else {
+					a.leftPanel(c)
+				}
+			}, history).Grow(1)
+		}
 		if root.FileDragOver() {
 			dropHint(c)
 		}
@@ -80,6 +87,7 @@ func (a *app) view(c *ui.Context) {
 	a.pullsView(c)
 	a.submitView(c)
 	c.OnShortcut(ui.Cmd, ui.KeyR, a.refresh)
+	c.OnShortcut(ui.Cmd, ui.KeyB, a.toggleSidebar)
 	c.OnShortcut(ui.Cmd, ui.KeyP, a.openFiles)
 	c.OnShortcut(ui.Cmd, ui.KeyK, a.openCommands)
 	c.OnShortcut(0, ui.KeyF7, func() { a.stepChange(false) })
@@ -119,6 +127,11 @@ func (a *app) toolbar(c *ui.Context) {
 	st := a.status
 	titleBar(c).Background(t.Surface).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 		ui.Image(c, icon).Size(22, 22)
+		// Where the sidebar meets the window, so that its way back stays
+		// in view while it is away.
+		if iconButton(c, "panel-left", a.sidebarLabel(), a.sidebarLabel()+" · "+shortcut("B")) {
+			a.toggleSidebar()
+		}
 		if a.ws != nil {
 			ui.Text(c, a.ws.name()+" /").FontSize(13).TextColor(t.TextMuted)
 		}
@@ -176,6 +189,22 @@ func (a *app) toolbar(c *ui.Context) {
 		}
 		ui.Button(c, "⋯").Label(loc.Repository()).Menu(a.repoMenu)
 	})
+}
+
+// toggleSidebar hides the sidebar, or shows it again, both the repository's
+// and the workspace's, keeping the choice for the next launch.
+func (a *app) toggleSidebar() {
+	prefs.SidebarHidden = !prefs.SidebarHidden
+	prefs.save()
+}
+
+// sidebarLabel says what the toggle does now, as its button and the
+// commands name it.
+func (a *app) sidebarLabel() string {
+	if prefs.SidebarHidden {
+		return loc.ShowSidebar()
+	}
+	return loc.HideSidebar()
 }
 
 // changesPanel is the working tree's changes, staged and not, and the
