@@ -14,8 +14,9 @@ import (
 // where it is in the file, as VS Code's overview ruler, over a minimap of
 // the file's lines, as CodeGlance: a click goes to the change, and
 // pointing at it shows the lines there. Its left edge drags to make it
-// wider or narrower.
-func overview(c *ui.Context, d *editor.DiffState) {
+// wider or narrower. area is the diff pane the strip sits in, which the
+// bubble keeps within.
+func overview(c *ui.Context, d *editor.DiffState, area ui.Element) {
 	hunks := d.Hunks() // none still keeps the strip, lest the diff widen as the last goes
 	t := c.Theme()
 	total := max(d.New.LineCount(), 1)
@@ -53,36 +54,41 @@ func overview(c *ui.Context, d *editor.DiffState) {
 	})
 	col.Draw(minimap(t, d, hunks))
 	if x, y, over := col.PointerPosition(); over && !overviewResizing {
-		minimapPreview(c, t, d, hunks, col, x, y)
+		minimapPreview(c, t, d, hunks, col, area, x, y)
 	}
 }
 
-// The preview bubble's shape, in DIPs: the lines it shows, its width, the
-// height of a line and its padding.
+// The preview bubble's shape, in DIPs: the lines it shows, the least
+// width it takes, the height of a line and its padding.
 const (
 	previewRows = 15
-	previewW    = 400
+	previewMinW = 160
 	previewLine = 15
 	previewPad  = 6
 )
 
 // minimapPreview shows the lines of the new side around the pointer's
 // place in the strip, changed or not, as CodeGlance's bubble beside its
-// minimap.
-func minimapPreview(c *ui.Context, t *ui.Theme, d *editor.DiffState, hunks []editor.DiffHunk, strip ui.Element, x, y float32) {
-	b := strip.Bounds()
+// minimap. The bubble is as wide as the diff pane, so lines are not cut
+// short the way they were at a fixed width.
+func minimapPreview(c *ui.Context, t *ui.Theme, d *editor.DiffState, hunks []editor.DiffHunk, strip, area ui.Element, x, y float32) {
+	b, a := strip.Bounds(), area.Bounds()
 	n := d.New.LineCount()
 	if n == 0 || b.H < previewLine+2*previewPad || x < 7 { // the left edge drags the strip wider
+		return
+	}
+	left := max(8, a.X+8)
+	width := b.X - 8 - left
+	if width < previewMinW { // a pane too narrow for the bubble
 		return
 	}
 	line := min(n-1, max(0, int((y-1)/(b.H-2)*float32(n))))
 	from := min(max(0, line-previewRows/2), max(0, n-previewRows))
 	height := float32(min(previewRows, n)*previewLine + 2*previewPad)
 	top := min(max(b.Y+y-height/2, b.Y), b.Y+b.H-height)
-	left := max(8, b.X-previewW-8)
 	at := 0 // the first change from the line on
 	ui.Overlay(c, func() {
-		ui.Box(c).Absolute().Left(left).Top(top).Width(previewW).Padding(previewPad).
+		ui.Box(c).Absolute().Left(left).Top(top).Width(width).Padding(previewPad).
 			Radius(8).Background(t.Surface).Border(1, t.Border).
 			Shadow(0, 6, 20, 0, ui.RGB(0, 0, 0).Alpha(0.3)).Children(func() {
 			for i := from; i < min(n, from+previewRows); i++ {
