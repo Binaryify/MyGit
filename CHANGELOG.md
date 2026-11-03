@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.25
+
+- 修复同一个文件里有的改动有语法高亮、有的整段发灰（[#10](https://github.com/Binaryify/MyGit/issues/10)）：看提交、看已暂存的改动或开着「忽略空格和空行」时，一处改动的上下文停在 `/* … */` 注释里，下一处改动就会被整段当成注释。现在每处改动各自从头高亮。根源已报给上游 [egoist/mygo#1047](https://github.com/egoist/mygo/issues/1047)
+- 缩略图悬停预览的代码气泡（[#10](https://github.com/Binaryify/MyGit/issues/10)）：字号和对比区一样大，代码按语法高亮，改动行加底色；看提交时行号是文件里的真实行号，不再从 1 数起
+
 ## 0.3.24
 
 - 缩略图悬停预览的代码气泡改为和对比区一样宽（[#10](https://github.com/Binaryify/MyGit/issues/10)）：原来固定 400 像素，长行大多会被截断；现在从对比区左边一直铺到缩略条前，整行都看得见
