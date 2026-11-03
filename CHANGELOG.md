@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.26
+
+- 侧边栏可以收起了（[#13](https://github.com/Binaryify/MyGit/issues/13)，感谢 [@yangdev02](https://github.com/yangdev02)）：工具栏最左边 App 图标旁的面板按钮、`⌘B` / `Ctrl+B`、命令面板、仓库 `⋯` 菜单里的「侧边栏」和设置 → 外观里的开关都能收起或显示它。收起后历史和对比区占满整个窗口宽度，仓库窗口和工作区窗口都生效；选择会记住，下次打开还是这样，再展开时侧边栏还是原来的宽度
+
 ## 0.3.25
 
 - 修复同一个文件里有的改动有语法高亮、有的整段发灰（[#10](https://github.com/Binaryify/MyGit/issues/10)）：看提交、看已暂存的改动或开着「忽略空格和空行」时，一处改动的上下文停在 `/* … */` 注释里，下一处改动就会被整段当成注释。现在每处改动各自从头高亮。根源已报给上游 [egoist/mygo#1047](https://github.com/egoist/mygo/issues/1047)
