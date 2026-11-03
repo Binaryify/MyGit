@@ -63,7 +63,7 @@ func overview(c *ui.Context, d *editor.DiffState, area ui.Element) {
 const (
 	previewRows = 15
 	previewMinW = 160
-	previewLine = 15
+	previewLine = 18
 	previewPad  = 6
 )
 
@@ -111,8 +111,8 @@ func minimapPreview(c *ui.Context, t *ui.Theme, d *editor.DiffState, hunks []edi
 					row.Background(t.SurfaceHover)
 				}
 				row.Children(func() {
-					ui.Text(c, strconv.Itoa(i+1)).Font("monospace").FontSize(9).TextColor(t.TextMuted).Width(30).TextAlign(ui.End)
-					ui.Text(c, strings.ReplaceAll(d.New.Line(i), "\t", "    ")).Font("monospace").FontSize(10).TextColor(color).SingleLine()
+					ui.Text(c, strconv.Itoa(i+1)).Font("monospace").FontSize(11).TextColor(t.TextMuted).Width(36).TextAlign(ui.End)
+					ui.Text(c, strings.ReplaceAll(d.New.Line(i), "\t", "    ")).Font("monospace").FontSize(12).TextColor(color).SingleLine()
 				})
 			}
 		})
