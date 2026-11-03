@@ -778,8 +778,9 @@ func patchDiff(p editor.FilePatch) *editor.DiffState {
 	d := &editor.DiffState{Layout: diffLayout(), Wrap: prefs.Wrap}
 	d.SetPatch(p)
 	if lang := editor.LanguageFor(fileName(p)); lang != nil {
-		d.Old.SetLanguage(lang)
-		d.New.SetLanguage(lang)
+		old, new := hunkStarts(p)
+		d.Old.SetLanguage(patchLanguage(lang, old))
+		d.New.SetLanguage(patchLanguage(lang, new))
 	}
 	return d
 }
