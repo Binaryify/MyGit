@@ -46,7 +46,8 @@ func hunkStarts(p editor.FilePatch) (old, new []int) {
 // highlighter does, a line at a time from the state the line before ends
 // in, but each hunk from the start: the file's lines between two hunks
 // are not there, so one hunk ending in a block comment would leave the
-// next all comment.
+// next all comment. It goes once mygo's patches do this themselves
+// (egoist/mygo#1047).
 type hunkHighlighter struct {
 	t       editor.Tokenizer
 	text    editor.Snapshot
