@@ -194,6 +194,40 @@ func TestWrapToggle(t *testing.T) {
 	}
 }
 
+func TestSidebarToggle(t *testing.T) {
+	defer func(h bool) { prefs.SidebarHidden = h }(prefs.SidebarHidden)
+	prefs.SidebarHidden = false
+	tt := newTester(t)
+	before, ok := tt.Find("Merge the feature")
+	if !ok {
+		t.Fatalf("no history: %q", tt.Texts())
+	}
+	tt.click(t, loc.HideSidebar())
+	if !prefs.SidebarHidden || tt.HasText(loc.Staged()) || tt.HasText(loc.Message()) {
+		t.Fatalf("after hiding it: pref %v, texts %q", prefs.SidebarHidden, tt.Texts())
+	}
+	// The history takes the room, rather than a strip of the split's.
+	after, ok := tt.Find("Merge the feature")
+	if !ok || after.X >= before.X-100 {
+		t.Fatalf("the history was at %v, and is at %v", before.X, after.X)
+	}
+	// And its diffs still have room under it.
+	tt.click(t, "Merge the feature")
+	if d := tt.a.detail; d.commit == nil || d.commit.Subject != "Merge the feature" || d.diff == nil {
+		t.Fatalf("the commit's detail %+v", d)
+	}
+	// Its way back, as the button names it now, and the key.
+	tt.click(t, loc.ShowSidebar())
+	if prefs.SidebarHidden || !tt.HasText(loc.Staged()) {
+		t.Fatalf("after showing it: pref %v, texts %q", prefs.SidebarHidden, tt.Texts())
+	}
+	tt.Key(ui.Cmd, ui.KeyB)
+	tt.settle()
+	if !prefs.SidebarHidden {
+		t.Fatalf("the key didn't hide it: texts %q", tt.Texts())
+	}
+}
+
 func TestStageAndCommit(t *testing.T) {
 	tt := newTester(t)
 	tt.click(t, "notes.txt")
