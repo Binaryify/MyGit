@@ -795,7 +795,7 @@ func (a *app) diffView(c *ui.Context) {
 			if d.whole {
 				dv.OnShortcut(ui.Cmd, ui.KeyS, a.saveFile) // as the file is typed in
 			}
-			overview(c, d.diff, row)
+			overview(c, d.diff, row, func(i int) int { return a.fileLine(editor.DiffNew, i) })
 		})
 	default:
 		ui.Column(c).Fill().Center().Children(func() { ui.Text(c, loc.NoDiff()).TextColor(t.TextMuted) })

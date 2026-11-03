@@ -3,6 +3,7 @@ package main
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
@@ -15,8 +16,9 @@ import (
 // the file's lines, as CodeGlance: a click goes to the change, and
 // pointing at it shows the lines there. Its left edge drags to make it
 // wider or narrower. area is the diff pane the strip sits in, which the
-// bubble keeps within.
-func overview(c *ui.Context, d *editor.DiffState, area ui.Element) {
+// bubble keeps within; number is the file's line (from 1) that a line of
+// the new side (from 0) is, as a patch's lines are not all the file's.
+func overview(c *ui.Context, d *editor.DiffState, area ui.Element, number func(int) int) {
 	hunks := d.Hunks() // none still keeps the strip, lest the diff widen as the last goes
 	t := c.Theme()
 	total := max(d.New.LineCount(), 1)
@@ -54,7 +56,7 @@ func overview(c *ui.Context, d *editor.DiffState, area ui.Element) {
 	})
 	col.Draw(minimap(t, d, hunks))
 	if x, y, over := col.PointerPosition(); over && !overviewResizing {
-		minimapPreview(c, t, d, hunks, col, area, x, y)
+		minimapPreview(c, t, d, hunks, col, area, number, x, y)
 	}
 }
 
@@ -63,15 +65,16 @@ func overview(c *ui.Context, d *editor.DiffState, area ui.Element) {
 const (
 	previewRows = 15
 	previewMinW = 160
-	previewLine = 18
+	previewLine = 20
 	previewPad  = 6
 )
 
 // minimapPreview shows the lines of the new side around the pointer's
 // place in the strip, changed or not, as CodeGlance's bubble beside its
 // minimap. The bubble is as wide as the diff pane, so lines are not cut
-// short the way they were at a fixed width.
-func minimapPreview(c *ui.Context, t *ui.Theme, d *editor.DiffState, hunks []editor.DiffHunk, strip, area ui.Element, x, y float32) {
+// short the way they were at a fixed width, in the diff's type and its
+// colors for code; the changed lines are tinted as in the diff.
+func minimapPreview(c *ui.Context, t *ui.Theme, d *editor.DiffState, hunks []editor.DiffHunk, strip, area ui.Element, number func(int) int, x, y float32) {
 	b, a := strip.Bounds(), area.Bounds()
 	n := d.New.LineCount()
 	if n == 0 || b.H < previewLine+2*previewPad || x < 7 { // the left edge drags the strip wider
@@ -87,6 +90,12 @@ func minimapPreview(c *ui.Context, t *ui.Theme, d *editor.DiffState, hunks []edi
 	height := float32(min(previewRows, n)*previewLine + 2*previewPad)
 	top := min(max(b.Y+y-height/2, b.Y), b.Y+b.H-height)
 	at := 0 // the first change from the line on
+	ct := editor.DefaultTheme(t)
+	hl := previewHighlighter(d.New)
+	if hl != nil {
+		hl.Highlight(from+previewRows, 50*time.Millisecond)
+	}
+	var toks []editor.Token
 	ui.Overlay(c, func() {
 		ui.Box(c).Absolute().Left(left).Top(top).Width(width).Padding(previewPad).
 			Radius(8).Background(t.Surface).Border(1, t.Border).
@@ -95,7 +104,7 @@ func minimapPreview(c *ui.Context, t *ui.Theme, d *editor.DiffState, hunks []edi
 				for at < len(hunks) && hunks[at].NewEnd <= i {
 					at++
 				}
-				color := t.Text
+				numColor, tint := t.TextMuted, ui.Color{}
 				if at < len(hunks) && hunks[at].NewStart <= i {
 					code := byte('M')
 					switch {
@@ -104,19 +113,80 @@ func minimapPreview(c *ui.Context, t *ui.Theme, d *editor.DiffState, hunks []edi
 					case hunks[at].NewEnd == hunks[at].NewStart:
 						code = 'D'
 					}
-					color = changeColor(t, code, false)
+					numColor = changeColor(t, code, false)
+					tint = numColor.Alpha(0.15)
 				}
 				row := ui.Row(c).Key(i).Height(previewLine).Padding(0, 4).Gap(8).AlignItems(ui.Center)
 				if i == line {
 					row.Background(t.SurfaceHover)
+				} else if tint != (ui.Color{}) {
+					row.Background(tint)
+				}
+				text := d.New.Line(i)
+				if hl != nil {
+					toks, _ = hl.Tokens(i, text, toks[:0])
 				}
 				row.Children(func() {
-					ui.Text(c, strconv.Itoa(i+1)).Font("monospace").FontSize(11).TextColor(t.TextMuted).Width(36).TextAlign(ui.End)
-					ui.Text(c, strings.ReplaceAll(d.New.Line(i), "\t", "    ")).Font("monospace").FontSize(12).TextColor(color).SingleLine()
+					ui.Text(c, strconv.Itoa(number(i))).Font("monospace").FontSize(11).TextColor(numColor).Width(36).TextAlign(ui.End)
+					ui.RichText(c, codeSpans(ct, text, toks)...).Font("monospace").FontSize(13).TextColor(ct.Text).SingleLine()
 				})
 			}
 		})
 	})
+}
+
+// previewSyntax is the highlighter of the lines the minimap's bubble
+// shows: that of the buffer's language, as the diff highlights it, for
+// the version of its text it was made for.
+var previewSyntax struct {
+	buf     *editor.Buffer
+	version uint64
+	hl      editor.Highlighter
+}
+
+// previewHighlighter returns a highlighter of b's text as it is, nil for
+// plain text.
+func previewHighlighter(b *editor.Buffer) editor.Highlighter {
+	l := b.Language()
+	if l == nil || l.Tokenizer == nil && l.Highlighter == nil {
+		return nil
+	}
+	s, p := b.Snapshot(), &previewSyntax
+	if p.buf != b || p.version != s.Version() || p.hl == nil {
+		p.buf, p.version = b, s.Version()
+		if l.Highlighter != nil {
+			p.hl = l.Highlighter(s, func() {})
+		} else {
+			p.hl = editor.NewTokenHighlighter(l.Tokenizer, s)
+		}
+	}
+	return p.hl
+}
+
+// codeSpans are the spans of a line of code colored by its tokens, as
+// the theme colors them, a tab as four spaces.
+func codeSpans(ct *editor.Theme, line string, toks []editor.Token) []ui.Span {
+	spans := make([]ui.Span, 0, len(toks)+1)
+	add := func(text string, k editor.TokenKind) {
+		if text != "" {
+			st := ct.Tokens[k]
+			sp := ui.Span{Text: strings.ReplaceAll(text, "\t", "    "), Color: st.Color, Italic: st.Italic}
+			if st.Bold {
+				sp.Weight = 700
+			}
+			spans = append(spans, sp)
+		}
+	}
+	at := 0
+	for _, tk := range toks {
+		end := min(tk.End, len(line))
+		if end > at {
+			add(line[at:end], tk.Kind)
+			at = end
+		}
+	}
+	add(line[at:], editor.TokenText)
+	return spans
 }
 
 // minimap paints the strip behind its marks as a minimap of the file, as

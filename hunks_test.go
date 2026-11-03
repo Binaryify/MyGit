@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 )
 
@@ -49,5 +50,28 @@ func TestHunkAfterACommentIsCode(t *testing.T) {
 	plain.Highlight(n-1, 1e9)
 	if toks, _ := plain.Tokens(3, line, nil); toks[0].Kind != editor.TokenComment {
 		t.Skip("mygo now starts each hunk afresh: hunkHighlighter may go")
+	}
+}
+
+// The minimap's bubble colors a line by its tokens, keeping its text.
+func TestPreviewSpans(t *testing.T) {
+	d := textDiff("a.cpp", "", "\tfor (int i = 0; i < n; i++) { // go\n")
+	hl := previewHighlighter(d.New)
+	if hl == nil || !hl.Highlight(0, 1e9) {
+		t.Fatal("no highlighter")
+	}
+	line := d.New.Line(0)
+	toks, _ := hl.Tokens(0, line, nil)
+	ct := editor.DefaultTheme(ui.DarkTheme())
+	spans := codeSpans(ct, line, toks)
+	text := ""
+	for _, s := range spans {
+		text += s.Text
+	}
+	if text != "    for (int i = 0; i < n; i++) { // go" {
+		t.Fatalf("text %q", text)
+	}
+	if spans[1].Text != "for" || spans[1].Color != ct.Tokens[editor.TokenKeyword].Color {
+		t.Fatalf("spans %+v", spans[:2])
 	}
 }
