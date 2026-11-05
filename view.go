@@ -135,7 +135,7 @@ func (a *app) toolbar(c *ui.Context) {
 		if a.ws != nil {
 			ui.Text(c, a.ws.name()+" /").FontSize(13).TextColor(t.TextMuted)
 		}
-		ui.Text(c, a.repo.Name()).FontSize(13).Bold().Tooltip(a.repo.Location())
+		a.projectButton(c)
 		if !a.local() {
 			a.remoteBadge(c)
 		}

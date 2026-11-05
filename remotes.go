@@ -133,12 +133,12 @@ func (a *app) repoMenu(m *ui.Menu) {
 	if m.Item(loc.SshMenu()).Chosen() {
 		openSSH()
 	}
-	if recent := recentLocations(); len(recent) > 0 {
+	if len(recentLocations()) > 0 {
 		m.Submenu(loc.MenuRecent(), func(m *ui.Menu) {
-			for _, l := range recent {
-				if m.Item(homeRelative(l)).Chosen() {
-					openRecent(l)
-				}
+			recentItems(m, nil, openRecent)
+			m.Separator()
+			if m.Item(loc.ClearRecent()).Chosen() {
+				clearRecent()
 			}
 		})
 	}

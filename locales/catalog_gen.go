@@ -5395,3 +5395,53 @@ func DropCommitMessage() string { return In(i18n.Locale()).DropCommitMessage() }
 func (msgs Messages) DropCommitMessage() string {
 	return Catalog.Format(msgs.locale, "dropCommitMessage", nil)
 }
+
+// RemoveRecent says "Remove from Recent"
+// in the language the app shows.
+func RemoveRecent() string { return In(i18n.Locale()).RemoveRecent() }
+
+// RemoveRecent says "Remove from Recent"
+// in the language of msgs.
+func (msgs Messages) RemoveRecent() string {
+	return Catalog.Format(msgs.locale, "removeRecent", nil)
+}
+
+// ClearRecent says "Clear Recent"
+// in the language the app shows.
+func ClearRecent() string { return In(i18n.Locale()).ClearRecent() }
+
+// ClearRecent says "Clear Recent"
+// in the language of msgs.
+func (msgs Messages) ClearRecent() string {
+	return Catalog.Format(msgs.locale, "clearRecent", nil)
+}
+
+// NoRecent says "Repositories you open show up here"
+// in the language the app shows.
+func NoRecent() string { return In(i18n.Locale()).NoRecent() }
+
+// NoRecent says "Repositories you open show up here"
+// in the language of msgs.
+func (msgs Messages) NoRecent() string {
+	return Catalog.Format(msgs.locale, "noRecent", nil)
+}
+
+// CloseProject says "Close Project"
+// in the language the app shows.
+func CloseProject() string { return In(i18n.Locale()).CloseProject() }
+
+// CloseProject says "Close Project"
+// in the language of msgs.
+func (msgs Messages) CloseProject() string {
+	return Catalog.Format(msgs.locale, "closeProject", nil)
+}
+
+// SwitchProject says "Switch Project"
+// in the language the app shows.
+func SwitchProject() string { return In(i18n.Locale()).SwitchProject() }
+
+// SwitchProject says "Switch Project"
+// in the language of msgs.
+func (msgs Messages) SwitchProject() string {
+	return Catalog.Format(msgs.locale, "switchProject", nil)
+}

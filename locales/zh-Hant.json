@@ -532,5 +532,10 @@
   "dropCommits": "刪除 {count} 個提交…",
   "dropCommitTitle": "刪除提交 {rev}？",
   "dropCommitsTitle": "刪除 {count} 個提交？",
-  "dropCommitMessage": "這些提交的改動會從目前分支的歷史中去掉，後面的提交會重新變基。"
+  "dropCommitMessage": "這些提交的改動會從目前分支的歷史中去掉，後面的提交會重新變基。",
+  "removeRecent": "從最近開啟中移除",
+  "clearRecent": "清除最近開啟",
+  "noRecent": "開啟過的儲存庫會顯示在這裡",
+  "closeProject": "關閉專案",
+  "switchProject": "切換專案"
 }

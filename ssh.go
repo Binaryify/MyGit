@@ -239,6 +239,31 @@ func recentLocations() []string {
 	return out
 }
 
+// forget takes a repository off those opened lately. The system can only
+// clear its recent folders, so the others are recorded again after, the
+// oldest first, keeping their order.
+func forget(location string) {
+	is := func(l string) bool { return l == location }
+	prefs.Recent = slices.DeleteFunc(prefs.Recent, is)
+	prefs.Remotes = slices.DeleteFunc(prefs.Remotes, is)
+	if docs := mygo.App.RecentDocuments(); slices.Contains(docs, location) {
+		_ = mygo.App.ClearRecentDocuments()
+		for _, d := range slices.Backward(docs) {
+			if d != location {
+				_ = mygo.App.AddRecentDocument(d)
+			}
+		}
+	}
+	prefs.save()
+}
+
+// clearRecent forgets all the repositories opened lately.
+func clearRecent() {
+	_ = mygo.App.ClearRecentDocuments()
+	prefs.Recent, prefs.Remotes = nil, nil
+	prefs.save()
+}
+
 // openRecent opens a repository opened lately: a folder, or host:dir on
 // another computer.
 func openRecent(location string) {

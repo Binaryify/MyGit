@@ -59,10 +59,10 @@ func showWelcome() {
 	w := &welcome{recent: recentLocations()}
 	w.win = mygo.NewWindow(customTitleBar(mygo.WindowOptions{
 		Title:     "MyGit",
-		Width:     520,
-		Height:    640,
-		MinWidth:  420,
-		MinHeight: 520,
+		Width:     860,
+		Height:    600,
+		MinWidth:  680,
+		MinHeight: 480,
 		Content:   ui.View(w.view),
 	}))
 	dropMenuBar(w.win)
@@ -132,51 +132,80 @@ func (w *welcome) view(c *ui.Context) {
 	}
 }
 
+// body is the window's two columns: what opens a repository on the left,
+// the repositories opened lately on the right.
 func (w *welcome) body(c *ui.Context) {
 	t := c.Theme()
-	ui.Column(c).Grow(1).Basis(0).Padding(0, 28, 28, 28).Gap(18).Children(func() {
-		ui.Column(c).Gap(6).AlignItems(ui.Center).Children(func() {
-			ui.Image(c, icon).Size(96, 96)
-			ui.Text(c, "MyGit").FontSize(24).Bold()
-			ui.Text(c, loc.Tagline()).TextColor(t.TextMuted)
-		})
-		w.dropZone(c)
-		ui.Row(c).Gap(8).Children(func() {
-			if ui.Button(c, loc.CloneMenu()).Grow(1).Clicked() {
-				w.clone = clonePlan{open: true, parent: defaultParent()}
+	ui.Row(c).Grow(1).Basis(0).AlignItems(ui.Stretch).Children(func() {
+		ui.Column(c).Grow(1).Basis(0).Padding(0, 28, 28, 28).Gap(18).Children(func() {
+			ui.Column(c).Gap(6).AlignItems(ui.Center).Children(func() {
+				ui.Image(c, icon).Size(96, 96)
+				ui.Text(c, "MyGit").FontSize(24).Bold()
+				ui.Text(c, loc.Tagline()).TextColor(t.TextMuted)
+			})
+			w.dropZone(c)
+			ui.Row(c).Gap(8).Children(func() {
+				if ui.Button(c, loc.CloneMenu()).Grow(1).Clicked() {
+					w.clone = clonePlan{open: true, parent: defaultParent()}
+				}
+				if ui.Button(c, loc.InitMenu()).Grow(1).Clicked() {
+					go w.initRepo()
+				}
+				if ui.Button(c, loc.SshMenu()).Grow(1).Clicked() {
+					w.ssh = newConnectPlan()
+				}
+			})
+			if w.errMsg != "" {
+				ui.Text(c, w.errMsg).TextColor(t.Danger).Wrap()
 			}
-			if ui.Button(c, loc.InitMenu()).Grow(1).Clicked() {
-				go w.initRepo()
-			}
-			if ui.Button(c, loc.SshMenu()).Grow(1).Clicked() {
-				w.ssh = newConnectPlan()
-			}
-		})
-		if w.errMsg != "" {
-			ui.Text(c, w.errMsg).TextColor(t.Danger).Wrap()
-		}
-		if w.unsafe != "" {
-			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
-				ui.Text(c, loc.TrustHint()).
-					FontSize(12).TextColor(t.TextMuted).Wrap().Grow(1).Basis(0)
-				if ui.PrimaryButton(c, loc.TrustOpen()).Clicked() {
-					dir := w.unsafe
-					if err := git.Trust(dir); err != nil {
-						w.errMsg = err.Error()
-						return
+			if w.unsafe != "" {
+				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+					ui.Text(c, loc.TrustHint()).
+						FontSize(12).TextColor(t.TextMuted).Wrap().Grow(1).Basis(0)
+					if ui.PrimaryButton(c, loc.TrustOpen()).Clicked() {
+						dir := w.unsafe
+						if err := git.Trust(dir); err != nil {
+							w.errMsg = err.Error()
+							return
+						}
+						w.open(dir)
 					}
-					w.open(dir)
+				})
+			}
+		})
+		w.recentList(c)
+	})
+}
+
+// recentList is the column of the repositories opened lately, each to
+// open or to take off it, or all of them to clear.
+func (w *welcome) recentList(c *ui.Context) {
+	t := c.Theme()
+	ui.Column(c).Width(300).Shrink(0).Padding(0, 16, 20, 16).Gap(8).
+		BorderWidth(0, 0, 0, 1).BorderColor(t.Border).Children(func() {
+		ui.Row(c).Height(24).Padding(0, 0, 0, 10).AlignItems(ui.Center).Children(func() {
+			ui.Text(c, loc.Recent()).Bold().TextColor(t.TextMuted).Grow(1)
+			if len(w.recent) > 0 {
+				clear := ui.ButtonBase(c.Key("clear")).Padding(2, 6).Radius(5).Cursor(ui.CursorPointer).Label(loc.ClearRecent())
+				if clear.Hovered() {
+					clear.Background(t.Text.Alpha(0.12))
 				}
-			})
-		}
-		if len(w.recent) > 0 {
-			ui.Text(c, loc.Recent()).Bold().TextColor(t.TextMuted)
-			ui.Scroll(c).Grow(1).Basis(0).Gap(2).Children(func() {
-				for _, l := range w.recent {
-					w.recentRow(c, l)
+				clear.Children(func() { ui.Text(c, loc.ClearRecent()).FontSize(12).TextColor(t.TextMuted) })
+				if clear.Clicked() {
+					clearRecent()
+					w.recent = nil
 				}
-			})
+			}
+		})
+		if len(w.recent) == 0 {
+			ui.Text(c, loc.NoRecent()).FontSize(12).TextColor(t.TextMuted).Wrap().Padding(0, 10)
+			return
 		}
+		ui.Scroll(c).Grow(1).Basis(0).Gap(2).Children(func() {
+			for _, l := range w.recent {
+				w.recentRow(c, l)
+			}
+		})
 	})
 }
 
@@ -213,24 +242,32 @@ func (w *welcome) recentRow(c *ui.Context, location string) {
 			name, where = path.Base(dir), hostName(host)+":"+dir
 		}
 	}
-	row := ui.ButtonBase(c.Key(location)).Padding(8, 10).Gap(10).Radius(8).AlignItems(ui.Center).
-		Cursor(ui.CursorPointer).Tooltip(location).Label(loc.OpenRepoNamed(name))
+	row := ui.Row(c.Key(location)).FillWidth().Padding(0, 6, 0, 0).Gap(4).Radius(8).AlignItems(ui.Center)
 	if row.Hovered() {
 		row.Background(t.SurfaceHover)
 	}
 	row.Children(func() {
-		ui.Column(c).Gap(2).Grow(1).Basis(0).Children(func() {
-			ui.Text(c, name).Bold().SingleLine()
-			ui.Text(c, where).FontSize(11).TextColor(t.TextMuted).SingleLine()
+		b := ui.ButtonBase(c.Key("open")).Padding(8, 10).Grow(1).Basis(0).Radius(8).
+			Cursor(ui.CursorPointer).Tooltip(location).Label(loc.OpenRepoNamed(name))
+		b.Children(func() {
+			ui.Column(c).Gap(2).Grow(1).Basis(0).Children(func() {
+				ui.Text(c, name).Bold().SingleLine()
+				ui.Text(c, where).FontSize(11).TextColor(t.TextMuted).SingleLine()
+			})
 		})
-	})
-	if row.Clicked() {
-		if remote {
-			w.connect(host, dir)
-		} else {
-			w.open(location)
+		if b.Clicked() {
+			if remote {
+				w.connect(host, dir)
+			} else {
+				w.open(location)
+			}
 		}
-	}
+		// Taking it off shows as the row is pointed at, or tabbed to.
+		if (row.Hovered() || row.FocusWithin()) && iconButton(c, "x", loc.RemoveRecent()) {
+			forget(location)
+			w.recent = recentLocations()
+		}
+	})
 }
 
 // homeRelative writes a path under the home folder with ~.

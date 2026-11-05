@@ -1478,5 +1478,10 @@
       }
     }
   },
-  "dropCommitMessage": "Their changes leave the current branch's history, and the commits after them are rebased."
+  "dropCommitMessage": "Their changes leave the current branch's history, and the commits after them are rebased.",
+  "removeRecent": "Remove from Recent",
+  "clearRecent": "Clear Recent",
+  "noRecent": "Repositories you open show up here",
+  "closeProject": "Close Project",
+  "switchProject": "Switch Project"
 }
