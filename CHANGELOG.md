@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.29
+
+- 升级到 MyGo 0.8.3：并排对比时，每处改动的标题始终留在左边，内容过长就以省略号收尾，分隔线拖到哪里都不会跑到右边（[egoist/mygo#1415](https://github.com/egoist/mygo/pull/1415)，感谢 [@yangdev02](https://github.com/yangdev02) 的报告）；列表里的一行右键时打开的是这一行自己的菜单
+- Windows 上动画只隔一帧变化时，用过的贴图也会及时释放，开着动画的程序不再一直涨内存（[egoist/mygo#1394](https://github.com/egoist/mygo/pull/1394)）
+- 程序自我更新后会删掉新版本不再带的文件，Windows 和 Linux 上不再残留上一版留下的文件（[egoist/mygo#1400](https://github.com/egoist/mygo/pull/1400)）
+- 圆角卡片里的内容在缩放、裁剪时贴合圆角，Metal、Direct3D 和 OpenGL 下都不会露到角外；从封面展开成整个窗口的动画不再每帧分配新的遮罩，打开时不再多占几百 MB 内存（[egoist/mygo#1420](https://github.com/egoist/mygo/pull/1420)、[egoist/mygo#1428](https://github.com/egoist/mygo/pull/1428)）
+
 ## 0.3.28
 
 - 升级到 MyGo 0.8.1（[#18](https://github.com/Binaryify/MyGit/issues/18)）：并排对比中间那条分隔线现在可以拖动，也能用方向键调宽，长行那一侧可以多分点宽度；对比区和合并对比区的滚动条不再一移开鼠标就消失
