@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.28
+
+- 升级到 MyGo 0.8.1（[#18](https://github.com/Binaryify/MyGit/issues/18)）：并排对比中间那条分隔线现在可以拖动，也能用方向键调宽，长行那一侧可以多分点宽度；对比区和合并对比区的滚动条不再一移开鼠标就消失
+- 对比区右侧的最小地图会画出当前视口框（[#10](https://github.com/Binaryify/MyGit/issues/10)）：滚动文件时能看见自己看到哪了，不再只有改动的位置。等到了 mygo 公开 diff 滚动位置的版本 [egoist/mygo#998](https://github.com/egoist/mygo/issues/998)，现在补上
+- 改动的高亮改由 mygo 自己按每处改动从头算起（[egoist/mygo#1048](https://github.com/egoist/mygo/pull/1048)），去掉 0.3.25 时自己复制的一份高亮：看提交、看已暂存的改动时每处改动不再可能整段发灰，改行、暂存部分改动之后高亮也不会错位；缩略图悬停预览的代码气泡仍然每处改动各自高亮
+
 ## 0.3.27
 
 - 欢迎页改为左右两列（[#15](https://github.com/Binaryify/MyGit/issues/15)，感谢 [@mojie126](https://github.com/mojie126) 的建议）：左边是拖放区和克隆、新建、通过 SSH 打开，右边是「最近打开」。鼠标移到某一行，右侧出现 ×，点一下只把这一项移出列表；标题旁的「清除最近打开」一次清空
