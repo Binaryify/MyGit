@@ -5,6 +5,9 @@
 - 升级到 MyGo 0.8.1（[#18](https://github.com/Binaryify/MyGit/issues/18)）：并排对比中间那条分隔线现在可以拖动，也能用方向键调宽，长行那一侧可以多分点宽度；对比区和合并对比区的滚动条不再一移开鼠标就消失
 - 对比区右侧的最小地图会画出当前视口框（[#10](https://github.com/Binaryify/MyGit/issues/10)）：滚动文件时能看见自己看到哪了，不再只有改动的位置。等到了 mygo 公开 diff 滚动位置的版本 [egoist/mygo#998](https://github.com/egoist/mygo/issues/998)，现在补上
 - 改动的高亮改由 mygo 自己按每处改动从头算起（[egoist/mygo#1048](https://github.com/egoist/mygo/pull/1048)），去掉 0.3.25 时自己复制的一份高亮：看提交、看已暂存的改动时每处改动不再可能整段发灰，改行、暂存部分改动之后高亮也不会错位；缩略图悬停预览的代码气泡仍然每处改动各自高亮
+- 分支可以右键了（[#17](https://github.com/Binaryify/MyGit/issues/17)）：分支下拉里每一行右键都弹出这一行原本点一下才出来的菜单，重命名、删除都在里面，不用先点一下再找
+- 删除本地分支后可以撤销（[#17](https://github.com/Binaryify/MyGit/issues/17)）：删掉的分支会记着它原来指向哪个提交，窗口顶部出现「已删除分支 x，可以撤销。」，点「撤销」就恢复回去，直到关掉程序都在；只留最近 3 个，点「关闭」就不再提
+- 删除远程分支要输入一遍分支名才删得掉（[#17](https://github.com/Binaryify/MyGit/issues/17)）：它会从远程仓库消失，别人拉取也就没有了，这里也无法再找回，所以和网页上删仓库一样要打出 `origin/xxx` 才放开「删除」按钮
 
 ## 0.3.27
 
