@@ -46,6 +46,11 @@ func testRepo(t *testing.T) *git.Repo {
 	}
 	sh("init", "-q", "-b", "main")
 	sh("config", "commit.gpgsign", "false")
+	// The machine's own core.autocrlf would end the lines of what is
+	// committed as it says, and TestMergeLineEnds reads a file's endings
+	// as git kept them: a global `input` turns its CRLF into LF, and the
+	// merge then saves LF where the test expects CRLF back.
+	sh("config", "core.autocrlf", "false")
 	file("main.go", "package main\n")
 	sh("add", ".")
 	sh("commit", "-q", "-m", "Start")
