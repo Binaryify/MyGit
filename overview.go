@@ -119,7 +119,7 @@ func minimapPreview(c *ui.Context, t *ui.Theme, d *editor.DiffState, hunks []edi
 					numColor = changeColor(t, code, false)
 					tint = numColor.Alpha(0.15)
 				}
-				row := ui.Row(c).Key(i).Height(previewLine).Padding(0, 4).Gap(8).AlignItems(ui.Center)
+				row := ui.Row(c.Key(i)).Height(previewLine).Padding(0, 4).Gap(8).AlignItems(ui.Center)
 				if i == line {
 					row.Background(t.SurfaceHover)
 				} else if tint != (ui.Color{}) {

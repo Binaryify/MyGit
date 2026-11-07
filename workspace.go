@@ -389,7 +389,7 @@ func (ws *workspace) hiddenRow(c *ui.Context) {
 	if len(hidden) == 0 {
 		return
 	}
-	b := ui.ButtonBase(c).Key("hidden").Height(30).PaddingX(8).Gap(6).AlignItems(ui.Center).
+	b := ui.ButtonBase(c.Key("hidden")).Height(30).PaddingX(8).Gap(6).AlignItems(ui.Center).
 		Cursor(ui.CursorPointer).Label(loc.HiddenReposCount(len(hidden))).Tooltip(loc.HiddenReposTip())
 	if b.Hovered() {
 		b.Background(t.Text.Alpha(0.08))
