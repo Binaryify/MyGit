@@ -15,12 +15,12 @@ import (
 // overview is a strip beside a diff with a mark for each of its changes
 // where it is in the file, as VS Code's overview ruler, over a minimap of
 // the file's lines, as CodeGlance: a click goes to the change, and
-// pointing at it shows the lines there. Its left edge drags to make it
-// wider or narrower. area is the diff pane the strip sits in, which the
-// bubble keeps within; starts are the lines a patch's hunks start at
-// (patchStarts), nil for a diff of whole texts; number is the file's line
-// (from 1) that a line of the new side (from 0) is, as a patch's lines are
-// not all the file's.
+// pointing at it shows the lines there, and it marks the rows in view. Its
+// left edge drags to make it wider or narrower. area is the diff pane the
+// strip sits in, which the bubble keeps within; starts are the lines a
+// patch's hunks start at (patchStarts), nil for a diff of whole texts;
+// number is the file's line (from 1) that a line of the new side (from 0)
+// is, as a patch's lines are not all the file's.
 func overview(c *ui.Context, d *editor.DiffState, area ui.Element, starts []int, number func(int) int) {
 	hunks := d.Hunks() // none still keeps the strip, lest the diff widen as the last goes
 	t := c.Theme()
@@ -250,18 +250,16 @@ func codeSpans(ct *editor.Theme, line string, toks []editor.Token) []ui.Span {
 // minimap paints the strip behind its marks as a minimap of the file, as
 // CodeGlance does: each line of the new side as a bar as long as the line
 // is, in the muted text color, the lines a change adds or makes in its
-// own. Where lines are shorter than a pixel, one of them stands for the
-// rest of its row.
-//
-// It says where the changes are, not where the view is: mygo's diff keeps
-// its scroll to itself, so there is no viewport to draw yet.
+// own, over a box on the rows in view. Where lines are shorter than a
+// pixel, one of them stands for the rest of its row.
 func minimap(t *ui.Theme, d *editor.DiffState, hunks []editor.DiffHunk) func(p *ui.Painter, r ui.Rect) {
 	return func(p *ui.Painter, r ui.Rect) {
 		n := d.New.LineCount()
-		r = ui.Rect{X: r.X + 3, Y: r.Y + 1, W: r.W - 6, H: r.H - 2}
+		r = minimapInner(r)
 		if n == 0 || r.W < 4 || r.H < 4 {
 			return
 		}
+		total := diffHeight(d)
 		step := max(1, (n+int(r.H)-1)/int(r.H))
 		lines := make([]string, 0, int(r.H))
 		longest := 1
@@ -287,12 +285,66 @@ func minimap(t *ui.Theme, d *editor.DiffState, hunks []editor.DiffHunk) func(p *
 				}
 				color = changeColor(t, code, false).Alpha(0.8)
 			}
-			y := r.Y + float32(i)*r.H/float32(n)
-			height := max(1, float32(step)*r.H/float32(n)*0.75)
+			// The rows as the diff laid them out: a separator, or a line
+			// wrapped onto two, is not the same height as the next.
+			y := minimapY(r.Y, r.H, d.LineTop(editor.DiffNew, i), total)
+			end := minimapY(r.Y, r.H, d.LineTop(editor.DiffNew, min(i+step, n)), total)
+			height := max(1, (end-y)*0.75)
 			width := max(1, float32(lineLength(line))/float32(longest)*r.W)
 			p.Fill(ui.Rect{X: r.X, Y: y, W: width, H: height}, color, 0)
 		}
+		if box := viewportBox(r, d.ScrollY(), d.ViewportHeight(), total); box.H > 0 {
+			p.Fill(box, t.Text.Alpha(0.1), 2)
+			p.Stroke(box, t.TextMuted.Alpha(0.6), 2, 1)
+		}
 	}
+}
+
+// minimapInner is the part of a strip the minimap draws in, clear of its edge.
+func minimapInner(r ui.Rect) ui.Rect {
+	return ui.Rect{X: r.X + 3, Y: r.Y + 1, W: r.W - 6, H: r.H - 2}
+}
+
+// diffHeight is the height of the diff's rows, in DIPs, as its last frame
+// laid them out: LineTop of the line after the new side's last counts the
+// separators, the annotations and the room a split view leaves across from
+// the other side, as a minimap scales them.
+func diffHeight(d *editor.DiffState) float64 {
+	n := d.New.LineCount()
+	if h := d.LineTop(editor.DiffNew, n); h > 0 {
+		return h
+	}
+	return float64(max(n, 1))
+}
+
+// minimapY is where a row above the first of a minimap's rows shows in it,
+// the minimap h high from y, the diff's rows total DIPs.
+func minimapY(y, h float32, above, total float64) float32 {
+	if total <= 0 {
+		return y
+	}
+	return y + float32(min(max(above/total, 0), 1))*h
+}
+
+// viewportBox is the box a minimap of a strip r draws over the rows in view,
+// those from scroll to scroll+viewport of total DIPs: at least 3 high, so a
+// few lines of a long file show, and within r.
+func viewportBox(r ui.Rect, scroll, viewport, total float64) ui.Rect {
+	if total <= 0 {
+		return ui.Rect{}
+	}
+	top := minimapY(r.Y, r.H, scroll, total)
+	bottom := minimapY(r.Y, r.H, scroll+viewport, total)
+	if bottom-top < 3 {
+		bottom = top + 3
+	}
+	if bottom > r.Y+r.H {
+		top, bottom = r.Y+r.H-3, r.Y+r.H
+	}
+	if top < r.Y {
+		top, bottom = r.Y, r.Y+3
+	}
+	return ui.Rect{X: r.X, Y: top, W: r.W, H: bottom - top}
 }
 
 // lineLength is how long a line shows, its indentation counted, a tab as
