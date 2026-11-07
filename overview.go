@@ -1,6 +1,7 @@
 package main
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -16,9 +17,11 @@ import (
 // the file's lines, as CodeGlance: a click goes to the change, and
 // pointing at it shows the lines there. Its left edge drags to make it
 // wider or narrower. area is the diff pane the strip sits in, which the
-// bubble keeps within; number is the file's line (from 1) that a line of
-// the new side (from 0) is, as a patch's lines are not all the file's.
-func overview(c *ui.Context, d *editor.DiffState, area ui.Element, number func(int) int) {
+// bubble keeps within; starts are the lines a patch's hunks start at
+// (patchStarts), nil for a diff of whole texts; number is the file's line
+// (from 1) that a line of the new side (from 0) is, as a patch's lines are
+// not all the file's.
+func overview(c *ui.Context, d *editor.DiffState, area ui.Element, starts []int, number func(int) int) {
 	hunks := d.Hunks() // none still keeps the strip, lest the diff widen as the last goes
 	t := c.Theme()
 	total := max(d.New.LineCount(), 1)
@@ -56,7 +59,7 @@ func overview(c *ui.Context, d *editor.DiffState, area ui.Element, number func(i
 	})
 	col.Draw(minimap(t, d, hunks))
 	if x, y, over := col.PointerPosition(); over && !overviewResizing {
-		minimapPreview(c, t, d, hunks, col, area, number, x, y)
+		minimapPreview(c, t, d, hunks, starts, col, area, number, x, y)
 	}
 }
 
@@ -74,7 +77,7 @@ const (
 // minimap. The bubble is as wide as the diff pane, so lines are not cut
 // short the way they were at a fixed width, in the diff's type and its
 // colors for code; the changed lines are tinted as in the diff.
-func minimapPreview(c *ui.Context, t *ui.Theme, d *editor.DiffState, hunks []editor.DiffHunk, strip, area ui.Element, number func(int) int, x, y float32) {
+func minimapPreview(c *ui.Context, t *ui.Theme, d *editor.DiffState, hunks []editor.DiffHunk, starts []int, strip, area ui.Element, number func(int) int, x, y float32) {
 	b, a := strip.Bounds(), area.Bounds()
 	n := d.New.LineCount()
 	if n == 0 || b.H < previewLine+2*previewPad || x < 7 { // the left edge drags the strip wider
@@ -91,7 +94,7 @@ func minimapPreview(c *ui.Context, t *ui.Theme, d *editor.DiffState, hunks []edi
 	top := min(max(b.Y+y-height/2, b.Y), b.Y+b.H-height)
 	at := 0 // the first change from the line on
 	ct := editor.DefaultTheme(t)
-	hl := previewHighlighter(d.New)
+	hl := previewHighlighter(d.New, starts)
 	if hl != nil {
 		hl.Highlight(from+previewRows, 50*time.Millisecond)
 	}
@@ -141,26 +144,81 @@ func minimapPreview(c *ui.Context, t *ui.Theme, d *editor.DiffState, hunks []edi
 var previewSyntax struct {
 	buf     *editor.Buffer
 	version uint64
+	starts  []int
 	hl      editor.Highlighter
 }
 
 // previewHighlighter returns a highlighter of b's text as it is, nil for
-// plain text.
-func previewHighlighter(b *editor.Buffer) editor.Highlighter {
+// plain text. starts are the lines a patch's hunks start at, which each
+// start afresh as the diff's own highlighter does.
+func previewHighlighter(b *editor.Buffer, starts []int) editor.Highlighter {
 	l := b.Language()
 	if l == nil || l.Tokenizer == nil && l.Highlighter == nil {
 		return nil
 	}
 	s, p := b.Snapshot(), &previewSyntax
-	if p.buf != b || p.version != s.Version() || p.hl == nil {
-		p.buf, p.version = b, s.Version()
-		if l.Highlighter != nil {
+	if p.buf != b || p.version != s.Version() || p.hl == nil || !slices.Equal(p.starts, starts) {
+		p.buf, p.version, p.starts = b, s.Version(), slices.Clone(starts)
+		switch {
+		case l.Highlighter != nil:
 			p.hl = l.Highlighter(s, func() {})
-		} else {
+		case len(starts) > 0:
+			p.hl = &hunkHighlighter{t: l.Tokenizer, text: s, starts: p.starts}
+		default:
 			p.hl = editor.NewTokenHighlighter(l.Tokenizer, s)
 		}
 	}
 	return p.hl
+}
+
+// hunkHighlighter highlights a patch's lines as mygo's default highlighter
+// does, a line at a time from the state the line before ends in, but each
+// hunk from the start: the file's lines between two hunks are not there.
+// mygo's own highlighter does as much for a diff, its restarts moving with
+// the text's edits; this one is for the bubble, which reads the text alone.
+type hunkHighlighter struct {
+	t       editor.Tokenizer
+	text    editor.Snapshot
+	starts  []int    // the lines the hunks start at, in order
+	states  []uint64 // the state line i starts in, for the lines known
+	scratch []editor.Token
+}
+
+func (h *hunkHighlighter) Edit(_, new editor.Snapshot, _ []editor.Change) {
+	h.text = new
+	h.states = h.states[:0]
+}
+
+func (h *hunkHighlighter) Highlight(last int, budget time.Duration) bool {
+	last = min(last, h.text.LineCount()-1)
+	if len(h.states) == 0 {
+		h.states = append(h.states, 0)
+	}
+	start := time.Now()
+	for i := len(h.states) - 1; i < last; i++ {
+		if i&63 == 63 && time.Since(start) > budget {
+			return false
+		}
+		var end uint64
+		h.scratch, end = h.t.Tokenize(h.text.Line(i), h.states[i], h.scratch[:0])
+		if _, ok := slices.BinarySearch(h.starts, i+1); ok {
+			end = 0
+		}
+		h.states = append(h.states, end)
+	}
+	return true
+}
+
+func (h *hunkHighlighter) Tokens(i int, text string, dst []editor.Token) ([]editor.Token, bool) {
+	state, ok := uint64(0), i < len(h.states)
+	if ok {
+		state = h.states[i]
+	}
+	if len(text) > 10000 { // left plain, as mygo's highlighter leaves it
+		return dst, ok
+	}
+	dst, _ = h.t.Tokenize(text, state, dst)
+	return dst, ok
 }
 
 // codeSpans are the spans of a line of code colored by its tokens, as

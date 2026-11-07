@@ -131,6 +131,7 @@ type detail struct {
 	images    *images     // the file shown is a picture: its sides, in place of a diff
 	pr        *pullReview // the pull request whose changes the commit is
 	diff      *editor.DiffState
+	starts    []int             // the lines of the diff's new side its hunks start at, for the minimap's bubble
 	merge     *merger           // a file in conflict's
 	blame     *blame            // a file's, shown in place of the diff
 	load      patchLoad         // reads the commit's patch
@@ -592,12 +593,13 @@ func (a *app) showFile(i int) {
 	d := &a.detail
 	d.fileSel = i
 	d.folded = d.generated[i] && !a.unfolded[foldKey(d.commit.Hash, fileName(d.files[i]))]
-	d.diff, d.images = nil, nil
+	d.diff, d.images, d.starts = nil, nil, nil
 	if f := d.files[i]; isImage(fileName(f)) {
 		d.folded = false
 		a.loadImages(a.commitSides(f.OldName, f.NewName))
 	} else if !d.folded {
 		d.diff = patchDiff(f)
+		d.starts = patchStarts(f)
 	}
 }
 
@@ -652,6 +654,7 @@ func (a *app) showChange(c git.Change, staged bool) {
 		patch    *editor.FilePatch
 		old, new string // the whole texts
 		diff     *editor.DiffState
+		starts   []int // the lines its hunks start at, for the minimap's bubble
 		folded   bool
 		binary   bool
 	}
@@ -698,6 +701,7 @@ func (a *app) showChange(c git.Change, staged bool) {
 			r.diff.ExpandUnchanged = !prefs.FoldUnchanged
 		} else {
 			r.diff = patchDiff(files[0])
+			r.starts = patchStarts(files[0])
 		}
 		return r, nil
 	}, func(r result, err error) {
@@ -727,6 +731,7 @@ func (a *app) showChange(c git.Change, staged bool) {
 			}
 		}
 		a.detail.raw, a.detail.patch, a.detail.diff, a.detail.whole = r.raw, r.patch, r.diff, whole && r.diff != nil
+		a.detail.starts = r.starts
 		a.detail.folded, a.detail.binary, a.detail.disk = r.folded, r.binary, r.new
 		a.detail.change = &c
 		if r.patch != nil && patch.Partial(*r.patch) && !ws.Any() {
@@ -775,14 +780,34 @@ func (a *app) save(over bool) {
 }
 
 func patchDiff(p editor.FilePatch) *editor.DiffState {
+	// The patch sets the language its lines are in, and the starts of its
+	// hunks, which its highlighter restarts at: the file's lines between two
+	// hunks are not in the text, so one hunk ending in a block comment would
+	// leave the next all comment.
 	d := &editor.DiffState{Layout: diffLayout(), Wrap: prefs.Wrap}
 	d.SetPatch(p)
-	if lang := editor.LanguageFor(fileName(p)); lang != nil {
-		old, new := hunkStarts(p)
-		d.Old.SetLanguage(patchLanguage(lang, old))
-		d.New.SetLanguage(patchLanguage(lang, new))
-	}
 	return d
+}
+
+// patchStarts are the lines of a patch's new side that its hunks start at: a
+// patch's lines are its hunks' lines one after another, the file's lines
+// between them not there, so a hunk ending in a block comment would leave the
+// next all comment.
+func patchStarts(p editor.FilePatch) []int {
+	starts := make([]int, 0, len(p.Hunks))
+	at := 0
+	for _, h := range p.Hunks {
+		starts = append(starts, at)
+		for _, l := range h.Lines {
+			if l == "" || l[0] == '\\' {
+				continue
+			}
+			if l[0] != '-' {
+				at++
+			}
+		}
+	}
+	return starts
 }
 
 func textDiff(name, old, new string) *editor.DiffState {
