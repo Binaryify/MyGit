@@ -16,6 +16,7 @@
   <img src="https://img.shields.io/badge/Windows-x64-0078D4?logo=windows" alt="Windows">
   <img src="https://img.shields.io/badge/Linux-x64-FCC624?logo=linux&logoColor=111" alt="Linux">
   <img src="https://img.shields.io/badge/built%20with-Go%20%2B%20MyGo-00ADD8?logo=go&logoColor=white" alt="Go">
+  <a href="https://awesomemygo.dev/apps/mygit"><img src="https://awesomemygo.dev/badge.svg" alt="Listed on Awesome MyGo"></a>
 </p>
 
 <p align="center">
