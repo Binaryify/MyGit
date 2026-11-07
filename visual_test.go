@@ -952,3 +952,34 @@ func TestDumpWorktrees(t *testing.T) {
 	at.Frame()
 	sc.save(t, at.Tester, "worktree-new")
 }
+
+// TestDumpBranchDelete renders what deleting a branch offers, into
+// MYGIT_DUMP, as TestDumpThemes does: the offer to bring it back, and the
+// dialog a remote branch's delete asks its name in.
+func TestDumpBranchDelete(t *testing.T) {
+	out := os.Getenv("MYGIT_DUMP")
+	if out == "" {
+		t.Skip()
+	}
+	save := func(tt *tester, name string) {
+		tt.Frame()
+		f, _ := os.Create(out + "/" + name + ".png")
+		png.Encode(f, tt.Image())
+		f.Close()
+	}
+	tt := newTester(t)
+	tt.a.deleteBranch("feature")
+	tt.settle()
+	save(tt, "branch-deleted")
+	tt.a.askDeleteRemote("origin/feature")
+	tt.a.prompt.value = "origin/feat"
+	tt.Frame()
+	save(tt, "branch-delete-remote")
+	// The branches' popover, and a branch's menu on a right click.
+	menu := newTester(t)
+	menu.commitFiles(t, "Another", map[string]string{"one.txt": "one\n"})
+	menu.click(t, loc.Branches())
+	menu.rightClickBranch(t, 0)
+	t.Logf("menu of a branch: %q", menu.Menu())
+	save(menu, "branch-menu")
+}
