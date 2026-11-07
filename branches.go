@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/egoist/mygo"
@@ -21,7 +22,11 @@ type prompt struct {
 	message, msgVal      string // a second, optional field: a tag's message
 	check                string // an option, as a checkbox, when given
 	checked              bool
-	ok                   func(value, message string)
+	// must, when given, is the value the field takes before the button
+	// goes, which the dialog then says: a branch of a remote goes only when
+	// its name is typed again, as a repository does on the web.
+	must, note string
+	ok         func(value, message string)
 }
 
 func (a *app) ask1(title, button, value string, ok func(string)) {
@@ -34,7 +39,14 @@ func (a *app) promptView(c *ui.Context) {
 	ui.Modal(c, &p.open, func() {
 		ui.Column(c).Gap(12).Width(360).Children(func() {
 			ui.Text(c, p.title).Bold().FontSize(14)
-			submitted := ui.TextInput(c, &p.value).Label(p.title).AutoFocus().Submitted()
+			if p.note != "" {
+				ui.Text(c, p.note).TextColor(c.Theme().TextMuted).Wrap()
+			}
+			placeholder := ""
+			if p.must != "" {
+				placeholder = p.must
+			}
+			submitted := ui.TextInput(c, &p.value).Label(p.title).Placeholder(placeholder).AutoFocus().Submitted()
 			if p.message != "" {
 				ui.TextInput(c, &p.msgVal).Placeholder(p.message).Label(p.message)
 			}
@@ -45,10 +57,12 @@ func (a *app) promptView(c *ui.Context) {
 				if ui.Button(c, loc.Cancel()).Clicked() {
 					p.open = false
 				}
-				ok := strings.TrimSpace(p.value) != ""
+				value := strings.TrimSpace(p.value)
+				ok := value != "" && (p.must == "" || value == p.must)
 				if (ui.PrimaryButton(c, p.button).Disabled(!ok).Clicked() || submitted) && ok {
 					p.open = false
-					p.ok(strings.TrimSpace(p.value), strings.TrimSpace(p.msgVal))
+					p.value = value
+					p.ok(value, strings.TrimSpace(p.msgVal))
 				}
 			})
 		})
@@ -98,10 +112,19 @@ func (a *app) remoteItems(m *ui.Menu, rb string) {
 	}
 	m.Separator()
 	if a.chose(m.Item(loc.BranchDeleteRemote())) {
-		a.ask(loc.BranchDeleteRemoteTitle(rb), loc.BranchDeleteRemoteMessage(), loc.Delete(), func() {
-			a.run(loc.OpDeleteRemoteBranch(), func(ctx context.Context) error { return a.repo.DeleteRemoteBranch(ctx, rb) }, nil)
-		})
+		a.askDeleteRemote(rb)
 	}
+}
+
+// askDeleteRemote asks to delete a remote branch, and takes its name typed
+// again to go on: it goes for everyone who fetches the repository, and
+// nothing here brings it back, so a plain Delete is too easy to hit.
+func (a *app) askDeleteRemote(rb string) {
+	a.prompt = prompt{open: true, title: loc.BranchDeleteRemoteTitle(rb), button: loc.Delete(),
+		note: loc.BranchDeleteRemoteWarning(rb), must: rb,
+		ok: func(string, string) {
+			a.run(loc.OpDeleteRemoteBranch(), func(ctx context.Context) error { return a.repo.DeleteRemoteBranch(ctx, rb) }, nil)
+		}}
 }
 
 // tagItems are what a tag's menu does with it.
@@ -215,8 +238,9 @@ func (a *app) branchesButton(c *ui.Context, label string) {
 					for _, w := range trees {
 						ui.Box(c.Key("worktree" + w.Dir)).Children(func() {
 							current := w.Dir == a.repo.Dir
+							items := func(m *ui.Menu) { a.worktreeItems(m, w) }
 							branchRowElement(c, path.Base(filepath.ToSlash(w.Dir)), worktreeNote(w), current).Tooltip(w.Dir).
-								Menu(func(m *ui.Menu) { a.worktreeItems(m, w) })
+								Menu(items).ContextMenu(items)
 						})
 					}
 				}
@@ -288,9 +312,10 @@ func branchRowElement(c *ui.Context, name, note string, current bool) ui.Element
 	return row
 }
 
-// branchMenuRow is a branch's row, whose click opens its menu.
+// branchMenuRow is a branch's row, which opens its menu on a press, as a
+// menu button, and on a right click too, as a context menu.
 func branchMenuRow(c *ui.Context, name string, current bool, items func(*ui.Menu)) {
-	branchRowElement(c, name, currentNote(current), current).Menu(items)
+	branchRowElement(c, name, currentNote(current), current).Menu(items).ContextMenu(items)
 }
 
 // mergeItems merge a branch into the current one, or rebase the current
@@ -325,21 +350,82 @@ func (a *app) newBranch(start string) {
 	})
 }
 
+// deletedBranch is a local branch deleted while the app runs, and the commit
+// it was at, to bring it back until the app quits, as IDEA does.
+type deletedBranch struct {
+	name, hash string
+}
+
+// rememberDeletedBranch keeps a branch just deleted, to bring back, as the
+// last few of them.
+func (a *app) rememberDeletedBranch(name, hash string) {
+	a.undoBranches = append(a.undoBranches, deletedBranch{name, hash})
+	if n := len(a.undoBranches); n > maxUndoBranches {
+		a.undoBranches = a.undoBranches[n-maxUndoBranches:]
+	}
+}
+
+// maxUndoBranches is how many of the branches deleted are kept to bring back.
+const maxUndoBranches = 3
+
+// undoBranch brings back a branch deleted, at the commit it was at.
+func (a *app) undoBranch(i int) {
+	u := a.undoBranches[i]
+	a.run(loc.OpRestoreBranch(u.name), func(ctx context.Context) error {
+		return a.repo.CreateBranch(ctx, u.name, u.hash, false)
+	}, func() {
+		a.update(func() { a.forgetUndoBranch(i) })
+	})
+}
+
+// forgetUndoBranch takes a branch off the ones to bring back.
+func (a *app) forgetUndoBranch(i int) {
+	if i >= 0 && i < len(a.undoBranches) {
+		a.undoBranches = slices.Delete(a.undoBranches, i, i+1)
+	}
+}
+
+// undoBar offers to bring back the local branches deleted while the app runs,
+// each until its row is closed: git keeps the commit until it prunes it, so
+// the branch is remade at it, as IDEA does for a delete just made.
+func (a *app) undoBar(c *ui.Context) {
+	t := c.Theme()
+	for i := range a.undoBranches {
+		name := a.undoBranches[i].name
+		ui.Row(c).Padding(6, 12).Gap(8).Background(t.Accent.Alpha(0.1)).AlignItems(ui.Center).Children(func() {
+			ui.Text(c, loc.BranchDeleted(name)).Wrap().Grow(1)
+			if ui.Button(c, loc.Undo()).Tooltip(loc.BranchUndoTip()).Clicked() {
+				a.undoBranch(i)
+			}
+			if ui.Button(c, loc.Close()).Clicked() {
+				a.forgetUndoBranch(i)
+			}
+		})
+	}
+}
+
 // deleteBranch deletes a merged branch at once, and asks before deleting
-// one whose commits would be lost.
+// one whose commits would be lost. Either way it keeps the commit the branch
+// was at, so undoBar brings it back until the app quits.
 func (a *app) deleteBranch(b string) {
-	a.run(loc.OpDeleteBranch(b), func(ctx context.Context) error {
-		err := a.repo.DeleteBranch(ctx, b, false)
-		if git.NotMerged(err) {
-			a.update(func() {
-				a.ask(loc.BranchNotMergedTitle(b), loc.BranchNotMergedMessage(), loc.DeleteAnyway(), func() {
-					a.run(loc.OpDeleteBranch(b), func(ctx context.Context) error { return a.repo.DeleteBranch(ctx, b, true) }, nil)
+	var del func(force bool)
+	del = func(force bool) {
+		a.run(loc.OpDeleteBranch(b), func(ctx context.Context) error {
+			hash, _ := a.repo.BranchHash(ctx, b) // before it goes, so undo has the commit
+			err := a.repo.DeleteBranch(ctx, b, force)
+			if git.NotMerged(err) && !force {
+				a.update(func() {
+					a.ask(loc.BranchNotMergedTitle(b), loc.BranchNotMergedMessage(), loc.DeleteAnyway(), func() { del(true) })
 				})
-			})
-			return nil
-		}
-		return err
-	}, nil)
+				return nil
+			}
+			if err == nil && hash != "" {
+				a.update(func() { a.rememberDeletedBranch(b, hash) })
+			}
+			return err
+		}, nil)
+	}
+	del(false)
 }
 
 // commitMenu is a commit's context menu in the history.

@@ -142,6 +142,17 @@ func (r *Repo) DeleteBranch(ctx context.Context, name string, force bool) error 
 	return err
 }
 
+// BranchHash is the commit a local branch is at, empty when there is no
+// such branch. A branch deleted is brought back at it, as it names the tip
+// no other name may, and git keeps that commit until it prunes it.
+func (r *Repo) BranchHash(ctx context.Context, name string) (string, error) {
+	out, err := r.Git(ctx, "rev-parse", "--verify", "--quiet", "refs/heads/"+name)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(out), nil
+}
+
 // UntrackedInTheWay are the untracked files a pull, a merge or a checkout
 // failed not to overwrite with files of the same paths it brings.
 func UntrackedInTheWay(err error) []string {

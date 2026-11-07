@@ -105,14 +105,17 @@ type app struct {
 	submit       submitPlan
 	pullReviews  map[int]*pullReview // the pull requests opened, with their reviews
 
-	busy      string // the operation running, as the toolbar says it
-	errMsg    string
-	notice    string // news that isn't an error, as an update check's
-	trustDir  string // a repository another user owns, dropped, to trust
-	sidebarW  float32
-	logH      float32
-	filesW    float32
-	stagedPct float32 // of the changes' room, the staged changes'
+	busy     string // the operation running, as the toolbar says it
+	errMsg   string
+	notice   string // news that isn't an error, as an update check's
+	trustDir string // a repository another user owns, dropped, to trust
+	// undoBranches are the local branches deleted while the app runs, which
+	// it offers to bring back until it quits, as IDEA does.
+	undoBranches []deletedBranch
+	sidebarW     float32
+	logH         float32
+	filesW       float32
+	stagedPct    float32 // of the changes' room, the staged changes'
 }
 
 // detail is what the bottom of the window shows: a commit's files and the

@@ -196,6 +196,16 @@ func (msgs Messages) OpDeleteBranch(name string) string {
 	return Catalog.Format(msgs.locale, "opDeleteBranch", map[string]any{"name": name})
 }
 
+// OpRestoreBranch says "Restore branch {name}"
+// in the language the app shows.
+func OpRestoreBranch(name string) string { return In(i18n.Locale()).OpRestoreBranch(name) }
+
+// OpRestoreBranch says "Restore branch {name}"
+// in the language of msgs.
+func (msgs Messages) OpRestoreBranch(name string) string {
+	return Catalog.Format(msgs.locale, "opRestoreBranch", map[string]any{"name": name})
+}
+
 // OpNewTag says "New tag {name}"
 // in the language the app shows.
 func OpNewTag(name string) string { return In(i18n.Locale()).OpNewTag(name) }
@@ -576,6 +586,16 @@ func (msgs Messages) Cancel() string {
 	return Catalog.Format(msgs.locale, "cancel", nil)
 }
 
+// Undo says "Undo"
+// in the language the app shows.
+func Undo() string { return In(i18n.Locale()).Undo() }
+
+// Undo says "Undo"
+// in the language of msgs.
+func (msgs Messages) Undo() string {
+	return Catalog.Format(msgs.locale, "undo", nil)
+}
+
 // Close says "Close"
 // in the language the app shows.
 func Close() string { return In(i18n.Locale()).Close() }
@@ -818,14 +838,36 @@ func (msgs Messages) BranchDeleteRemoteTitle(name string) string {
 	return Catalog.Format(msgs.locale, "branchDeleteRemoteTitle", map[string]any{"name": name})
 }
 
-// BranchDeleteRemoteMessage says "The branch will be deleted from the remote repository."
+// BranchDeleteRemoteWarning says "It goes from the remote repository for everyone who fetches it, and nothing here brings it back. Type {name} to confirm."
 // in the language the app shows.
-func BranchDeleteRemoteMessage() string { return In(i18n.Locale()).BranchDeleteRemoteMessage() }
+func BranchDeleteRemoteWarning(name string) string {
+	return In(i18n.Locale()).BranchDeleteRemoteWarning(name)
+}
 
-// BranchDeleteRemoteMessage says "The branch will be deleted from the remote repository."
+// BranchDeleteRemoteWarning says "It goes from the remote repository for everyone who fetches it, and nothing here brings it back. Type {name} to confirm."
 // in the language of msgs.
-func (msgs Messages) BranchDeleteRemoteMessage() string {
-	return Catalog.Format(msgs.locale, "branchDeleteRemoteMessage", nil)
+func (msgs Messages) BranchDeleteRemoteWarning(name string) string {
+	return Catalog.Format(msgs.locale, "branchDeleteRemoteWarning", map[string]any{"name": name})
+}
+
+// BranchDeleted says "Branch {name} deleted."
+// in the language the app shows.
+func BranchDeleted(name string) string { return In(i18n.Locale()).BranchDeleted(name) }
+
+// BranchDeleted says "Branch {name} deleted."
+// in the language of msgs.
+func (msgs Messages) BranchDeleted(name string) string {
+	return Catalog.Format(msgs.locale, "branchDeleted", map[string]any{"name": name})
+}
+
+// BranchUndoTip says "Bring the branch back at the commit it was at"
+// in the language the app shows.
+func BranchUndoTip() string { return In(i18n.Locale()).BranchUndoTip() }
+
+// BranchUndoTip says "Bring the branch back at the commit it was at"
+// in the language of msgs.
+func (msgs Messages) BranchUndoTip() string {
+	return Catalog.Format(msgs.locale, "branchUndoTip", nil)
 }
 
 // Branches says "Branches"

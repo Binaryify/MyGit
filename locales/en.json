@@ -68,6 +68,14 @@
     }
   },
   "opDeleteBranch": "Delete branch {name}",
+  "opRestoreBranch": "Restore branch {name}",
+  "@opRestoreBranch": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "@opDeleteBranch": {
     "placeholders": {
       "name": {
@@ -246,6 +254,7 @@
   "discardLinesTitle": "Discard these changes?",
   "discardLinesMessage": "The selected changes will be removed from the working tree. This can't be undone.",
   "cancel": "Cancel",
+  "undo": "Undo",
   "close": "Close",
   "ok": "OK",
   "done": "Done",
@@ -298,7 +307,23 @@
       }
     }
   },
-  "branchDeleteRemoteMessage": "The branch will be deleted from the remote repository.",
+  "branchDeleteRemoteWarning": "It goes from the remote repository for everyone who fetches it, and nothing here brings it back. Type {name} to confirm.",
+  "@branchDeleteRemoteWarning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "branchDeleted": "Branch {name} deleted.",
+  "@branchDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "branchUndoTip": "Bring the branch back at the commit it was at",
   "branches": "Branches",
   "branchSearch": "Search branches and tags",
   "branchNew": "+ New Branch…",

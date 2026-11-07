@@ -34,6 +34,7 @@ func (a *app) view(c *ui.Context) {
 				}
 			})
 		}
+		a.undoBar(c)
 		if a.errMsg != "" {
 			ui.Row(c).Padding(6, 12).Gap(8).Background(t.Danger.Alpha(0.12)).AlignItems(ui.Center).Children(func() {
 				ui.Text(c, a.errMsg).TextColor(t.Danger).Wrap().Grow(1)
