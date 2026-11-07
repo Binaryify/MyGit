@@ -287,7 +287,7 @@ func (m *merger) compareBase(p int, title string) {
 		}
 		return b
 	}
-	m.compare, m.compareTitle = &editor.DiffState{Old: buf(m.texts.base), New: buf(side), Wrap: prefs.Wrap}, title
+	m.compare, m.compareTitle = &editor.DiffState{Old: buf(m.texts.base), New: buf(side), Wrap: prefs.Wrap, KeepScrollbars: true}, title
 }
 
 // take resolves the chunk shown with a side's change, or both's.

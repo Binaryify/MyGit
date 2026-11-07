@@ -784,7 +784,7 @@ func patchDiff(p editor.FilePatch) *editor.DiffState {
 	// hunks, which its highlighter restarts at: the file's lines between two
 	// hunks are not in the text, so one hunk ending in a block comment would
 	// leave the next all comment.
-	d := &editor.DiffState{Layout: diffLayout(), Wrap: prefs.Wrap}
+	d := &editor.DiffState{Layout: diffLayout(), Wrap: prefs.Wrap, KeepScrollbars: true}
 	d.SetPatch(p)
 	return d
 }
@@ -811,7 +811,7 @@ func patchStarts(p editor.FilePatch) []int {
 }
 
 func textDiff(name, old, new string) *editor.DiffState {
-	d := &editor.DiffState{Old: editor.NewBuffer(old), New: editor.NewBuffer(new), Layout: diffLayout(), Wrap: prefs.Wrap}
+	d := &editor.DiffState{Old: editor.NewBuffer(old), New: editor.NewBuffer(new), Layout: diffLayout(), Wrap: prefs.Wrap, KeepScrollbars: true}
 	if lang := editor.LanguageFor(name); lang != nil {
 		d.Old.SetLanguage(lang)
 		d.New.SetLanguage(lang)
