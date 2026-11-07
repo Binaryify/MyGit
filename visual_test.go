@@ -131,6 +131,39 @@ func TestDumpFeatures(t *testing.T) {
 	save(tt, "comment")
 }
 
+// TestDumpSplit renders a diff's sides before and after the line between
+// them is dragged left, into MYGIT_DUMP, as TestDumpThemes does: the halves
+// mygo 0.8.0 gives a split, and the wider old side a drag leaves.
+func TestDumpSplit(t *testing.T) {
+	out := os.Getenv("MYGIT_DUMP")
+	if out == "" {
+		t.Skip()
+	}
+	save := func(tt *tester, name string) {
+		tt.Frame()
+		f, _ := os.Create(out + "/" + name + ".png")
+		png.Encode(f, tt.Image())
+		f.Close()
+	}
+	tt := newTester(t)
+	tt.SetDark(true)
+	tt.commitFiles(t, "Widen the sides", map[string]string{
+		"main.go": "package main\n\nfunc main() {\n\trun()\n}\n",
+	})
+	tt.click(t, "Widen the sides")
+	save(tt, "split-halves")
+	oldR, ok := tt.Find("Old text")
+	if !ok {
+		t.Fatalf("no old side; texts %q", tt.Texts())
+	}
+	x, y := oldR.X+oldR.W+0.75, oldR.Y+oldR.H/2
+	tt.Press(x, y)
+	tt.Move(x-140, y)
+	tt.Release(x-140, y)
+	save(tt, "split-dragged")
+	t.Logf("share %v after dragging left", tt.a.detail.diff.SplitPercent)
+}
+
 // TestDumpPull renders a pull request's review into MYGIT_DUMP: its
 // header, a thread under its line and a comment of the review pending.
 func TestDumpPull(t *testing.T) {

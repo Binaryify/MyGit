@@ -110,6 +110,23 @@ func (tt *tester) click(t *testing.T, s string) {
 	tt.settle()
 }
 
+// rightClickRow presses the secondary button on a log row, by the row's
+// rectangle rather than its label: mygo 0.8.1's Tester counts the row's own
+// element, which carries the context menu, as the receiver of a right click
+// while the label sits on the list's row element around it, and refuses the
+// label even though both press the same handler. See targetCenter in
+// mygo's ui/headless.go, and drop this helper once a release compares
+// handlers instead of elements.
+func (tt *tester) rightClickRow(t *testing.T, s string) {
+	t.Helper()
+	r, ok := tt.Find(s)
+	if !ok {
+		t.Fatalf("no row %q; texts %q", s, tt.Texts())
+	}
+	tt.RightClickAt(r.X+r.W/2, r.Y+r.H/2)
+	tt.settle()
+}
+
 func TestHistory(t *testing.T) {
 	tt := newTester(t)
 	for _, s := range []string{"Merge the feature", "Write main", "Add the feature", "Start", "4 个提交", "main", "feature", "notes.txt"} {
@@ -378,9 +395,7 @@ func TestSearchAndScope(t *testing.T) {
 
 func TestBranchFromCommitAndDelete(t *testing.T) {
 	tt := newTester(t)
-	if err := tt.RightClick("Write main"); err != nil {
-		t.Fatal(err)
-	}
+	tt.rightClickRow(t, "Write main")
 	if err := tt.ChooseMenuItem("从此提交新建分支…"); err != nil {
 		t.Fatalf("%v; menu %q", err, tt.Menu())
 	}
@@ -412,9 +427,7 @@ func TestBranchFromCommitAndDelete(t *testing.T) {
 
 func TestResetHardAsks(t *testing.T) {
 	tt := newTester(t)
-	if err := tt.RightClick("Start"); err != nil {
-		t.Fatal(err)
-	}
+	tt.rightClickRow(t, "Start")
 	if err := tt.ChooseMenuItem("将 main 重置到此", "Hard：丢弃所有更改…"); err != nil {
 		t.Fatalf("%v; menu %q", err, tt.Menu())
 	}
@@ -533,9 +546,7 @@ func TestInteractiveRebaseDialog(t *testing.T) {
 	}
 	tt.a.refresh()
 	tt.settle()
-	if err := tt.RightClick("Add the feature"); err != nil {
-		t.Fatal(err)
-	}
+	tt.rightClickRow(t, "Add the feature")
 	if err := tt.ChooseMenuItem("从此处交互式变基…"); err != nil {
 		t.Fatal(err)
 	}
@@ -564,9 +575,7 @@ func TestEditCommitMessage(t *testing.T) {
 	}
 	tt.a.refresh()
 	tt.settle()
-	if err := tt.RightClick("Add the feature"); err != nil {
-		t.Fatal(err)
-	}
+	tt.rightClickRow(t, "Add the feature")
 	if err := tt.ChooseMenuItem("编辑提交消息…"); err != nil {
 		t.Fatal(err)
 	}
@@ -603,9 +612,7 @@ func TestSquashCommits(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.settle()
-	if err := tt.RightClick("Tidy"); err != nil {
-		t.Fatal(err)
-	}
+	tt.rightClickRow(t, "Tidy")
 	if err := tt.ChooseMenuItem("压缩 2 个提交…"); err != nil {
 		t.Fatal(err)
 	}
@@ -635,9 +642,7 @@ func TestDropCommit(t *testing.T) {
 	}
 	tt.a.refresh()
 	tt.settle()
-	if err := tt.RightClick("Add the feature"); err != nil {
-		t.Fatal(err)
-	}
+	tt.rightClickRow(t, "Add the feature")
 	if err := tt.ChooseMenuItem("删除提交…"); err != nil {
 		t.Fatal(err)
 	}

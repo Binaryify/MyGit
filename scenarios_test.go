@@ -11,10 +11,48 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/egoist/mygo/ui/editor"
 
 	"mygit/internal/git"
 	loc "mygit/locales"
 )
+
+// TestScenarioDragTheDiffDivider drags the line between a diff's sides the
+// way IDEA lets one widen either side: mygo 0.8.0 shares the sides by
+// DiffState.SplitPercent.
+func TestScenarioDragTheDiffDivider(t *testing.T) {
+	tt := newTester(t)
+	tt.click(t, "Add the feature")
+	d := tt.a.detail.diff
+	if d == nil || d.Layout != editor.DiffSplit {
+		t.Fatalf("diff %+v", d)
+	}
+	// The line between the sides, the two editing them being as wide as
+	// the halves it leaves them.
+	oldR, ok := tt.Find("Old text")
+	if !ok {
+		t.Fatalf("no old side; texts %q", tt.Texts())
+	}
+	newR, ok := tt.Find("New text")
+	if !ok {
+		t.Fatalf("no new side; texts %q", tt.Texts())
+	}
+	x, y := oldR.X+oldR.W+0.75, oldR.Y+oldR.H/2
+	if d.SplitPercent != 0 {
+		t.Fatalf("share %v before any drag, want the halves", d.SplitPercent)
+	}
+	tt.Press(x, y)
+	tt.Move(x-100, y)
+	tt.Release(x-100, y)
+	tt.Frame()
+	if d.SplitPercent <= 0 || d.SplitPercent >= 50 {
+		t.Fatalf("share %v after dragging left", d.SplitPercent)
+	}
+	after, _ := tt.Find("New text")
+	if after.X > newR.X-80 || after.X < newR.X-120 {
+		t.Fatalf("the new side at %v, want about %v", after.X, newR.X-100)
+	}
+}
 
 // These walk through what people do, a step at a time, looking at what
 // the window shows after each.
