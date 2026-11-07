@@ -294,8 +294,9 @@ func minimap(t *ui.Theme, d *editor.DiffState, hunks []editor.DiffHunk) func(p *
 			p.Fill(ui.Rect{X: r.X, Y: y, W: width, H: height}, color, 0)
 		}
 		if box := viewportBox(r, d.ScrollY(), d.ViewportHeight(), total); box.H > 0 {
-			p.Fill(box, t.Text.Alpha(0.1), 2)
-			p.Stroke(box, t.TextMuted.Alpha(0.6), 2, 1)
+			// In the accent: a muted box is lost in the bars of a light theme.
+			p.Fill(box, t.Accent.Alpha(0.2), 2)
+			p.Stroke(box, t.Accent.Alpha(0.9), 2, 1)
 		}
 	}
 }
