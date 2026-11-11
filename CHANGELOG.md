@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.30
+
+- 升级到 [MyGo 0.9.0](https://github.com/egoist/mygo/releases/tag/v0.9.0)：代码高亮新增 Svelte、HCL/Terraform、ERB、Jinja 和 Nix，没有扩展名的脚本按 `#!` 行识别语言；只读对比在文件最后一个换行处正确结束
+- 滚动条改为 VS Code 编辑器的样式；键盘聚焦到的控件会自动滚动到可见位置；列表、文件树和右键菜单每帧做的工作更少
+- macOS 上原生弹出框跟随应用的浅色/深色外观；Windows 英文系统上中文统一用一种字体，数字和英文换行正确
+- 粘贴时优先使用 UTF-8 文本；自动更新在服务器短暂出错时重试
+
 ## 0.3.29
 
 - 升级到 MyGo 0.8.3：并排对比时，每处改动的标题始终留在左边，内容过长就以省略号收尾，分隔线拖到哪里都不会跑到右边（[egoist/mygo#1415](https://github.com/egoist/mygo/pull/1415)，感谢 [@yangdev02](https://github.com/yangdev02) 的报告）；列表里的一行右键时打开的是这一行自己的菜单
