@@ -6,6 +6,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
+	"mygit/internal/git"
 	loc "mygit/locales"
 )
 
@@ -92,6 +93,56 @@ func (a *app) listRows(list string, items []int, path func(int) string) (tree []
 	}
 	tree = treeRows(items, path, func(dir string) bool { return a.folded(list, dir) })
 	return tree, len(tree), func(r int) int { return tree[r].item }
+}
+
+// untrackedGroup is the dir of the row the untracked files show under, as
+// IDEA's Unversioned Files: no folder's, so that it folds as one.
+const untrackedGroup = "\x00untracked"
+
+// changeRows are the rows of a list of changes, as listRows lays them out,
+// but with the untracked files of the changes not staged apart from the
+// others: after them, under a group of their own, their folders folding
+// as the list key+untrackedGroup's. It gives the row of the group too, -1
+// for none.
+func (a *app) changeRows(key string, changes []git.Change, items []int, staged bool) (tree []treeRow, n, group int, item func(r int) int) {
+	path := func(i int) string { return changes[i].Path }
+	var tracked, untracked []int
+	if !staged {
+		for _, i := range items {
+			if changes[i].Work == '?' {
+				untracked = append(untracked, i)
+			} else {
+				tracked = append(tracked, i)
+			}
+		}
+	}
+	if len(untracked) == 0 {
+		tree, n, item = a.listRows(key, items, path)
+		return tree, n, -1, item
+	}
+	tree = a.fileRows(key, tracked, path, 0)
+	group = len(tree)
+	tree = append(tree, treeRow{dir: untrackedGroup, name: loc.UntrackedFiles(), item: -1})
+	if !a.folded(key, untrackedGroup) {
+		tree = append(tree, a.fileRows(key+untrackedGroup, untracked, path, 1)...)
+	}
+	return tree, len(tree), group, func(r int) int { return tree[r].item }
+}
+
+// fileRows are the rows of items, as a tree or a list, depth folders in.
+func (a *app) fileRows(list string, items []int, path func(int) string, depth int) []treeRow {
+	var rows []treeRow
+	if prefs.TreeView {
+		rows = treeRows(items, path, func(dir string) bool { return a.folded(list, dir) })
+	} else {
+		for _, it := range items {
+			rows = append(rows, treeRow{name: path(it), item: it})
+		}
+	}
+	for i := range rows {
+		rows[i].depth += depth
+	}
+	return rows
 }
 
 // folded tells whether a folder of a list shows folded.

@@ -277,7 +277,22 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 			items[i] = i
 		}
 	}
-	tree, n, at := a.listRows(key, items, func(i int) string { return changes[i].Path })
+	tree, n, group, at := a.changeRows(key, changes, items, staged)
+	// The rows below the untracked files' group are theirs: their folders
+	// fold, and act on their files, apart from the others'.
+	inGroup := func(r int) bool { return group >= 0 && r > group }
+	foldKey := func(r int) string {
+		if inGroup(r) {
+			return key + untrackedGroup
+		}
+		return key
+	}
+	itemsOf := func(r int) []int {
+		if group < 0 {
+			return items
+		}
+		return slices.DeleteFunc(slices.Clone(items), func(i int) bool { return (changes[i].Work == '?') != inGroup(r) })
+	}
 	if tree != nil {
 		*row = treeRowOf(tree, *sel)
 	} else {
@@ -317,12 +332,16 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		}
 	})
 	l := ui.List(c.Key(title), list, n, func(i int) {
+		if i == group {
+			a.untrackedRow(c, key, changes, itemsOf(i+1))
+			return
+		}
 		if at(i) < 0 {
 			// A folder, with the actions of its files while the pointer
 			// is over it, as VS Code's changes tree: to stage or unstage
 			// what is in it, or to discard it.
-			folder := tree[i].dir
-			row := a.folderRow(c, key, tree[i])
+			folder, items := tree[i].dir, itemsOf(i)
+			row := a.folderRow(c, foldKey(i), tree[i])
 			if row.Hovered() {
 				row.Children(func() {
 					if staged {
@@ -361,6 +380,9 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		indent := float32(8)
 		if tree != nil {
 			indent = 6 + float32(tree[i].depth)*treeIndent
+			if !prefs.TreeView { // a list's, under the untracked files' group or not
+				indent += 2
+			}
 		}
 		row := ui.Row(c).Height(24).Padding(0, 8, 0, indent).Gap(6).AlignItems(ui.Center)
 		if chosen {
@@ -387,7 +409,7 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 			if chosen {
 				muted = t.AccentText.Alpha(0.75)
 			}
-			if dir != "." && tree == nil {
+			if dir != "." && !prefs.TreeView {
 				ui.Text(c, dir).FontSize(11).TextColor(muted).SingleLine().Grow(1).Basis(0)
 			} else {
 				ui.Box(c).Grow(1)
@@ -436,7 +458,7 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 	}
 	folder := *row >= 0 && *row < n && at(*row) < 0
 	if (l.Changed() || l.Submitted()) && folder {
-		a.toggleFolder(key, tree[*row].dir)
+		a.toggleFolder(foldKey(*row), tree[*row].dir)
 	} else if l.Changed() && *row >= 0 && *row < n {
 		// One change is chosen at a time, of both lists.
 		a.chooseChange(at(*row), staged)
@@ -462,6 +484,42 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		list.Handle.OnShortcut(c, 0, ui.KeyBackspace, discard)
 		list.Handle.OnShortcut(c, 0, ui.KeyDelete, discard)
 	}
+}
+
+// untrackedRow is the row the untracked files show under, items of
+// changes: a chevron that folds them, how many, and while the pointer is
+// over it, the actions of them all.
+func (a *app) untrackedRow(c *ui.Context, key string, changes []git.Change, items []int) {
+	t := c.Theme()
+	icon := map[bool]string{true: "chevron-right", false: "chevron-down"}[a.folded(key, untrackedGroup)]
+	row := ui.Row(c).Height(24).Padding(0, 8, 0, 6).Gap(6).AlignItems(ui.Center)
+	row.Children(func() {
+		ui.Icon(c, icons[icon]).Size(12, 12).TextColor(t.TextMuted)
+		ui.Text(c, loc.UntrackedFiles()).SingleLine().TextColor(t.TextMuted)
+		ui.Badge(c, fmt.Sprint(len(items)))
+		ui.Box(c).Grow(1)
+	})
+	if !row.Hovered() {
+		return
+	}
+	paths := make([]string, len(items))
+	for i, it := range items {
+		paths[i] = changes[it].Path
+	}
+	row.Children(func() {
+		if iconButton(c, "undo", loc.DiscardUntracked()) && a.busy == "" {
+			chosen := make([]git.Change, len(items))
+			for i, it := range items {
+				chosen[i] = changes[it]
+			}
+			a.ask(loc.DiscardUntrackedTitle(), loc.DiscardUntrackedMessage(len(chosen)), loc.Discard(), func() {
+				a.run(loc.OpDiscard(), func(ctx context.Context) error { return a.discardChanges(ctx, chosen) }, nil)
+			})
+		}
+		if iconButton(c, "plus", loc.StageUntracked()) && a.busy == "" {
+			a.stagePaths(paths...)
+		}
+	})
 }
 
 // changeCheckbox is the check box that leads a change's row: checked

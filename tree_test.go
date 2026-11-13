@@ -81,3 +81,55 @@ func TestTreeView(t *testing.T) {
 		t.Fatalf("list: texts %q", tt.Texts())
 	}
 }
+
+// TestUntrackedGroup checks that the untracked files show apart from the
+// other changes, under a group of their own that folds, and stages them
+// all, as IDEA's Unversioned Files (issue #26).
+func TestUntrackedGroup(t *testing.T) {
+	defer func(on bool) { prefs.TreeView = on }(prefs.TreeView)
+	prefs.TreeView = false
+	tt := newTester(t)
+	_ = os.MkdirAll(filepath.Join(tt.a.repo.Dir, "src"), 0o755)
+	tt.write(t, map[string]string{"main.go": "package main\n\n// changed\n", "src/new.go": "package src\n"}) // notes.txt is untracked already
+	tt.a.refresh()
+	tt.settle()
+	order := func() []string {
+		var out []string
+		for _, s := range tt.Texts() {
+			if s == "main.go" || s == "未跟踪的文件" || s == "notes.txt" || s == "new.go" {
+				out = append(out, s)
+			}
+		}
+		return out
+	}
+	if got, want := order(), []string{"main.go", "未跟踪的文件", "notes.txt", "new.go"}; !slices.Equal(got, want) {
+		t.Fatalf("order %q, want %q", got, want)
+	}
+	tt.click(t, "未跟踪的文件") // folds it
+	tt.Frame()
+	if got := order(); !slices.Equal(got, []string{"main.go", "未跟踪的文件"}) {
+		t.Fatalf("folded: %q", got)
+	}
+	tt.click(t, "未跟踪的文件")
+	tt.Frame()
+	r, ok := tt.Find("未跟踪的文件")
+	if !ok {
+		t.Fatal("no group row")
+	}
+	tt.Move(r.X+r.W/2, r.Y+r.H/2)
+	tt.Frame()
+	tt.click(t, "暂存未跟踪的文件")
+	var staged, unstaged []string
+	for _, c := range tt.a.staged {
+		staged = append(staged, c.Path)
+	}
+	for _, c := range tt.a.unstaged {
+		unstaged = append(unstaged, c.Path)
+	}
+	if !slices.Equal(staged, []string{"notes.txt", "src/new.go"}) || !slices.Equal(unstaged, []string{"main.go"}) {
+		t.Fatalf("staged %q, unstaged %q", staged, unstaged)
+	}
+	if tt.HasText("未跟踪的文件") {
+		t.Fatalf("a group of no files: %q", tt.Texts())
+	}
+}

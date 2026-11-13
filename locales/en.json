@@ -574,6 +574,18 @@
   "discardFolder": "Discard Changes in Folder",
   "stageFolder": "Stage Folder",
   "unstageFolder": "Unstage Folder",
+  "untrackedFiles": "Untracked Files",
+  "stageUntracked": "Stage Untracked Files",
+  "discardUntracked": "Delete Untracked Files",
+  "discardUntrackedTitle": "Delete the untracked files?",
+  "discardUntrackedMessage": "{count, plural, one {# untracked file will be deleted.} other {# untracked files will be deleted.}}",
+  "@discardUntrackedMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "discardFolderTitle": "Discard This Folder's Changes?",
   "discardFolderMessage": "{count, plural, one {The change to # file in {folder} will be discarded. This can't be undone.} other {The changes to # files in {folder} will be discarded. This can't be undone.}}",
   "@discardFolderMessage": {

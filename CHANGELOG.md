@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.31
+
+- 未跟踪的文件不再和改过的文件混在一起（[#26](https://github.com/Binaryify/MyGit/issues/26)，感谢 [@nuo010](https://github.com/nuo010) 的建议）：「更改」里先列改过的文件，新文件统一收在下面的「未跟踪的文件」分组里，和 IDEA 的 Unversioned Files 一样，点一下分组就能折起来。鼠标移到分组上，可以一键暂存或删除全部未跟踪的文件，删除前会先确认。树形视图下，两边同名的文件夹各自折叠、各自操作，互不影响
+
 ## 0.3.30
 
 - 升级到 [MyGo 0.9.0](https://github.com/egoist/mygo/releases/tag/v0.9.0)：代码高亮新增 Svelte、HCL/Terraform、ERB、Jinja 和 Nix，没有扩展名的脚本按 `#!` 行识别语言；只读对比在文件最后一个换行处正确结束

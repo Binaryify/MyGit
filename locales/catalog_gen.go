@@ -1982,6 +1982,58 @@ func (msgs Messages) UnstageFolder() string {
 	return Catalog.Format(msgs.locale, "unstageFolder", nil)
 }
 
+// UntrackedFiles says "Untracked Files"
+// in the language the app shows.
+func UntrackedFiles() string { return In(i18n.Locale()).UntrackedFiles() }
+
+// UntrackedFiles says "Untracked Files"
+// in the language of msgs.
+func (msgs Messages) UntrackedFiles() string {
+	return Catalog.Format(msgs.locale, "untrackedFiles", nil)
+}
+
+// StageUntracked says "Stage Untracked Files"
+// in the language the app shows.
+func StageUntracked() string { return In(i18n.Locale()).StageUntracked() }
+
+// StageUntracked says "Stage Untracked Files"
+// in the language of msgs.
+func (msgs Messages) StageUntracked() string {
+	return Catalog.Format(msgs.locale, "stageUntracked", nil)
+}
+
+// DiscardUntracked says "Delete Untracked Files"
+// in the language the app shows.
+func DiscardUntracked() string { return In(i18n.Locale()).DiscardUntracked() }
+
+// DiscardUntracked says "Delete Untracked Files"
+// in the language of msgs.
+func (msgs Messages) DiscardUntracked() string {
+	return Catalog.Format(msgs.locale, "discardUntracked", nil)
+}
+
+// DiscardUntrackedTitle says "Delete the untracked files?"
+// in the language the app shows.
+func DiscardUntrackedTitle() string { return In(i18n.Locale()).DiscardUntrackedTitle() }
+
+// DiscardUntrackedTitle says "Delete the untracked files?"
+// in the language of msgs.
+func (msgs Messages) DiscardUntrackedTitle() string {
+	return Catalog.Format(msgs.locale, "discardUntrackedTitle", nil)
+}
+
+// DiscardUntrackedMessage says "{count, plural, one {# untracked file will be deleted.} other {# untracked files will be deleted.}}"
+// in the language the app shows.
+func DiscardUntrackedMessage(count int) string {
+	return In(i18n.Locale()).DiscardUntrackedMessage(count)
+}
+
+// DiscardUntrackedMessage says "{count, plural, one {# untracked file will be deleted.} other {# untracked files will be deleted.}}"
+// in the language of msgs.
+func (msgs Messages) DiscardUntrackedMessage(count int) string {
+	return Catalog.Format(msgs.locale, "discardUntrackedMessage", map[string]any{"count": count})
+}
+
 // DiscardFolderTitle says "Discard This Folder's Changes?"
 // in the language the app shows.
 func DiscardFolderTitle() string { return In(i18n.Locale()).DiscardFolderTitle() }
