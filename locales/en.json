@@ -15,6 +15,17 @@
   "opUnstage": "Unstage",
   "opDiscard": "Discard",
   "opCommit": "Commit",
+  "commitAndPush": "Commit & Push",
+  "moreCommitActions": "More Commit Actions",
+  "opCommitAndPush": "Commit and push",
+  "errPushAfterCommit": "Committed, but the push failed: {error}",
+  "@errPushAfterCommit": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "opFetch": "Fetch",
   "opPull": "Pull",
   "opFetchRemote": "Fetch {remote}",

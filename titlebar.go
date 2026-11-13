@@ -52,6 +52,9 @@ func shiftShortcut(key string) string {
 	if macOS {
 		return "⇧⌘" + key
 	}
+	if key == "↩" {
+		key = "Enter"
+	}
 	return "Ctrl+Shift+" + key
 }
 

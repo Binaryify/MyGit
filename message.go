@@ -92,28 +92,36 @@ func (a *app) generateMessage() {
 	}
 	s := prefs.AI
 	var msg string
-	a.run(loc.OpGenerateMessage(), func(ctx context.Context) error {
-		key, err := aiKey()
-		if err != nil {
-			return err
-		}
-		stat, err := a.repo.Git(ctx, "diff", "--staged", "--no-ext-diff", "--stat")
-		if err != nil {
-			return err
-		}
-		diff, err := a.repo.Git(ctx, "diff", "--staged", "--no-ext-diff")
-		if err != nil {
-			return err
-		}
-		prompt := messagePrompt(a.repo.RecentMessages(ctx, 10), stat, diff)
-		cfg := llm.Config{API: s.API, BaseURL: s.BaseURL, Model: strings.TrimSpace(s.Model), Key: key, HTTP: s.client()}
-		if msg, err = llm.Complete(ctx, cfg, messageSystem(s.Instructions), prompt); err == nil && msg == "" {
-			err = errors.New(loc.ErrNoMessage())
-		}
+	a.run(loc.OpGenerateMessage(), func(ctx context.Context) (err error) {
+		msg, err = a.writeMessage(ctx, s)
 		return err
 	}, func() {
 		a.message, a.recall = msg, 0
 	})
+}
+
+// writeMessage has the model s sets write the message of the staged
+// changes; it runs off the main thread.
+func (a *app) writeMessage(ctx context.Context, s aiSettings) (string, error) {
+	key, err := aiKey()
+	if err != nil {
+		return "", err
+	}
+	stat, err := a.repo.Git(ctx, "diff", "--staged", "--no-ext-diff", "--stat")
+	if err != nil {
+		return "", err
+	}
+	diff, err := a.repo.Git(ctx, "diff", "--staged", "--no-ext-diff")
+	if err != nil {
+		return "", err
+	}
+	prompt := messagePrompt(a.repo.RecentMessages(ctx, 10), stat, diff)
+	cfg := llm.Config{API: s.API, BaseURL: s.BaseURL, Model: strings.TrimSpace(s.Model), Key: key, HTTP: s.client()}
+	msg, err := llm.Complete(ctx, cfg, messageSystem(s.Instructions), prompt)
+	if err == nil && msg == "" {
+		err = errors.New(loc.ErrNoMessage())
+	}
+	return msg, err
 }
 
 // generateButton is the Generate button, with the sparkles AI tools mark

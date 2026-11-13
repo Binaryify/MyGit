@@ -226,14 +226,8 @@ func (a *app) changesPanel(c *ui.Context) {
 				if prefs.AI.on() && generateButton(c, !a.canGenerateMessage()) {
 					a.generateMessage()
 				}
-				label := loc.Commit()
-				if n := len(a.staged); n > 0 {
-					label = loc.CommitFiles(n)
-				}
-				if ui.PrimaryButton(c, label).Disabled(!a.canCommit()).Tooltip(shortcut("↩")).Clicked() {
-					a.commit()
-				}
 			})
+			a.commitButton(c)
 		})
 		if len(a.staged)+len(a.unstaged) > 0 || a.filter.query != "" {
 			a.filterField(c)
@@ -246,6 +240,7 @@ func (a *app) changesPanel(c *ui.Context) {
 		}).Grow(1).Basis(0)
 	})
 	c.OnShortcut(ui.Cmd, ui.KeyEnter, a.commit)
+	c.OnShortcut(ui.Cmd|ui.Shift, ui.KeyEnter, a.commitAndPush)
 }
 
 // messageField is the commit message's box, where Up brings back the

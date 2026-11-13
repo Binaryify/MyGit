@@ -86,6 +86,46 @@ func (msgs Messages) OpCommit() string {
 	return Catalog.Format(msgs.locale, "opCommit", nil)
 }
 
+// CommitAndPush says "Commit & Push"
+// in the language the app shows.
+func CommitAndPush() string { return In(i18n.Locale()).CommitAndPush() }
+
+// CommitAndPush says "Commit & Push"
+// in the language of msgs.
+func (msgs Messages) CommitAndPush() string {
+	return Catalog.Format(msgs.locale, "commitAndPush", nil)
+}
+
+// MoreCommitActions says "More Commit Actions"
+// in the language the app shows.
+func MoreCommitActions() string { return In(i18n.Locale()).MoreCommitActions() }
+
+// MoreCommitActions says "More Commit Actions"
+// in the language of msgs.
+func (msgs Messages) MoreCommitActions() string {
+	return Catalog.Format(msgs.locale, "moreCommitActions", nil)
+}
+
+// OpCommitAndPush says "Commit and push"
+// in the language the app shows.
+func OpCommitAndPush() string { return In(i18n.Locale()).OpCommitAndPush() }
+
+// OpCommitAndPush says "Commit and push"
+// in the language of msgs.
+func (msgs Messages) OpCommitAndPush() string {
+	return Catalog.Format(msgs.locale, "opCommitAndPush", nil)
+}
+
+// ErrPushAfterCommit says "Committed, but the push failed: {error}"
+// in the language the app shows.
+func ErrPushAfterCommit(error string) string { return In(i18n.Locale()).ErrPushAfterCommit(error) }
+
+// ErrPushAfterCommit says "Committed, but the push failed: {error}"
+// in the language of msgs.
+func (msgs Messages) ErrPushAfterCommit(error string) string {
+	return Catalog.Format(msgs.locale, "errPushAfterCommit", map[string]any{"error": error})
+}
+
 // OpFetch says "Fetch"
 // in the language the app shows.
 func OpFetch() string { return In(i18n.Locale()).OpFetch() }

@@ -272,6 +272,7 @@ func shortcuts() []keyBinding {
 		{shortcut("F"), loc.SearchHistory()},
 		{shortcut("B"), loc.ToggleSidebar()},
 		{shortcut("↩"), loc.Commit()},
+		{shiftShortcut("↩"), loc.CommitAndPush()},
 		{shortcut("S"), loc.ShortcutSave()},
 		{"F7", loc.NextChange()},
 		{shiftKey("F7"), loc.PreviousChange()},
