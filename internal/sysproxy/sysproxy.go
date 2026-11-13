@@ -59,8 +59,12 @@ func Parse(raw string) (*url.URL, error) {
 }
 
 // Func is the proxy for a request: the one set, the environment's, or
-// the system's, nil for none.
+// the system's, nil for none. This computer goes without any, as a model
+// served here, Ollama's at localhost:11434, may be reached.
 func Func(req *http.Request) (*url.URL, error) {
+	if loopback(req.URL.Hostname()) {
+		return nil, nil
+	}
 	if u := manual.Load(); u != nil {
 		return u, nil
 	}
@@ -97,10 +101,7 @@ func (c config) proxy(u *url.URL) (*url.URL, error) {
 // one of the hosts listed.
 func (c config) bypassed(host string) bool {
 	host = strings.ToLower(host)
-	if host == "localhost" {
-		return true
-	}
-	if ip := net.ParseIP(host); ip != nil && ip.IsLoopback() {
+	if loopback(host) {
 		return true
 	}
 	for _, p := range c.bypass {
@@ -124,4 +125,13 @@ func (c config) bypassed(host string) bool {
 		}
 	}
 	return false
+}
+
+// loopback tells whether host is this computer.
+func loopback(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }

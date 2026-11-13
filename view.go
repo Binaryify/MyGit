@@ -222,6 +222,10 @@ func (a *app) changesPanel(c *ui.Context) {
 					a.toggleAmend()
 				}
 				ui.Box(c).Grow(1)
+				// Only with a model set: without one, nothing of AI shows.
+				if prefs.AI.on() && generateButton(c, !a.canGenerateMessage()) {
+					a.generateMessage()
+				}
 				label := loc.Commit()
 				if n := len(a.staged); n > 0 {
 					label = loc.CommitFiles(n)

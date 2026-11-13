@@ -46,6 +46,7 @@ type settings struct {
 	Proxy               string          `json:"proxy,omitempty"`   // the downloads', "" for the system's
 	Remotes             []string        `json:"remotes,omitempty"` // repositories on other computers opened lately, host:dir
 	Recent              []string        `json:"recent,omitempty"`  // the folders opened lately here and there, the latest first
+	AI                  aiSettings      `json:"ai,omitempty"`      // the model writing commit messages
 	path                string
 }
 
@@ -152,11 +153,16 @@ func editorChoices() []string {
 	return []string{loc.EditorSystem(), "code", "cursor", "zed", "subl", "idea", loc.EditorOther()}
 }
 
+// scrollbarRoom is what a dialog's scrolling form leaves clear on its
+// right: the scroll bar's track, 12 DIPs, and a little more.
+const scrollbarRoom = 14
+
 // settingsDialog is the settings, open or not, in a repository's window
 // or the welcome window.
 type settingsDialog struct {
 	open     bool
-	proxyErr string // why the proxy written isn't one
+	proxyErr string   // why the proxy written isn't one
+	ai       aiDialog // the AI's settings, a dialog of their own over these
 }
 
 func (a *app) settingsView(c *ui.Context) { a.settings.view(c, true, a.reloadDiff) }
@@ -167,6 +173,7 @@ func (d *settingsDialog) view(c *ui.Context, withShortcuts bool, closed func()) 
 	if !d.open {
 		return
 	}
+	defer d.ai.view(c) // over the settings, built after them
 	t := c.Theme()
 	if ui.Modal(c, &d.open, func() {
 		// The title and Done stay in view, the settings between scrolling
@@ -174,7 +181,9 @@ func (d *settingsDialog) view(c *ui.Context, withShortcuts bool, closed func()) 
 		_, h := c.Size()
 		ui.Column(c).Gap(12).Width(dialogWidth(c, 440)).Children(func() {
 			ui.Text(c, loc.Settings()).Bold().FontSize(15)
-			ui.Scroll(c).MaxHeight(h - t.Space(40)).Gap(12).Children(func() {
+			// Room on the right for the scroll bar, which floats over
+			// what it scrolls and would cover the fields' edges.
+			ui.Scroll(c).MaxHeight(h-t.Space(40)).Gap(12).Padding(0, scrollbarRoom, 0, 0).Children(func() {
 				ui.Text(c, loc.ExternalEditor()).Bold().TextColor(t.TextMuted)
 				choices := editorChoices()
 				choice := prefs.Editor
@@ -224,6 +233,7 @@ func (d *settingsDialog) view(c *ui.Context, withShortcuts bool, closed func()) 
 				} else {
 					ui.Text(c, loc.ProxyHint()).FontSize(11).TextColor(t.TextMuted).Wrap()
 				}
+				d.aiEntry(c)
 				if withShortcuts {
 					ui.Text(c, loc.Shortcuts()).Bold().TextColor(t.TextMuted)
 					ui.Column(c).Gap(6).Children(func() {

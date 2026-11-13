@@ -1982,6 +1982,256 @@ func (msgs Messages) UnstageFolder() string {
 	return Catalog.Format(msgs.locale, "unstageFolder", nil)
 }
 
+// GenerateMessage says "Generate"
+// in the language the app shows.
+func GenerateMessage() string { return In(i18n.Locale()).GenerateMessage() }
+
+// GenerateMessage says "Generate"
+// in the language of msgs.
+func (msgs Messages) GenerateMessage() string {
+	return Catalog.Format(msgs.locale, "generateMessage", nil)
+}
+
+// OpGenerateMessage says "Generate the message"
+// in the language the app shows.
+func OpGenerateMessage() string { return In(i18n.Locale()).OpGenerateMessage() }
+
+// OpGenerateMessage says "Generate the message"
+// in the language of msgs.
+func (msgs Messages) OpGenerateMessage() string {
+	return Catalog.Format(msgs.locale, "opGenerateMessage", nil)
+}
+
+// GenerateMessageTip says "Have the model set in Settings write the message from the staged changes"
+// in the language the app shows.
+func GenerateMessageTip() string { return In(i18n.Locale()).GenerateMessageTip() }
+
+// GenerateMessageTip says "Have the model set in Settings write the message from the staged changes"
+// in the language of msgs.
+func (msgs Messages) GenerateMessageTip() string {
+	return Catalog.Format(msgs.locale, "generateMessageTip", nil)
+}
+
+// ErrNoMessage says "the model replied nothing"
+// in the language the app shows.
+func ErrNoMessage() string { return In(i18n.Locale()).ErrNoMessage() }
+
+// ErrNoMessage says "the model replied nothing"
+// in the language of msgs.
+func (msgs Messages) ErrNoMessage() string {
+	return Catalog.Format(msgs.locale, "errNoMessage", nil)
+}
+
+// AiSection says "AI Commit Messages"
+// in the language the app shows.
+func AiSection() string { return In(i18n.Locale()).AiSection() }
+
+// AiSection says "AI Commit Messages"
+// in the language of msgs.
+func (msgs Messages) AiSection() string {
+	return Catalog.Format(msgs.locale, "aiSection", nil)
+}
+
+// ApiKind says "API"
+// in the language the app shows.
+func ApiKind() string { return In(i18n.Locale()).ApiKind() }
+
+// ApiKind says "API"
+// in the language of msgs.
+func (msgs Messages) ApiKind() string {
+	return Catalog.Format(msgs.locale, "apiKind", nil)
+}
+
+// ApiOpenAI says "OpenAI-compatible"
+// in the language the app shows.
+func ApiOpenAI() string { return In(i18n.Locale()).ApiOpenAI() }
+
+// ApiOpenAI says "OpenAI-compatible"
+// in the language of msgs.
+func (msgs Messages) ApiOpenAI() string {
+	return Catalog.Format(msgs.locale, "apiOpenAI", nil)
+}
+
+// BaseURL says "Base URL"
+// in the language the app shows.
+func BaseURL() string { return In(i18n.Locale()).BaseURL() }
+
+// BaseURL says "Base URL"
+// in the language of msgs.
+func (msgs Messages) BaseURL() string {
+	return Catalog.Format(msgs.locale, "baseURL", nil)
+}
+
+// BaseURLPlaceholder says "{url} (default)"
+// in the language the app shows.
+func BaseURLPlaceholder(url string) string { return In(i18n.Locale()).BaseURLPlaceholder(url) }
+
+// BaseURLPlaceholder says "{url} (default)"
+// in the language of msgs.
+func (msgs Messages) BaseURLPlaceholder(url string) string {
+	return Catalog.Format(msgs.locale, "baseURLPlaceholder", map[string]any{"url": url})
+}
+
+// Model says "Model"
+// in the language the app shows.
+func Model() string { return In(i18n.Locale()).Model() }
+
+// Model says "Model"
+// in the language of msgs.
+func (msgs Messages) Model() string {
+	return Catalog.Format(msgs.locale, "model", nil)
+}
+
+// ModelPlaceholder says "The model's name, e.g. deepseek-chat; empty turns it off"
+// in the language the app shows.
+func ModelPlaceholder() string { return In(i18n.Locale()).ModelPlaceholder() }
+
+// ModelPlaceholder says "The model's name, e.g. deepseek-chat; empty turns it off"
+// in the language of msgs.
+func (msgs Messages) ModelPlaceholder() string {
+	return Catalog.Format(msgs.locale, "modelPlaceholder", nil)
+}
+
+// ApiKey says "API Key"
+// in the language the app shows.
+func ApiKey() string { return In(i18n.Locale()).ApiKey() }
+
+// ApiKey says "API Key"
+// in the language of msgs.
+func (msgs Messages) ApiKey() string {
+	return Catalog.Format(msgs.locale, "apiKey", nil)
+}
+
+// ApiKeyPlaceholder says "Paste the key (a local model may need none)"
+// in the language the app shows.
+func ApiKeyPlaceholder() string { return In(i18n.Locale()).ApiKeyPlaceholder() }
+
+// ApiKeyPlaceholder says "Paste the key (a local model may need none)"
+// in the language of msgs.
+func (msgs Messages) ApiKeyPlaceholder() string {
+	return Catalog.Format(msgs.locale, "apiKeyPlaceholder", nil)
+}
+
+// ApiKeySaved says "Saved; paste another to replace it"
+// in the language the app shows.
+func ApiKeySaved() string { return In(i18n.Locale()).ApiKeySaved() }
+
+// ApiKeySaved says "Saved; paste another to replace it"
+// in the language of msgs.
+func (msgs Messages) ApiKeySaved() string {
+	return Catalog.Format(msgs.locale, "apiKeySaved", nil)
+}
+
+// DeleteAPIKey says "Delete Key"
+// in the language the app shows.
+func DeleteAPIKey() string { return In(i18n.Locale()).DeleteAPIKey() }
+
+// DeleteAPIKey says "Delete Key"
+// in the language of msgs.
+func (msgs Messages) DeleteAPIKey() string {
+	return Catalog.Format(msgs.locale, "deleteAPIKey", nil)
+}
+
+// AiKeyNotice says "Your key stays on this computer, in the system's keychain: it isn't in the settings' file, nor sent anywhere but to t…"
+// in the language the app shows.
+func AiKeyNotice() string { return In(i18n.Locale()).AiKeyNotice() }
+
+// AiKeyNotice says "Your key stays on this computer, in the system's keychain: it isn't in the settings' file, nor sent anywhere but to t…"
+// in the language of msgs.
+func (msgs Messages) AiKeyNotice() string {
+	return Catalog.Format(msgs.locale, "aiKeyNotice", nil)
+}
+
+// AiInstructions says "Extra Instructions (optional)"
+// in the language the app shows.
+func AiInstructions() string { return In(i18n.Locale()).AiInstructions() }
+
+// AiInstructions says "Extra Instructions (optional)"
+// in the language of msgs.
+func (msgs Messages) AiInstructions() string {
+	return Catalog.Format(msgs.locale, "aiInstructions", nil)
+}
+
+// AiInstructionsPlaceholder says "E.g. use Conventional Commits; write in Chinese; keep the summary under 50 characters"
+// in the language the app shows.
+func AiInstructionsPlaceholder() string { return In(i18n.Locale()).AiInstructionsPlaceholder() }
+
+// AiInstructionsPlaceholder says "E.g. use Conventional Commits; write in Chinese; keep the summary under 50 characters"
+// in the language of msgs.
+func (msgs Messages) AiInstructionsPlaceholder() string {
+	return Catalog.Format(msgs.locale, "aiInstructionsPlaceholder", nil)
+}
+
+// AiStatusOff says "Not set up: with a model, Generate shows by the Commit button"
+// in the language the app shows.
+func AiStatusOff() string { return In(i18n.Locale()).AiStatusOff() }
+
+// AiStatusOff says "Not set up: with a model, Generate shows by the Commit button"
+// in the language of msgs.
+func (msgs Messages) AiStatusOff() string {
+	return Catalog.Format(msgs.locale, "aiStatusOff", nil)
+}
+
+// AiStatusOn says "On: {model}"
+// in the language the app shows.
+func AiStatusOn(model string) string { return In(i18n.Locale()).AiStatusOn(model) }
+
+// AiStatusOn says "On: {model}"
+// in the language of msgs.
+func (msgs Messages) AiStatusOn(model string) string {
+	return Catalog.Format(msgs.locale, "aiStatusOn", map[string]any{"model": model})
+}
+
+// AiSetUp says "Set Up…"
+// in the language the app shows.
+func AiSetUp() string { return In(i18n.Locale()).AiSetUp() }
+
+// AiSetUp says "Set Up…"
+// in the language of msgs.
+func (msgs Messages) AiSetUp() string {
+	return Catalog.Format(msgs.locale, "aiSetUp", nil)
+}
+
+// AiDirect says "Connect directly, past the network proxy"
+// in the language the app shows.
+func AiDirect() string { return In(i18n.Locale()).AiDirect() }
+
+// AiDirect says "Connect directly, past the network proxy"
+// in the language of msgs.
+func (msgs Messages) AiDirect() string {
+	return Catalog.Format(msgs.locale, "aiDirect", nil)
+}
+
+// AiDirectHint says "For providers reached better without it, as DeepSeek's from China. Off, the requests go by the proxy in Settings."
+// in the language the app shows.
+func AiDirectHint() string { return In(i18n.Locale()).AiDirectHint() }
+
+// AiDirectHint says "For providers reached better without it, as DeepSeek's from China. Off, the requests go by the proxy in Settings."
+// in the language of msgs.
+func (msgs Messages) AiDirectHint() string {
+	return Catalog.Format(msgs.locale, "aiDirectHint", nil)
+}
+
+// AiHint says "With a model set, Generate shows by the Commit button: it sends the staged changes' diff to this provider, and what i…"
+// in the language the app shows.
+func AiHint() string { return In(i18n.Locale()).AiHint() }
+
+// AiHint says "With a model set, Generate shows by the Commit button: it sends the staged changes' diff to this provider, and what i…"
+// in the language of msgs.
+func (msgs Messages) AiHint() string {
+	return Catalog.Format(msgs.locale, "aiHint", nil)
+}
+
+// ErrSaveAPIKey says "Couldn't save the key: {error}"
+// in the language the app shows.
+func ErrSaveAPIKey(error string) string { return In(i18n.Locale()).ErrSaveAPIKey(error) }
+
+// ErrSaveAPIKey says "Couldn't save the key: {error}"
+// in the language of msgs.
+func (msgs Messages) ErrSaveAPIKey(error string) string {
+	return Catalog.Format(msgs.locale, "errSaveAPIKey", map[string]any{"error": error})
+}
+
 // UntrackedFiles says "Untracked Files"
 // in the language the app shows.
 func UntrackedFiles() string { return In(i18n.Locale()).UntrackedFiles() }
@@ -5138,11 +5388,11 @@ func (msgs Messages) ProxyPlaceholder() string {
 	return Catalog.Format(msgs.locale, "proxyPlaceholder", nil)
 }
 
-// ProxyHint says "For downloading the SSH helpers and updates. Empty follows the system's proxy. git and ssh keep their own."
+// ProxyHint says "For the AI's requests, and downloading the SSH helpers and updates; this computer's addresses go without it. Empty fo…"
 // in the language the app shows.
 func ProxyHint() string { return In(i18n.Locale()).ProxyHint() }
 
-// ProxyHint says "For downloading the SSH helpers and updates. Empty follows the system's proxy. git and ssh keep their own."
+// ProxyHint says "For the AI's requests, and downloading the SSH helpers and updates; this computer's addresses go without it. Empty fo…"
 // in the language of msgs.
 func (msgs Messages) ProxyHint() string {
 	return Catalog.Format(msgs.locale, "proxyHint", nil)

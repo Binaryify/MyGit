@@ -95,3 +95,22 @@ func TestSet(t *testing.T) {
 		}
 	}
 }
+
+// TestLoopback checks that this computer goes without the proxy set, as
+// a model served here does, and everything else through it.
+func TestLoopback(t *testing.T) {
+	defer Set("")
+	if err := Set("127.0.0.1:7890"); err != nil {
+		t.Fatal(err)
+	}
+	for _, raw := range []string{"http://localhost:11434/v1", "http://127.0.0.1:11434/v1", "http://[::1]:11434/v1", "http://LOCALHOST/"} {
+		req, _ := http.NewRequest("POST", raw, nil)
+		if u, err := Func(req); u != nil || err != nil {
+			t.Errorf("%s: through %v, %v", raw, u, err)
+		}
+	}
+	req, _ := http.NewRequest("POST", "https://ollama.com/v1/chat/completions", nil)
+	if u, _ := Func(req); u == nil || u.String() != "http://127.0.0.1:7890" {
+		t.Errorf("ollama.com: through %v", u)
+	}
+}

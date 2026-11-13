@@ -574,6 +574,52 @@
   "discardFolder": "Discard Changes in Folder",
   "stageFolder": "Stage Folder",
   "unstageFolder": "Unstage Folder",
+  "generateMessage": "Generate",
+  "opGenerateMessage": "Generate the message",
+  "generateMessageTip": "Have the model set in Settings write the message from the staged changes",
+  "errNoMessage": "the model replied nothing",
+  "aiSection": "AI Commit Messages",
+  "apiKind": "API",
+  "apiOpenAI": "OpenAI-compatible",
+  "baseURL": "Base URL",
+  "baseURLPlaceholder": "{url} (default)",
+  "@baseURLPlaceholder": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "model": "Model",
+  "modelPlaceholder": "The model's name, e.g. deepseek-chat; empty turns it off",
+  "apiKey": "API Key",
+  "apiKeyPlaceholder": "Paste the key (a local model may need none)",
+  "apiKeySaved": "Saved; paste another to replace it",
+  "deleteAPIKey": "Delete Key",
+  "aiKeyNotice": "Your key stays on this computer, in the system's keychain: it isn't in the settings' file, nor sent anywhere but to the provider above, with its requests.",
+  "aiInstructions": "Extra Instructions (optional)",
+  "aiInstructionsPlaceholder": "E.g. use Conventional Commits; write in Chinese; keep the summary under 50 characters",
+  "aiStatusOff": "Not set up: with a model, Generate shows by the Commit button",
+  "aiStatusOn": "On: {model}",
+  "@aiStatusOn": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "aiSetUp": "Set Up…",
+  "aiDirect": "Connect directly, past the network proxy",
+  "aiDirectHint": "For providers reached better without it, as DeepSeek's from China. Off, the requests go by the proxy in Settings.",
+  "aiHint": "With a model set, Generate shows by the Commit button: it sends the staged changes' diff to this provider, and what it writes fills the message, to read before committing.",
+  "errSaveAPIKey": "Couldn't save the key: {error}",
+  "@errSaveAPIKey": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "untrackedFiles": "Untracked Files",
   "stageUntracked": "Stage Untracked Files",
   "discardUntracked": "Delete Untracked Files",
@@ -1411,7 +1457,7 @@
   "networkSection": "Network proxy",
   "proxy": "Proxy",
   "proxyPlaceholder": "The system's, or http://127.0.0.1:7890, socks5://…",
-  "proxyHint": "For downloading the SSH helpers and updates. Empty follows the system's proxy. git and ssh keep their own.",
+  "proxyHint": "For the AI's requests, and downloading the SSH helpers and updates; this computer's addresses go without it. Empty follows the system's proxy. git and ssh keep their own.",
   "proxyInvalid": "Write a proxy as http://host:port, https://… or socks5://…",
   "syncChanges": "Sync Changes {counts}",
   "opSync": "Sync",
