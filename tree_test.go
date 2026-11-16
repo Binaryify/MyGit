@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+
+	"mygit/internal/git"
 )
 
 func TestTreeRows(t *testing.T) {
@@ -131,5 +133,35 @@ func TestUntrackedGroup(t *testing.T) {
 	}
 	if tt.HasText("未跟踪的文件") {
 		t.Fatalf("a group of no files: %q", tt.Texts())
+	}
+}
+
+// TestChangeFolders: Collapse All folds every folder of a list of changes,
+// the untracked files' apart, and Expand All unfolds them again (#31).
+func TestChangeFolders(t *testing.T) {
+	changes := []git.Change{
+		{Path: "src/ui/view.go", Work: 'M'},
+		{Path: "src/main.go", Work: 'M'},
+		{Path: "docs/new.md", Work: '?'},
+		{Path: "a.txt", Work: 'M'},
+	}
+	items := []int{0, 1, 2, 3}
+	got := changeFolders("changes", changes, items, false)
+	want := []string{"changes\x00src", "changes\x00src/ui", "changes" + untrackedGroup + "\x00docs"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("folders %q, want %q", got, want)
+	}
+	staged := changeFolders("staged", changes, items, true) // no group apart
+	if !slices.Equal(staged, []string{"staged\x00docs", "staged\x00src", "staged\x00src/ui"}) {
+		t.Fatalf("staged folders %q", staged)
+	}
+	a := &app{}
+	a.foldAll(got, true)
+	if !a.folded("changes", "src/ui") || !a.folded("changes"+untrackedGroup, "docs") || a.folded("changes", untrackedGroup) {
+		t.Fatalf("folded %v", a.foldedDirs)
+	}
+	a.foldAll(got, false)
+	if len(a.foldedDirs) != 0 {
+		t.Fatalf("unfolded %v", a.foldedDirs)
 	}
 }

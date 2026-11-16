@@ -27,7 +27,7 @@ func (r *Repo) Stashes(ctx context.Context) ([]Stash, error) {
 			continue
 		}
 		sec, _ := strconv.ParseInt(f[2], 10, 64)
-		list = append(list, Stash{Ref: f[0], Hash: f[1], Time: time.Unix(sec, 0), Subject: f[3]})
+		list = append(list, Stash{Ref: f[0], Hash: f[1], Time: time.Unix(sec, 0), Subject: oneLine(f[3])})
 	}
 	return list, nil
 }

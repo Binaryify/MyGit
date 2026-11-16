@@ -1577,5 +1577,51 @@
   "clearRecent": "Clear Recent",
   "noRecent": "Repositories you open show up here",
   "closeProject": "Close Project",
-  "switchProject": "Switch Project"
+  "switchProject": "Switch Project",
+  "pullBehind": "Pull ↓{count}",
+  "@pullBehind": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pushMenuAhead": "Push ↑{count}…",
+  "@pushMenuAhead": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "collapseAll": "Collapse All",
+  "expandAll": "Expand All",
+  "copyLocalPath": "Copy Local Path: {path}",
+  "@copyLocalPath": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "copyRemoteURL": "Copy {remote} URL: {url}",
+  "@copyRemoteURL": {
+    "placeholders": {
+      "remote": {
+        "type": "String"
+      },
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "copyURL": "Copy URL",
+  "copiedText": "Copied {text}",
+  "@copiedText": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  }
 }

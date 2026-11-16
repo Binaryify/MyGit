@@ -783,3 +783,31 @@ func TestTrimKeepsNewSpaces(t *testing.T) {
 		t.Errorf("ignoring spaces: diff %q", d)
 	}
 }
+
+// TestSubjectOneLine: a message whose lines end at a lone \r, as some
+// tools write them, lists on one line, and one committed here ends its
+// lines at \n (#28).
+func TestSubjectOneLine(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	if _, err := r.Git(ctx, "commit", "-q", "--allow-empty", "-m", "1. fix A\r2. fix B"); err != nil {
+		t.Fatal(err)
+	}
+	write(t, r, "a.txt", "a\n")
+	if err := r.Stage(ctx, "a.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Commit(ctx, "1. fix C\r2. fix D\r\n\r\nbody", false); err != nil {
+		t.Fatal(err)
+	}
+	var all []Commit
+	if err := r.Log(ctx, Scope{}, 10, func(c []Commit) { all = append(all, c...) }); err != nil {
+		t.Fatal(err)
+	}
+	if len(all) != 2 || all[0].Subject != "1. fix C 2. fix D" || all[1].Subject != "1. fix A 2. fix B" {
+		t.Fatalf("subjects %q", []string{all[0].Subject, all[1].Subject})
+	}
+	if m := r.LastMessage(ctx); m != "1. fix C\n2. fix D\n\nbody" {
+		t.Fatalf("message %q", m)
+	}
+}

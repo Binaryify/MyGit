@@ -175,8 +175,10 @@ func inBatches(paths []string, fn func(batch []string) error) error {
 	return nil
 }
 
-// Commit commits the index.
+// Commit commits the index, the message's lines ending at \n however
+// they were typed or pasted, as git expects them (#28).
 func (r *Repo) Commit(ctx context.Context, message string, amend bool) error {
+	message = strings.ReplaceAll(strings.ReplaceAll(message, "\r\n", "\n"), "\r", "\n")
 	args := []string{"commit", "-m", message}
 	if amend {
 		args = append(args, "--amend")

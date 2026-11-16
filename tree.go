@@ -106,16 +106,7 @@ const untrackedGroup = "\x00untracked"
 // for none.
 func (a *app) changeRows(key string, changes []git.Change, items []int, staged bool) (tree []treeRow, n, group int, item func(r int) int) {
 	path := func(i int) string { return changes[i].Path }
-	var tracked, untracked []int
-	if !staged {
-		for _, i := range items {
-			if changes[i].Work == '?' {
-				untracked = append(untracked, i)
-			} else {
-				tracked = append(tracked, i)
-			}
-		}
-	}
+	tracked, untracked := splitUntracked(changes, items, staged)
 	if len(untracked) == 0 {
 		tree, n, item = a.listRows(key, items, path)
 		return tree, n, -1, item
@@ -127,6 +118,68 @@ func (a *app) changeRows(key string, changes []git.Change, items []int, staged b
 		tree = append(tree, a.fileRows(key+untrackedGroup, untracked, path, 1)...)
 	}
 	return tree, len(tree), group, func(r int) int { return tree[r].item }
+}
+
+// splitUntracked parts the items of a list of changes into those tracked
+// and the untracked files, which only the changes not staged keep apart.
+func splitUntracked(changes []git.Change, items []int, staged bool) (tracked, untracked []int) {
+	if staged {
+		return items, nil
+	}
+	for _, i := range items {
+		if changes[i].Work == '?' {
+			untracked = append(untracked, i)
+		} else {
+			tracked = append(tracked, i)
+		}
+	}
+	return tracked, untracked
+}
+
+// changeFolders are the folders of a list of changes shown as a tree,
+// folded or not, as foldedDirs keys them: the list key's, and the
+// untracked files' apart, as changeRows folds them.
+func changeFolders(key string, changes []git.Change, items []int, staged bool) []string {
+	path := func(i int) string { return changes[i].Path }
+	tracked, untracked := splitUntracked(changes, items, staged)
+	var keys []string
+	add := func(list string, items []int) {
+		for _, r := range treeRows(items, path, func(string) bool { return false }) {
+			if r.item < 0 {
+				keys = append(keys, list+"\x00"+r.dir)
+			}
+		}
+	}
+	add(key, tracked)
+	add(key+untrackedGroup, untracked)
+	return keys
+}
+
+// foldAllButton folds every folder of keys, as IDEA's Collapse All, or,
+// all of them folded, unfolds them (#31).
+func (a *app) foldAllButton(c *ui.Context, keys []string) {
+	open := slices.ContainsFunc(keys, func(k string) bool { return !a.foldedDirs[k] })
+	icon, label := "chevrons-down-up", loc.CollapseAll()
+	if !open {
+		icon, label = "chevrons-up-down", loc.ExpandAll()
+	}
+	if iconButton(c, icon, label) {
+		a.foldAll(keys, open)
+	}
+}
+
+// foldAll folds the folders keys names, or unfolds them.
+func (a *app) foldAll(keys []string, fold bool) {
+	if a.foldedDirs == nil {
+		a.foldedDirs = map[string]bool{}
+	}
+	for _, k := range keys {
+		if fold {
+			a.foldedDirs[k] = true
+		} else {
+			delete(a.foldedDirs, k)
+		}
+	}
 }
 
 // fileRows are the rows of items, as a tree or a list, depth folders in.

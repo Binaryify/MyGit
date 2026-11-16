@@ -167,7 +167,16 @@ func (a *app) toolbar(c *ui.Context) {
 				}
 			}
 		})
-		ui.Button(c, loc.Pull()+" ▾").Label(loc.Pull()).Disabled(!idle || st.Upstream == "").Menu(func(m *ui.Menu) {
+		// The commits there are to pull and to push, on the buttons that
+		// would (#30).
+		pullText, pushText := loc.Pull(), loc.PushMenu()
+		if st.Behind > 0 {
+			pullText = loc.PullBehind(st.Behind)
+		}
+		if st.Ahead > 0 {
+			pushText = loc.PushMenuAhead(st.Ahead)
+		}
+		ui.Button(c, pullText+" ▾").Label(loc.Pull()).Disabled(!idle || st.Upstream == "").Menu(func(m *ui.Menu) {
 			pull := func(mode git.PullMode) {
 				a.runPull(loc.OpPull(), func(ctx context.Context) error { return a.repo.Pull(ctx, mode) })
 			}
@@ -181,7 +190,7 @@ func (a *app) toolbar(c *ui.Context) {
 				pull(git.PullMerge)
 			}
 		})
-		if ui.Button(c, loc.PushMenu()).Tooltip(loc.PushTooltip()).Disabled(!idle || st.Branch == "").Clicked() {
+		if ui.Button(c, pushText).Label(loc.PushMenu()).Tooltip(loc.PushTooltip()).Disabled(!idle || st.Branch == "").Clicked() {
 			a.openPush()
 		}
 		a.commentsButton(c)
@@ -313,8 +322,18 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		}
 		ui.Badge(c, count)
 		ui.Box(c).Grow(1)
-		if len(items) > 0 {
+		if len(items) > 0 && prefs.TreeView {
+			if folders := changeFolders(key, changes, items, staged); len(folders) > 0 {
+				a.foldAllButton(c, folders)
+			}
+		}
+		// The way to a tree shows while the list is empty too, so that it
+		// is found before the files come (#31); a workspace's repositories,
+		// stacked, keep theirs to those with files.
+		if len(items) > 0 || fill {
 			treeToggle(c)
+		}
+		if len(items) > 0 {
 			idle := a.busy == ""
 			if staged {
 				if iconButton(c, "minus", loc.UnstageAll()) && idle {
@@ -400,9 +419,13 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 				code = ch.Staged
 			}
 			name, dir := path.Base(ch.Path), path.Dir(ch.Path)
+			// The name in its change's color too, as VS Code's and IDEA's
+			// (#29); a generated file's stays muted, as wanted the less.
 			nameText := ui.Text(c, name).SingleLine().Shrink(0)
 			if !chosen && isGenerated(ch.Path, a.genMarked, nil, nil) {
 				nameText.TextColor(t.TextMuted)
+			} else if !chosen {
+				nameText.TextColor(changeColor(t, code, false))
 			}
 			muted := t.TextMuted
 			if chosen {
@@ -830,6 +853,8 @@ func (a *app) filesList(c *ui.Context) {
 			nameText := ui.Text(c, path.Base(name)).SingleLine().Shrink(0)
 			if (viewed || gen) && !chosen {
 				nameText.TextColor(t.TextMuted)
+			} else if !chosen {
+				nameText.TextColor(changeColor(t, code, false)) // as the changes' (#29)
 			}
 			if dir := path.Dir(name); dir != "." && tree == nil {
 				ui.Text(c, dir).FontSize(11).TextColor(muted).SingleLine().Grow(1).Basis(0)

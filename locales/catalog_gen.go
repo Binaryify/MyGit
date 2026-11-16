@@ -5829,3 +5829,85 @@ func SwitchProject() string { return In(i18n.Locale()).SwitchProject() }
 func (msgs Messages) SwitchProject() string {
 	return Catalog.Format(msgs.locale, "switchProject", nil)
 }
+
+// PullBehind says "Pull ↓{count}"
+// in the language the app shows.
+func PullBehind(count int) string { return In(i18n.Locale()).PullBehind(count) }
+
+// PullBehind says "Pull ↓{count}"
+// in the language of msgs.
+func (msgs Messages) PullBehind(count int) string {
+	return Catalog.Format(msgs.locale, "pullBehind", map[string]any{"count": count})
+}
+
+// PushMenuAhead says "Push ↑{count}…"
+// in the language the app shows.
+func PushMenuAhead(count int) string { return In(i18n.Locale()).PushMenuAhead(count) }
+
+// PushMenuAhead says "Push ↑{count}…"
+// in the language of msgs.
+func (msgs Messages) PushMenuAhead(count int) string {
+	return Catalog.Format(msgs.locale, "pushMenuAhead", map[string]any{"count": count})
+}
+
+// CollapseAll says "Collapse All"
+// in the language the app shows.
+func CollapseAll() string { return In(i18n.Locale()).CollapseAll() }
+
+// CollapseAll says "Collapse All"
+// in the language of msgs.
+func (msgs Messages) CollapseAll() string {
+	return Catalog.Format(msgs.locale, "collapseAll", nil)
+}
+
+// ExpandAll says "Expand All"
+// in the language the app shows.
+func ExpandAll() string { return In(i18n.Locale()).ExpandAll() }
+
+// ExpandAll says "Expand All"
+// in the language of msgs.
+func (msgs Messages) ExpandAll() string {
+	return Catalog.Format(msgs.locale, "expandAll", nil)
+}
+
+// CopyLocalPath says "Copy Local Path: {path}"
+// in the language the app shows.
+func CopyLocalPath(path string) string { return In(i18n.Locale()).CopyLocalPath(path) }
+
+// CopyLocalPath says "Copy Local Path: {path}"
+// in the language of msgs.
+func (msgs Messages) CopyLocalPath(path string) string {
+	return Catalog.Format(msgs.locale, "copyLocalPath", map[string]any{"path": path})
+}
+
+// CopyRemoteURL says "Copy {remote} URL: {url}"
+// in the language the app shows.
+func CopyRemoteURL(remote string, url string) string {
+	return In(i18n.Locale()).CopyRemoteURL(remote, url)
+}
+
+// CopyRemoteURL says "Copy {remote} URL: {url}"
+// in the language of msgs.
+func (msgs Messages) CopyRemoteURL(remote string, url string) string {
+	return Catalog.Format(msgs.locale, "copyRemoteURL", map[string]any{"remote": remote, "url": url})
+}
+
+// CopyURL says "Copy URL"
+// in the language the app shows.
+func CopyURL() string { return In(i18n.Locale()).CopyURL() }
+
+// CopyURL says "Copy URL"
+// in the language of msgs.
+func (msgs Messages) CopyURL() string {
+	return Catalog.Format(msgs.locale, "copyURL", nil)
+}
+
+// CopiedText says "Copied {text}"
+// in the language the app shows.
+func CopiedText(text string) string { return In(i18n.Locale()).CopiedText(text) }
+
+// CopiedText says "Copied {text}"
+// in the language of msgs.
+func (msgs Messages) CopiedText(text string) string {
+	return Catalog.Format(msgs.locale, "copiedText", map[string]any{"text": text})
+}

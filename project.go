@@ -3,6 +3,7 @@ package main
 import (
 	"slices"
 
+	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
 	"mygit/internal/git"
@@ -26,9 +27,19 @@ func (a *app) projectButton(c *ui.Context) {
 	b.Menu(a.projectMenu).ContextMenu(a.projectMenu)
 }
 
-// projectMenu switches the window to a repository opened lately, or
-// closes it, as an IDE's project menu does.
+// projectMenu says where the repository is and where its remotes are, to
+// copy, among many projects (#32), and switches the window to a
+// repository opened lately, or closes it, as an IDE's project menu does.
 func (a *app) projectMenu(m *ui.Menu) {
+	if m.Item(loc.CopyLocalPath(a.repo.Dir)).Chosen() {
+		a.copyText(a.repo.Dir)
+	}
+	for _, r := range a.remoteURLs {
+		if m.Item(loc.CopyRemoteURL(r.Name, r.URL)).Chosen() {
+			a.copyText(r.URL)
+		}
+	}
+	m.Separator()
 	here := a.locations()
 	if slices.ContainsFunc(recentLocations(), func(l string) bool { return !slices.Contains(here, l) }) {
 		m.Submenu(loc.SwitchProject(), func(m *ui.Menu) {
@@ -39,6 +50,12 @@ func (a *app) projectMenu(m *ui.Menu) {
 	if m.Item(loc.CloseProject()).Chosen() {
 		a.closeProject()
 	}
+}
+
+// copyText puts text on the clipboard, saying so.
+func (a *app) copyText(text string) {
+	mygo.Clipboard.WriteText(text)
+	a.notice = loc.CopiedText(text)
 }
 
 // locations are where the window's repository is: its own, and its

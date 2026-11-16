@@ -58,7 +58,7 @@ func (r *Repo) RebaseSteps(ctx context.Context, base string) ([]RebaseStep, erro
 		if strings.Contains(f[1], " ") {
 			return nil, ErrMerges
 		}
-		steps = append(steps, RebaseStep{Action: Pick, Hash: f[0], Subject: f[2]})
+		steps = append(steps, RebaseStep{Action: Pick, Hash: f[0], Subject: oneLine(f[2])})
 	}
 	return steps, nil
 }

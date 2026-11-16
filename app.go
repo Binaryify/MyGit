@@ -52,6 +52,7 @@ type app struct {
 	status                   git.Status
 	branches                 []string
 	remotes                  []string // the remotes' branches
+	remoteURLs               []git.Remote
 	tags                     []string // the newest first
 	worktrees                []git.Worktree
 	super                    string // the superproject's working tree, of a submodule
@@ -299,6 +300,7 @@ type snapshot struct {
 	status   git.Status
 	branches []string
 	remotes  []string
+	urls     []git.Remote // the remotes, with their URLs
 	tags     []string
 	refs     string
 	op       git.Operation
@@ -325,6 +327,7 @@ func (a *app) refresh() {
 		rb, _ := a.repo.RemoteBranches(ctx)
 		tags, _ := a.repo.Tags(ctx)
 		stashes, _ := a.repo.Stashes(ctx)
+		urls, _ := a.repo.Remotes(ctx)
 		paths := make([]string, len(st.Changes))
 		for i, c := range st.Changes {
 			paths[i] = c.Path
@@ -333,7 +336,7 @@ func (a *app) refresh() {
 		if st.Upstream != "" && st.Ahead > 0 {
 			unpushed = a.repo.Unpushed(ctx)
 		}
-		return snapshot{st, b, rb, tags, a.repo.Refs(ctx), a.repo.Operation(ctx), stashes, a.repo.Generated(ctx, paths), unpushed}, nil
+		return snapshot{st, b, rb, urls, tags, a.repo.Refs(ctx), a.repo.Operation(ctx), stashes, a.repo.Generated(ctx, paths), unpushed}, nil
 	}, func(s snapshot, err error) {
 		a.refreshing = false
 		if a.again {
@@ -356,6 +359,7 @@ func (a *app) refresh() {
 		}
 		a.setStatus(s.status)
 		a.branches, a.remotes, a.tags, a.op, a.stashes = s.branches, s.remotes, s.tags, s.op, s.stashes
+		a.remoteURLs = s.urls
 		a.stashSel = min(a.stashSel, len(a.stashes)-1)
 		if reload {
 			a.refs = s.refs

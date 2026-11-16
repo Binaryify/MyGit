@@ -96,11 +96,21 @@ func parseCommit(record string) (Commit, bool) {
 		return Commit{}, false
 	}
 	sec, _ := strconv.ParseInt(f[3], 10, 64)
-	c := Commit{Hash: f[0], Author: f[2], Time: time.Unix(sec, 0), Subject: f[4], Refs: parseRefs(f[5])}
+	c := Commit{Hash: f[0], Author: f[2], Time: time.Unix(sec, 0), Subject: oneLine(f[4]), Refs: parseRefs(f[5])}
 	if f[1] != "" {
 		c.Parents = strings.Split(f[1], " ")
 	}
 	return c, true
+}
+
+// oneLine is a subject as %s gives it, on one line: git joins the lines
+// of the first paragraph at \n, but a message whose lines end at a lone
+// \r keeps them, which a row would draw over each other (#28).
+func oneLine(s string) string {
+	if !strings.ContainsAny(s, "\r\n") {
+		return s
+	}
+	return strings.Join(strings.FieldsFunc(s, func(r rune) bool { return r == '\r' || r == '\n' }), " ")
 }
 
 // parseRefs reads %D: "HEAD -> main, origin/main, tag: v1.0".

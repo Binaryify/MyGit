@@ -80,6 +80,9 @@ func (a *app) remotesView(c *ui.Context) {
 						ui.Text(c, r.Name).Bold()
 						ui.Text(c, r.URL).FontSize(11).TextColor(t.TextMuted).SingleLine().Tooltip(r.URL)
 					})
+					if iconButton(c, "copy", loc.CopyURL()) {
+						a.copyText(r.URL)
+					}
 					if ui.Button(c, loc.Fetch()).Disabled(a.busy != "").Clicked() {
 						a.run(loc.OpFetchRemote(r.Name), func(ctx context.Context) error { return a.repo.FetchRemote(ctx, r.Name) }, nil)
 					}

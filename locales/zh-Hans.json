@@ -575,5 +575,13 @@
   "clearRecent": "清除最近打开",
   "noRecent": "打开过的仓库会显示在这里",
   "closeProject": "关闭项目",
-  "switchProject": "切换项目"
+  "switchProject": "切换项目",
+  "pullBehind": "拉取 ↓{count}",
+  "pushMenuAhead": "推送 ↑{count}…",
+  "collapseAll": "全部收起",
+  "expandAll": "全部展开",
+  "copyLocalPath": "复制本地仓库路径：{path}",
+  "copyRemoteURL": "复制 {remote} 地址：{url}",
+  "copyURL": "复制地址",
+  "copiedText": "已复制 {text}"
 }
