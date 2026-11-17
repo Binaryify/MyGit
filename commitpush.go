@@ -55,28 +55,20 @@ func (a *app) commitAndPush() {
 	}, nil)
 }
 
-// commitButton is the Commit button, the width of the sidebar as VS
-// Code's, split: its arrow's menu commits and pushes at once.
-func (a *app) commitButton(c *ui.Context) {
+// commitButtons are Commit and Commit & Push side by side, half the
+// sidebar each, as IDEA's: committing and pushing at once is as often
+// what's wanted, so it shows rather than hides in a menu (#33).
+func (a *app) commitButtons(c *ui.Context) {
 	label := loc.Commit()
 	if n := len(a.staged); n > 0 {
 		label = loc.CommitFiles(n)
 	}
-	ui.Row(c).Gap(1).Children(func() {
-		if ui.PrimaryButton(c, label).Disabled(!a.canCommit()).Tooltip(shortcut("↩")).Grow(1).Clicked() {
+	ui.Row(c).Gap(8).Children(func() {
+		if ui.PrimaryButton(c, label).Disabled(!a.canCommit()).Tooltip(shortcut("↩")).Grow(1).Basis(0).Clicked() {
 			a.commit()
 		}
-		more := ui.PrimaryButton(c, "").Label(loc.MoreCommitActions()).Tooltip(loc.CommitAndPush() + "  " + shiftShortcut("↩")).
-			Disabled(a.busy != "").PaddingX(8)
-		more.Children(func() { ui.Icon(c, icons["chevron-down"]).Size(14, 14) })
-		more.Menu(a.commitActions)
+		if ui.Button(c, loc.CommitAndPush()).Disabled(!a.canCommitAndPush()).Tooltip(shiftShortcut("↩")).Grow(1).Basis(0).Clicked() {
+			a.commitAndPush()
+		}
 	})
-}
-
-// commitActions is the menu of the Commit button's arrow: committing and
-// pushing at once.
-func (a *app) commitActions(m *ui.Menu) {
-	if m.Item(loc.CommitAndPush()).Shortcut(ui.Cmd|ui.Shift, ui.KeyEnter).Disabled(!a.canCommitAndPush()).Chosen() {
-		a.commitAndPush()
-	}
 }

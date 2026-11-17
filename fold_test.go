@@ -121,3 +121,31 @@ func TestGeneratedChangeFolds(t *testing.T) {
 		t.Fatal("yarn.lock still folded once asked for")
 	}
 }
+
+// TestChangedGeneratedFileFolds shows a go.sum changed in the working tree,
+// as `go mod tidy` leaves it: it folds, with a patch and no diff yet, and
+// shows its diff, lines to stage and all, once asked for (#35).
+func TestChangedGeneratedFileFolds(t *testing.T) {
+	tt := newTester(t)
+	sum := "example.com/a v1.0.0 h1:abc=\nexample.com/b v1.2.0 h1:def=\nexample.com/c v1.3.0 h1:ghi=\n"
+	tt.commitFiles(t, "Deps", map[string]string{"go.sum": sum})
+	tidy := "example.com/a v1.0.0 h1:abc=\nexample.com/c v1.3.0 h1:ghi=\n"
+	if err := os.WriteFile(filepath.Join(tt.a.repo.Dir, "go.sum"), []byte(tidy), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	tt.a.refresh()
+	tt.settle()
+	ch, ok := find(tt.a.unstaged, "go.sum")
+	if !ok {
+		t.Fatalf("no go.sum among %v", tt.a.unstaged)
+	}
+	tt.a.showChange(ch, false)
+	tt.settle()
+	if d := tt.a.detail; !d.folded || d.diff != nil || d.patch == nil {
+		t.Fatalf("go.sum not folded: %+v", d)
+	}
+	tt.click(t, "显示 diff")
+	if d := tt.a.detail; d.folded || d.diff == nil || !d.diff.LineSelection {
+		t.Fatal("go.sum's diff not shown, its lines to stage, once asked for")
+	}
+}

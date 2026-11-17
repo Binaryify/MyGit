@@ -16,7 +16,6 @@
   "opDiscard": "Discard",
   "opCommit": "Commit",
   "commitAndPush": "Commit & Push",
-  "moreCommitActions": "More Commit Actions",
   "opCommitAndPush": "Commit and push",
   "errPushAfterCommit": "Committed, but the push failed: {error}",
   "@errPushAfterCommit": {
@@ -631,6 +630,8 @@
       }
     }
   },
+  "oneList": "One list of changes: a check stages, the file stays put, as IDEA's",
+  "newFiles": "New Files",
   "untrackedFiles": "Untracked Files",
   "stageUntracked": "Stage Untracked Files",
   "discardUntracked": "Delete Untracked Files",

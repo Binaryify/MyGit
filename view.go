@@ -236,10 +236,14 @@ func (a *app) changesPanel(c *ui.Context) {
 					a.generateMessage()
 				}
 			})
-			a.commitButton(c)
+			a.commitButtons(c)
 		})
 		if len(a.staged)+len(a.unstaged) > 0 || a.filter.query != "" {
 			a.filterField(c)
+		}
+		if prefs.OneList { // all in one, as IDEA's (#34)
+			ui.Column(c).Grow(1).Basis(0).Children(func() { a.changeSection(c, loc.Changes(), false, true) })
+			return
 		}
 		// Dragged as the room the staged changes need, few or thousands.
 		ui.SplitVerticalPercent(c.Key("changes"), &a.stagedPct, func() {
@@ -269,15 +273,22 @@ func (a *app) messageField(c *ui.Context) ui.Element {
 // workspace's repositories stack them.
 func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 	t := c.Theme()
-	changes := a.changes(staged)
+	changes, rows := a.listed(staged)
+	one := a.oneList(staged)
 	list, sel, row := &a.unstagedList, &a.unstagedSel, &a.unstagedRow
 	if staged {
 		list, sel, row = &a.stagedList, &a.stagedSel, &a.stagedRow
 	}
+	if one { // the change shown, of whichever list
+		at := -1
+		if ch := a.detail.change; ch != nil {
+			at = indexOf(changes, ch.Path)
+		}
+		sel = &at
+	}
 	// The list chooses rows; the app, changes, by their indices. A tree's
 	// rows are folders too, which are no change.
 	key := map[bool]string{true: "staged", false: "changes"}[staged]
-	rows := a.shownRows(staged)
 	items := rows
 	if items == nil {
 		items = make([]int, len(changes))
@@ -299,7 +310,7 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		if group < 0 {
 			return items
 		}
-		return slices.DeleteFunc(slices.Clone(items), func(i int) bool { return (changes[i].Work == '?') != inGroup(r) })
+		return slices.DeleteFunc(slices.Clone(items), func(i int) bool { return isNewFile(changes[i], staged) != inGroup(r) })
 	}
 	if tree != nil {
 		*row = treeRowOf(tree, *sel)
@@ -335,11 +346,12 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		}
 		if len(items) > 0 {
 			idle := a.busy == ""
-			if staged {
+			if (staged || one) && len(a.staged) > 0 {
 				if iconButton(c, "minus", loc.UnstageAll()) && idle {
 					a.unstageAll()
 				}
-			} else {
+			}
+			if !staged && len(a.unstaged) > 0 {
 				if iconButton(c, "undo", loc.DiscardAll()) && idle {
 					a.discardAll()
 				}
@@ -406,16 +418,19 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		if chosen {
 			row.TextColor(t.AccentText)
 		}
+		// In the one list, a change staged reads so once nothing more of it
+		// is in the working tree; partly, its box shows a dash.
+		on, partly := stagedIn(ch, staged), one && ch.Staged != 0 && ch.Work != 0
 		row.Children(func() {
 			label := loc.StageFile(ch.Path)
-			if staged {
+			if on {
 				label = loc.UnstageFile(ch.Path)
 			}
-			if changeCheckbox(c, staged, chosen, label) {
-				a.toggleStage(ch, staged)
+			if changeCheckbox(c, on, partly, chosen, label) {
+				a.toggleStage(ch, on)
 			}
 			code := ch.Work
-			if staged {
+			if staged || one && ch.Staged != 0 { // in the one list, as against HEAD
 				code = ch.Staged
 			}
 			name, dir := path.Base(ch.Path), path.Dir(ch.Path)
@@ -440,15 +455,15 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 				if iconButton(c, "open", loc.OpenFile()) {
 					a.openInEditor(a.repo.Path(ch.Path), 0)
 				}
-				if !staged && !ch.Conflict && iconButton(c, "undo", loc.DiscardChanges()) {
+				if !on && !ch.Conflict && iconButton(c, "undo", loc.DiscardChanges()) {
 					a.discard(ch)
 				}
 				icon, label := "plus", loc.Stage()
-				if staged {
+				if on {
 					icon, label = "minus", loc.Unstage()
 				}
 				if iconButton(c, icon, label) {
-					a.toggleStage(ch, staged)
+					a.toggleStage(ch, on)
 				}
 			}
 			letter := string(code)
@@ -459,10 +474,10 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 				Width(14).TextAlign(ui.Center).Tooltip(changeName(code))
 		})
 		row.ContextMenu(func(m *ui.Menu) {
-			if m.Item(map[bool]string{true: loc.Unstage(), false: loc.Stage()}[staged]).Chosen() {
-				a.toggleStage(ch, staged)
+			if m.Item(map[bool]string{true: loc.Unstage(), false: loc.Stage()}[on]).Chosen() {
+				a.toggleStage(ch, on)
 			}
-			if !staged && !ch.Conflict && m.Item(loc.DiscardMenu()).Chosen() {
+			if !on && !ch.Conflict && m.Item(loc.DiscardMenu()).Chosen() {
 				a.discard(ch)
 			}
 			m.Separator()
@@ -483,9 +498,10 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		a.toggleFolder(foldKey(*row), tree[*row].dir)
 	} else if l.Changed() && *row >= 0 && *row < n {
 		// One change is chosen at a time, of both lists.
-		a.chooseChange(at(*row), staged)
+		a.chooseListed(changes[at(*row)], staged)
 	} else if l.Submitted() && *row >= 0 && *row < n {
-		a.toggleStage(changes[at(*row)], staged)
+		ch := changes[at(*row)]
+		a.toggleStage(ch, stagedIn(ch, staged))
 	}
 	// The keys of VS Code's and Finder's lists: space stages or unstages
 	// the change chosen, delete discards it, asking first.
@@ -496,10 +512,10 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 			}
 		}
 	}
-	list.Handle.OnShortcut(c, 0, ui.KeySpace, chosen(func(ch git.Change) { a.toggleStage(ch, staged) }))
+	list.Handle.OnShortcut(c, 0, ui.KeySpace, chosen(func(ch git.Change) { a.toggleStage(ch, stagedIn(ch, staged)) }))
 	if !staged {
 		discard := chosen(func(ch git.Change) {
-			if !ch.Conflict {
+			if !ch.Conflict && ch.Work != 0 {
 				a.discard(ch)
 			}
 		})
@@ -517,7 +533,7 @@ func (a *app) untrackedRow(c *ui.Context, key string, changes []git.Change, item
 	row := ui.Row(c).Height(24).Padding(0, 8, 0, 6).Gap(6).AlignItems(ui.Center)
 	row.Children(func() {
 		ui.Icon(c, icons[icon]).Size(12, 12).TextColor(t.TextMuted)
-		ui.Text(c, loc.UntrackedFiles()).SingleLine().TextColor(t.TextMuted)
+		ui.Text(c, newFilesName()).SingleLine().TextColor(t.TextMuted)
 		ui.Badge(c, fmt.Sprint(len(items)))
 		ui.Box(c).Grow(1)
 	})
@@ -530,9 +546,11 @@ func (a *app) untrackedRow(c *ui.Context, key string, changes []git.Change, item
 	}
 	row.Children(func() {
 		if iconButton(c, "undo", loc.DiscardUntracked()) && a.busy == "" {
-			chosen := make([]git.Change, len(items))
-			for i, it := range items {
-				chosen[i] = changes[it]
+			var chosen []git.Change // the one list's added files are kept
+			for _, it := range items {
+				if changes[it].Work == '?' {
+					chosen = append(chosen, changes[it])
+				}
 			}
 			a.ask(loc.DiscardUntrackedTitle(), loc.DiscardUntrackedMessage(len(chosen)), loc.Discard(), func() {
 				a.run(loc.OpDiscard(), func(ctx context.Context) error { return a.discardChanges(ctx, chosen) }, nil)
@@ -548,9 +566,9 @@ func (a *app) untrackedRow(c *ui.Context, key string, changes []git.Change, item
 // when the change is staged, as the commit dialog of IDEA checks the
 // changes to commit, and a click stages it or unstages it. A chosen row
 // is white on the accent, so the box turns with it.
-func changeCheckbox(c *ui.Context, staged, chosen bool, label string) bool {
+func changeCheckbox(c *ui.Context, staged, partly, chosen bool, label string) bool {
 	t := c.Theme()
-	on := staged // the click flips it; the change itself is staged after
+	on := staged || partly // the click flips it; the change itself is staged after
 	box := ui.CheckboxBase(c, &on).Size(14, 14).Radius(3).Center().Shrink(0).
 		Label(label).Tooltip(label).Cursor(ui.CursorPointer)
 	mark, ink := t.Accent, t.AccentText
@@ -567,10 +585,22 @@ func changeCheckbox(c *ui.Context, staged, chosen bool, label string) bool {
 	}
 	box.Children(func() {
 		if on {
-			ui.Icon(c, icons["check"]).Size(10, 10).TextColor(ink)
+			ui.Icon(c, icons[map[bool]string{true: "minus", false: "check"}[partly]]).Size(10, 10).TextColor(ink)
 		}
 	})
 	return box.Changed()
+}
+
+// stagedIn tells whether a change of a section reads staged: all of the
+// staged changes do, and of the one list those with nothing more in the
+// working tree. The changes not staged otherwise all have some.
+func stagedIn(ch git.Change, staged bool) bool { return staged || ch.Work == 0 }
+
+// chooseListed chooses the change of a section's row, in the one list of
+// the staged changes when it reads staged, else of the working tree's.
+func (a *app) chooseListed(ch git.Change, staged bool) {
+	s := stagedIn(ch, staged)
+	a.chooseChange(indexOf(a.changes(s), ch.Path), s)
 }
 
 func (a *app) toggleStage(ch git.Change, staged bool) {

@@ -29,6 +29,7 @@ type settings struct {
 	Wrap           bool             `json:"wrap"`                     // the diffs wrap long lines rather than scrolling them sideways
 	FoldedBranches map[string]bool  `json:"foldedBranches,omitempty"` // the branches' popover's sections folded, by kind
 	TreeView       bool             `json:"treeView"`                 // the lists of files show as trees
+	OneList        bool             `json:"oneList,omitempty"`        // the changes, staged or not, in one list, as IDEA's (#34)
 	// The history's columns, as its menu sets them: the commit hash,
 	// tags and branches, and whether they show before the subject or
 	// after it.
@@ -216,6 +217,9 @@ func (d *settingsDialog) view(c *ui.Context, withShortcuts bool, closed func()) 
 				shown := !prefs.SidebarHidden
 				if ui.Toggle(c, &shown, loc.Sidebar()).Changed() {
 					prefs.SidebarHidden = !shown
+					prefs.save()
+				}
+				if ui.Toggle(c, &prefs.OneList, loc.OneList()).Changed() {
 					prefs.save()
 				}
 				ui.Text(c, loc.DiffSection()).Bold().TextColor(t.TextMuted)

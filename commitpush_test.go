@@ -69,11 +69,7 @@ func TestCommitAndPush(t *testing.T) {
 	if !tt.a.canCommitAndPush() {
 		t.Fatal("not with a model to write the message")
 	}
-	tt.click(t, loc.MoreCommitActions()) // the arrow of the Commit button
-	if err := tt.ChooseMenuItem(loc.CommitAndPush()); err != nil {
-		t.Fatalf("%v; menu %q", err, tt.Menu())
-	}
-	tt.settle()
+	tt.click(t, loc.CommitAndPush()) // beside Commit (#33)
 	if got := pushed(); got != "Write down what to remember" || tt.a.errMsg != "" {
 		t.Fatalf("written: pushed %q, error %q", got, tt.a.errMsg)
 	}

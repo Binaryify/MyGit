@@ -396,8 +396,12 @@ func (a *app) setStatus(st git.Status) {
 	}
 	// The diff of a change shows it as it is now, or nothing once it's gone.
 	if ch := a.detail.change; ch != nil {
-		if c, ok := find(a.changes(a.detail.staged), ch.Path); ok {
-			a.showChange(c, a.detail.staged)
+		staged := a.detail.staged
+		if c, ok := find(st.Changes, ch.Path); ok && prefs.OneList {
+			staged = stagedIn(c, false) // checked or not, it stays shown
+		}
+		if c, ok := find(a.changes(staged), ch.Path); ok {
+			a.showChange(c, staged)
 		} else if !a.unsaved() { // edits not saved stay, to save or give up
 			a.detail = detail{}
 		}
@@ -741,7 +745,8 @@ func (a *app) showChange(c git.Change, staged bool) {
 		a.detail.starts = r.starts
 		a.detail.folded, a.detail.binary, a.detail.disk = r.folded, r.binary, r.new
 		a.detail.change = &c
-		if r.patch != nil && patch.Partial(*r.patch) && !ws.Any() {
+		// A generated file folded has a patch but no diff yet (#35).
+		if r.diff != nil && r.patch != nil && patch.Partial(*r.patch) && !ws.Any() {
 			a.reviewLines(r.diff)
 		}
 		// The file opens at its first change, or its last when ⇧F7 came
@@ -934,7 +939,7 @@ func folderItems(changes []git.Change, items []int, dir string) []int {
 func folderChanges(changes []git.Change, items []int, dir string) []git.Change {
 	var out []git.Change
 	for _, i := range folderItems(changes, items, dir) {
-		if c := changes[i]; !c.Conflict {
+		if c := changes[i]; !c.Conflict && c.Work != 0 { // the one list's staged have none to discard
 			out = append(out, c)
 		}
 	}

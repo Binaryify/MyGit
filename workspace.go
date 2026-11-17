@@ -473,10 +473,10 @@ func (ws *workspace) section(c *ui.Context, i int, a *app) {
 				}
 			}
 		})
-		if len(a.staged) > 0 {
+		if len(a.staged) > 0 && !prefs.OneList {
 			a.changeSection(c, loc.Staged(), true, false)
 		}
-		if len(a.unstaged) > 0 {
+		if len(a.unstaged) > 0 || prefs.OneList && len(a.staged) > 0 {
 			a.changeSection(c, loc.Changes(), false, false)
 		}
 	})

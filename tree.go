@@ -113,21 +113,37 @@ func (a *app) changeRows(key string, changes []git.Change, items []int, staged b
 	}
 	tree = a.fileRows(key, tracked, path, 0)
 	group = len(tree)
-	tree = append(tree, treeRow{dir: untrackedGroup, name: loc.UntrackedFiles(), item: -1})
+	tree = append(tree, treeRow{dir: untrackedGroup, name: newFilesName(), item: -1})
 	if !a.folded(key, untrackedGroup) {
 		tree = append(tree, a.fileRows(key+untrackedGroup, untracked, path, 1)...)
 	}
 	return tree, len(tree), group, func(r int) int { return tree[r].item }
 }
 
+// isNewFile tells whether a change of a list shows under the untracked
+// files' group: an untracked file, of the changes not staged; in the one
+// list, a file added too, so that checking it leaves it there (#34).
+func isNewFile(c git.Change, staged bool) bool {
+	return !staged && (c.Work == '?' || prefs.OneList && c.Staged == 'A')
+}
+
+// newFilesName names the untracked files' group: in the one list, the new
+// files, added or not.
+func newFilesName() string {
+	if prefs.OneList {
+		return loc.NewFiles()
+	}
+	return loc.UntrackedFiles()
+}
+
 // splitUntracked parts the items of a list of changes into those tracked
-// and the untracked files, which only the changes not staged keep apart.
+// and the new files, which only the changes not staged keep apart.
 func splitUntracked(changes []git.Change, items []int, staged bool) (tracked, untracked []int) {
 	if staged {
 		return items, nil
 	}
 	for _, i := range items {
-		if changes[i].Work == '?' {
+		if isNewFile(changes[i], staged) {
 			untracked = append(untracked, i)
 		} else {
 			tracked = append(tracked, i)

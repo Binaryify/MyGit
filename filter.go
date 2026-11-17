@@ -17,6 +17,7 @@ type changeFilter struct {
 	// The rows of each list the filter shows, by the changes' indices,
 	// nil for all of them.
 	staged, unstaged []int
+	all              []int // of the one list's, the status's changes
 }
 
 // refilter works out the rows shown again, as the text or the changes
@@ -24,6 +25,7 @@ type changeFilter struct {
 func (a *app) refilter() {
 	f := &a.filter
 	f.staged, f.unstaged = matching(a.staged, f.query), matching(a.unstaged, f.query)
+	f.all = matching(a.status.Changes, f.query)
 }
 
 // matching are the indices of the changes whose paths have query in them,
@@ -49,6 +51,20 @@ func (a *app) shownRows(staged bool) []int {
 		return a.filter.staged
 	}
 	return a.filter.unstaged
+}
+
+// oneList tells whether the section of the changes not staged lists them
+// all, staged or not, as IDEA's commit window: a check stages a file and
+// leaves it where it is (#34).
+func (a *app) oneList(staged bool) bool { return prefs.OneList && !staged }
+
+// listed are the changes a section lists, and the rows of them the filter
+// shows, nil for all.
+func (a *app) listed(staged bool) ([]git.Change, []int) {
+	if a.oneList(staged) {
+		return a.status.Changes, a.filter.all
+	}
+	return a.changes(staged), a.shownRows(staged)
 }
 
 // shownPaths are what staging or unstaging all of a list acts on: the

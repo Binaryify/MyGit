@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.35
+
+- 修复点开改过的生成文件时闪退（[#35](https://github.com/Binaryify/MyGit/issues/35)，感谢 [@georgewuw](https://github.com/georgewuw) 的报告）：`go mod tidy` 之后点「更改」里的 `go.sum`（`yarn.lock`、`package-lock.json` 等同理）会直接退出。这类文件默认折叠，还没有对比内容，却仍被挂上了逐行暂存的按钮。所有系统都有这个问题，不只是 Windows
+- 「提交并推送」不再藏在下拉箭头里（[#33](https://github.com/Binaryify/MyGit/issues/33)，感谢 [@nuo010](https://github.com/nuo010) 的建议）：它和「提交」并排显示，各占一半宽度，点一下就能提交并推送，快捷键仍是 `⇧⌘↩`（Windows 上是 `Ctrl+Shift+Enter`）
+- 可以像 IDEA 一样只用一个更改列表（[#34](https://github.com/Binaryify/MyGit/issues/34)，感谢 [@nuo010](https://github.com/nuo010) 的建议）：打开「设置 → 外观 → 单一更改列表」后，不再分「暂存的更改」和「更改」两块，所有改动都在一个「更改」列表里。打勾就暂存、取消勾选就取消暂存，文件都留在原处；只暂存了一部分的文件显示为横杠。新文件不管是否已暂存，都收在「新文件」分组里。这个开关默认关闭，原来的两块布局不变
+
 ## 0.3.34
 
 以下改进都来自 [@nuo010](https://github.com/nuo010) 的反馈，感谢！

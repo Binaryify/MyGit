@@ -96,16 +96,6 @@ func (msgs Messages) CommitAndPush() string {
 	return Catalog.Format(msgs.locale, "commitAndPush", nil)
 }
 
-// MoreCommitActions says "More Commit Actions"
-// in the language the app shows.
-func MoreCommitActions() string { return In(i18n.Locale()).MoreCommitActions() }
-
-// MoreCommitActions says "More Commit Actions"
-// in the language of msgs.
-func (msgs Messages) MoreCommitActions() string {
-	return Catalog.Format(msgs.locale, "moreCommitActions", nil)
-}
-
 // OpCommitAndPush says "Commit and push"
 // in the language the app shows.
 func OpCommitAndPush() string { return In(i18n.Locale()).OpCommitAndPush() }
@@ -2270,6 +2260,26 @@ func ErrSaveAPIKey(error string) string { return In(i18n.Locale()).ErrSaveAPIKey
 // in the language of msgs.
 func (msgs Messages) ErrSaveAPIKey(error string) string {
 	return Catalog.Format(msgs.locale, "errSaveAPIKey", map[string]any{"error": error})
+}
+
+// OneList says "One list of changes: a check stages, the file stays put, as IDEA's"
+// in the language the app shows.
+func OneList() string { return In(i18n.Locale()).OneList() }
+
+// OneList says "One list of changes: a check stages, the file stays put, as IDEA's"
+// in the language of msgs.
+func (msgs Messages) OneList() string {
+	return Catalog.Format(msgs.locale, "oneList", nil)
+}
+
+// NewFiles says "New Files"
+// in the language the app shows.
+func NewFiles() string { return In(i18n.Locale()).NewFiles() }
+
+// NewFiles says "New Files"
+// in the language of msgs.
+func (msgs Messages) NewFiles() string {
+	return Catalog.Format(msgs.locale, "newFiles", nil)
 }
 
 // UntrackedFiles says "Untracked Files"
