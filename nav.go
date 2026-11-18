@@ -107,10 +107,8 @@ func (a *app) fileStep(dir int) func() {
 			return nil
 		}
 		return func() {
+			a.detail.enter = dir // its diff opens there once loaded
 			a.showFile(i)
-			if diff := a.detail.diff; diff != nil {
-				diff.GoToHunk(enteredHunk(len(diff.Hunks()), dir))
-			}
 		}
 	case d.change != nil:
 		at := indexOf(a.staged, d.change.Path)

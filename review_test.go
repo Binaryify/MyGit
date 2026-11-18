@@ -18,9 +18,9 @@ func TestCommentOnACommit(t *testing.T) {
 			a.showFile(i)
 		}
 	}
-	tt.Frame()
-	// The diff's lines are the patch's: its line 0 is the file's first
-	// line the hunk shows, and the comment numbers the file's.
+	tt.settle()
+	// The diff shows the whole file, as IntelliJ does, and the comment
+	// numbers the file's lines.
 	d := a.detail.diff
 	i, ok := a.toDiff(editor.DiffNew, 6)
 	if !ok {
@@ -52,7 +52,7 @@ func TestCommentOnACommit(t *testing.T) {
 			a.showFile(i)
 		}
 	}
-	tt.Frame()
+	tt.settle()
 	if len(a.detail.diff.Annotations) != 0 {
 		t.Error("the comment shows on another file")
 	}

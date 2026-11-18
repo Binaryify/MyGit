@@ -59,6 +59,9 @@ func (a *app) diffFile() (name, rev string, ok bool) {
 // patch's rather than whole files'.
 func (a *app) diffPatch() *editor.FilePatch {
 	d := a.detail
+	if d.patchWhole { // the whole files number their lines, not the patch
+		return nil
+	}
 	switch {
 	case d.commit != nil && d.fileSel >= 0 && d.fileSel < len(d.files):
 		return &d.files[d.fileSel]
