@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"path"
 	"slices"
 	"strings"
@@ -127,26 +128,31 @@ type detail struct {
 	change *git.Change
 	staged bool // the change's staged side, else its working tree's
 
-	files     []editor.FilePatch
-	fileSel   int
-	generated []bool      // of files, those people don't write
-	folded    bool        // the file shown is generated, its diff folded until asked
-	binary    bool        // the change shown is of a binary file, without lines
-	disk      string      // the file edited as it was on disk when its edits began, to save over it knowingly
-	images    *images     // the file shown is a picture: its sides, in place of a diff
-	pr        *pullReview // the pull request whose changes the commit is
-	diff      *editor.DiffState
-	starts    []int             // the lines of the diff's new side its hunks start at, for the minimap's bubble
-	merge     *merger           // a file in conflict's
-	blame     *blame            // a file's, shown in place of the diff
-	load      patchLoad         // reads the commit's patch
-	message   string            // the commit's whole message
-	parent    int               // the merge's parent its change is against
-	raw       string            // the change's patch as git printed it
-	whole     bool              // the change shows whole files, the new one to edit
-	patch     *editor.FilePatch // the change's, when its lines can be chosen
-	gen       int
-	loading   bool
+	files      []editor.FilePatch
+	fileSel    int
+	generated  []bool      // of files, those people don't write
+	folded     bool        // the file shown is generated, its diff folded until asked
+	binary     bool        // the change shown is of a binary file, without lines
+	disk       string      // the file edited as it was on disk when its edits began, to save over it knowingly
+	images     *images     // the file shown is a picture: its sides, in place of a diff
+	pr         *pullReview // the pull request whose changes the commit is
+	diff       *editor.DiffState
+	starts     []int                // the lines of the diff's new side its hunks start at, for the minimap's bubble
+	merge      *merger              // a file in conflict's
+	blame      *blame               // a file's, shown in place of the diff
+	load       patchLoad            // reads the commit's patch
+	message    string               // the commit's whole message
+	parent     int                  // the merge's parent its change is against
+	raw        string               // the change's patch as git printed it
+	whole      bool                 // the change shows whole files, the new one to edit
+	patch      *editor.FilePatch    // the change's, when its lines can be chosen
+	patchWhole bool                 // the diff shows the whole files, a patch's changes on them
+	fold       bool                 // the whole files fold away from the changes, as the file is long
+	reveal     bool                 // the first change waits to be scrolled into view
+	sides      [2]textSide          // where the diff's texts come from: old first, then new
+	texts      map[string][2]string // the texts of the files' sides, read with the patch
+	gen        int
+	loading    bool
 	// F7's past the diff's last change (1) or ⇧F7's before its first (-1),
 	// with the caret it left, saying the next goes on to another file.
 	edge, edgeAt int
@@ -505,7 +511,11 @@ func (a *app) showCommit(i int) {
 		return
 	}
 	c := a.commits[i]
-	a.showPatch(c, func(ctx context.Context, ws git.Whitespace) (string, error) { return a.repo.Show(ctx, c.Hash, ws) })
+	old := textSide{}
+	if len(c.Parents) > 0 {
+		old = revSide(c.Parents[0])
+	}
+	a.showPatch(c, old, revSide(c.Hash), func(ctx context.Context, ws git.Whitespace) (string, error) { return a.repo.Show(ctx, c.Hash, ws) })
 }
 
 // showCompare shows the change from one revision to another, the working
@@ -515,7 +525,11 @@ func (a *app) showCompare(label, from, to string) {
 		return
 	}
 	c := git.Commit{Hash: from + ".." + to, Subject: label}
-	a.showPatch(c, func(ctx context.Context, ws git.Whitespace) (string, error) {
+	now := diskSide
+	if to != "" {
+		now = revSide(to)
+	}
+	a.showPatch(c, revSide(from), now, func(ctx context.Context, ws git.Whitespace) (string, error) {
 		if to == "" {
 			return a.repo.DiffWorktree(ctx, from, ws)
 		}
@@ -532,7 +546,7 @@ func (a *app) showStash(s git.Stash) {
 		return
 	}
 	c := git.Commit{Hash: s.Hash, Time: s.Time, Subject: s.Subject, Refs: []string{s.Ref}}
-	a.showPatch(c, func(ctx context.Context, ws git.Whitespace) (string, error) { return a.repo.StashShow(ctx, s.Ref, ws) })
+	a.showPatch(c, revSide(s.Ref+"^1"), revSide(s.Ref), func(ctx context.Context, ws git.Whitespace) (string, error) { return a.repo.StashShow(ctx, s.Ref, ws) })
 }
 
 // patchLoad reads a commit's patch, leaving out the whitespace changes ws
@@ -540,12 +554,13 @@ func (a *app) showStash(s git.Stash) {
 type patchLoad func(ctx context.Context, ws git.Whitespace) (string, error)
 
 // showPatch loads the files of a commit's patch, which load reads, and
-// its message.
-func (a *app) showPatch(c git.Commit, load patchLoad) {
+// its message. old and now say where the texts of its diffs' sides come
+// from, for the files it shows whole.
+func (a *app) showPatch(c git.Commit, old, now textSide, load patchLoad) {
 	if a.detail.commit != nil && a.detail.commit.Hash == c.Hash && a.detail.blame == nil {
 		return
 	}
-	a.detail = detail{commit: &c, gen: a.detail.gen + 1, loading: true}
+	a.detail = detail{commit: &c, gen: a.detail.gen + 1, loading: true, sides: [2]textSide{old, now}}
 	a.loadPatch(load, "")
 }
 
@@ -553,7 +568,8 @@ func (a *app) showPatch(c git.Commit, load patchLoad) {
 func (a *app) showParent(i int) {
 	c := *a.detail.commit
 	parent := c.Parents[i]
-	a.detail = detail{commit: &c, parent: i, message: a.detail.message, gen: a.detail.gen + 1, loading: true}
+	a.detail = detail{commit: &c, parent: i, message: a.detail.message, gen: a.detail.gen + 1, loading: true,
+		sides: [2]textSide{revSide(parent), revSide(c.Hash)}}
 	a.loadPatch(func(ctx context.Context, ws git.Whitespace) (string, error) {
 		return a.repo.DiffFrom(ctx, parent, c.Hash, ws)
 	}, "")
@@ -563,11 +579,13 @@ func (a *app) showParent(i int) {
 // keep when it has it.
 func (a *app) loadPatch(load patchLoad, keep string) {
 	gen, hash, ws := a.detail.gen, a.detail.commit.Hash, prefs.whitespace()
+	old, now := a.detail.sides[0], a.detail.sides[1]
 	a.detail.load = load
 	type result struct {
 		files   []editor.FilePatch
 		message string
 		marked  map[string]bool
+		texts   map[string][2]string
 	}
 	work(a, func(ctx context.Context) (result, error) {
 		out, err := load(ctx, ws)
@@ -583,7 +601,14 @@ func (a *app) loadPatch(load patchLoad, keep string) {
 		for i, f := range files {
 			names[i] = fileName(f)
 		}
-		return result{files, msg, a.repo.Generated(ctx, names)}, err
+		marked := a.repo.Generated(ctx, names)
+		// The files' texts here, with the patch: choosing one shows it at
+		// once, rather than waiting for git to start again.
+		texts := map[string][2]string{}
+		if !ws.Any() {
+			texts = a.prefetch(ctx, files, old, now)
+		}
+		return result{files, msg, marked, texts}, err
 	}, func(r result, err error) {
 		if gen != a.detail.gen {
 			return
@@ -593,7 +618,7 @@ func (a *app) loadPatch(load patchLoad, keep string) {
 			a.errMsg = err.Error()
 			return
 		}
-		a.detail.files, a.detail.message = r.files, r.message
+		a.detail.files, a.detail.message, a.detail.texts = r.files, r.message, r.texts
 		a.detail.generated = make([]bool, len(r.files))
 		for i := range r.files {
 			a.detail.generated[i] = isGenerated(fileName(r.files[i]), r.marked, &r.files[i], nil)
@@ -616,14 +641,109 @@ func (a *app) showFile(i int) {
 	d := &a.detail
 	d.fileSel = i
 	d.folded = d.generated[i] && !a.unfolded[foldKey(d.commit.Hash, fileName(d.files[i]))]
-	d.diff, d.images, d.starts = nil, nil, nil
-	if f := d.files[i]; isImage(fileName(f)) {
-		d.folded = false
+	d.diff, d.images, d.starts, d.patchWhole = nil, nil, nil, false
+	f := d.files[i]
+	if isImage(fileName(f)) {
+		d.folded, d.enter = false, 0 // no changes to step into
 		a.loadImages(a.commitSides(f.OldName, f.NewName))
 	} else if !d.folded {
-		d.diff = patchDiff(f)
-		d.starts = patchStarts(f)
+		a.showWhole(f, i)
+	} else {
+		d.enter = 0 // folded, it has no diff to open at a change
 	}
+}
+
+// showWhole shows the diff of a file of the commit shown: its patch over
+// the whole files when they can be read, as IntelliJ shows them, else its
+// hunks alone, as git prints them. The texts read with the patch show it
+// at once; others are read here, on a worker.
+func (a *app) showWhole(f editor.FilePatch, i int) {
+	name := fileName(f)
+	if texts, ok := a.detail.texts[name]; ok {
+		if d := fullDiff(f, texts[0], texts[1]); d != nil {
+			a.detail.diff, a.detail.patchWhole = d, true
+			a.foldWhole(d)
+			a.openAtChange(d)
+			return
+		}
+	}
+	gen, sel, old, now := a.detail.gen, i, a.detail.sides[0], a.detail.sides[1]
+	a.detail.loading = true
+	type result struct {
+		diff  *editor.DiffState
+		texts [2]string
+	}
+	work(a, func(ctx context.Context) (result, error) {
+		d, texts, _ := a.patchFull(ctx, f, old, now)
+		return result{d, texts}, nil
+	}, func(r result, err error) {
+		if gen != a.detail.gen || sel != a.detail.fileSel {
+			return
+		}
+		a.detail.loading = false
+		if r.diff != nil {
+			if a.detail.texts == nil {
+				a.detail.texts = map[string][2]string{}
+			}
+			a.detail.texts[name] = r.texts
+			a.detail.diff, a.detail.patchWhole = r.diff, true
+			a.foldWhole(r.diff)
+			a.openAtChange(r.diff)
+			return
+		}
+		if sel < len(a.detail.files) {
+			d := patchDiff(a.detail.files[sel])
+			a.detail.diff = d
+			a.detail.starts = patchStarts(a.detail.files[sel])
+			a.openAtChange(d)
+		}
+	})
+}
+
+// openAtChange puts the caret at the change the file shown opens at, when
+// stepped into going on or back: its first, or its last. A file chosen
+// alone keeps its caret where it was, its first change scrolled into view
+// instead, as no step of the changes is under way.
+func (a *app) openAtChange(d *editor.DiffState) {
+	if a.detail.enter != 0 {
+		if n := len(d.Hunks()); n > 0 {
+			d.GoToHunk(enteredHunk(n, a.detail.enter))
+		}
+		a.detail.enter = 0
+		return
+	}
+	a.detail.reveal = true
+}
+
+// revealChange scrolls the first change of the diff shown into view, once
+// the frame has laid its lines out, as a file shows whole from its top.
+func (a *app) revealChange() {
+	d := &a.detail
+	if !d.reveal || d.diff == nil {
+		return
+	}
+	hunks := d.diff.Hunks()
+	if len(hunks) == 0 {
+		d.reveal = false
+		return
+	}
+	if d.diff.ViewportHeight() <= 0 { // not laid out yet
+		return
+	}
+	d.reveal = false
+	top := d.diff.LineTop(editor.DiffNew, hunks[0].NewStart)
+	lh := d.diff.LineTop(editor.DiffNew, hunks[0].NewStart+1) - top
+	if top+lh <= d.diff.ViewportHeight() {
+		return // already in view
+	}
+	d.diff.SetScrollY(max(top-2*lh, 0)) // a couple of lines below the top
+}
+
+// foldWhole folds the unchanged lines of whole files away from their
+// changes, as a file long enough to read a screen at a time is opened.
+func (a *app) foldWhole(d *editor.DiffState) {
+	d.ExpandUnchanged = max(d.Old.LineCount(), d.New.LineCount()) <= wholeLines
+	a.detail.fold = !d.ExpandUnchanged
 }
 
 // unfold shows the diff of the generated file shown.
@@ -673,12 +793,22 @@ func (a *app) showChange(c git.Change, staged bool) {
 	// place and its patch, all of it, can be cut for staging. The one list
 	// shows every file whole against HEAD, as IDEA's commit window (#37).
 	whole := !staged && !ws.Any() && (prefs.OneList || c.Work == 'M')
+	// Where the patch's sides come from, for the file shown whole.
+	old, now := indexSide, diskSide
+	switch {
+	case prefs.OneList: // against HEAD, staged or not
+		old = revSide("HEAD")
+	case staged:
+		old, now = revSide("HEAD"), indexSide
+	}
 	type result struct {
 		raw      string
 		patch    *editor.FilePatch
 		old, new string // the whole texts
 		diff     *editor.DiffState
-		starts   []int // the lines its hunks start at, for the minimap's bubble
+		whole    bool      // the diff shows the whole files, a patch's changes on them
+		texts    [2]string // the texts the whole files were made of
+		starts   []int     // the lines its hunks start at, for the minimap's bubble
 		folded   bool
 		binary   bool
 	}
@@ -695,6 +825,21 @@ func (a *app) showChange(c git.Change, staged bool) {
 				return result{raw: text, folded: true}, nil
 			}
 			return result{raw: text, diff: textDiff(c.Path, "", text)}, nil
+		}
+		// The texts of its sides read beside its patch, rather than after
+		// it: one call of git each, and the window waits for the longer.
+		read := make(chan [2]string, 1)
+		readSides := func() {
+			oldText, newText, err := a.sideTexts(ctx, old, now, c.Path, c.Path)
+			if err != nil {
+				read <- [2]string{}
+				return
+			}
+			read <- [2]string{oldText, newText}
+		}
+		reading := !whole
+		if reading {
+			go readSides()
 		}
 		var out string
 		var err error
@@ -738,9 +883,25 @@ func (a *app) showChange(c git.Change, staged bool) {
 			// The whole file, as it is edited, unless folded as asked: folding
 			// the lines around the changes moves them as a change is typed away.
 			r.diff.ExpandUnchanged = !prefs.FoldUnchanged
-		} else {
+		} else if !patch.Partial(files[0]) || patchTooLong(files[0]) {
 			r.diff = patchDiff(files[0])
 			r.starts = patchStarts(files[0])
+		} else {
+			if !reading { // shown whole until its patch said otherwise
+				readSides()
+			}
+			texts := <-read
+			var d *editor.DiffState
+			if len(texts[0])+len(texts[1]) <= wholeMaxByte {
+				d = fullDiff(files[0], texts[0], texts[1])
+			}
+			if d == nil {
+				d = patchDiff(files[0])
+				r.starts = patchStarts(files[0])
+			} else {
+				r.whole, r.texts = true, texts
+			}
+			r.diff = d
 		}
 		return r, nil
 	}, func(r result, err error) {
@@ -770,6 +931,11 @@ func (a *app) showChange(c git.Change, staged bool) {
 			}
 		}
 		a.detail.raw, a.detail.patch, a.detail.diff, a.detail.whole = r.raw, r.patch, r.diff, whole && r.diff != nil
+		a.detail.patchWhole = r.whole && r.diff != nil
+		if a.detail.patchWhole {
+			a.foldWhole(r.diff)
+			a.detail.texts = map[string][2]string{c.Path: r.texts}
+		}
 		a.detail.starts = r.starts
 		a.detail.folded, a.detail.binary, a.detail.disk = r.folded, r.binary, r.new
 		a.detail.change = &c
@@ -818,6 +984,212 @@ func (a *app) save(over bool) {
 	a.detail.disk = text
 	d.diff.New.MarkSaved()
 	a.refresh()
+}
+
+// wholeLines is the most lines of a side of a diff shown whole at once;
+// longer files fold their unchanged lines away from the changes as they
+// open, and patchFull leaves the longest ones to their hunks alone.
+const (
+	wholeLines   = 2000
+	wholeMaxLine = 50000
+	wholeMaxByte = 8 << 20
+	// wholeMaxFiles and wholeMaxCache are the most files of a commit whose
+	// texts are kept, and the most bytes of them: a commit of thousands of
+	// files keeps none, reading the chosen one alone.
+	wholeMaxFiles = 400
+	wholeMaxCache = 24 << 20
+)
+
+// sideKind says where the text of a side of a diff comes from.
+type sideKind int
+
+const (
+	sideNone  sideKind = iota // no text: a file added or deleted
+	sideRev                   // a revision's blob, its rev names it
+	sideIndex                 // the index's version of the file
+	sideDisk                  // the file on disk
+)
+
+// side is where the text of a side of a diff comes from.
+type textSide struct {
+	kind sideKind
+	rev  string
+}
+
+func revSide(rev string) textSide { return textSide{kind: sideRev, rev: rev} }
+
+var (
+	indexSide = textSide{kind: sideIndex}
+	diskSide  = textSide{kind: sideDisk}
+)
+
+// patchFull shows a patch over the whole files of its sides, as IntelliJ
+// shows a change, and whether it could: a patch whose sides are too long,
+// whose files are not changed in place, or which does not make the new one
+// from the old, as one leaving whitespace out may not, is shown by its
+// hunks alone.
+func (a *app) patchFull(ctx context.Context, f editor.FilePatch, old, now textSide) (*editor.DiffState, [2]string, bool) {
+	var texts [2]string
+	if !patch.Partial(f) || patchTooLong(f) {
+		return nil, texts, false
+	}
+	oldText, newText, err := a.sideTexts(ctx, old, now, f.OldName, f.NewName)
+	if err != nil || len(oldText)+len(newText) > wholeMaxByte {
+		return nil, texts, false
+	}
+	texts[0], texts[1] = oldText, newText
+	d := fullDiff(f, oldText, newText)
+	return d, texts, d != nil // the patch may not make the new file from the old
+}
+
+// fullDiff shows a patch over the whole files it makes the new one from,
+// nil when it does not, as one leaving whitespace out may not.
+func fullDiff(f editor.FilePatch, oldText, newText string) *editor.DiffState {
+	d := &editor.DiffState{Layout: diffLayout(), Wrap: prefs.Wrap, KeepScrollbars: true}
+	if err := d.SetPatchFiles(f, oldText, newText); err != nil {
+		return nil
+	}
+	return d
+}
+
+// prefetch reads the texts of the files of a commit's patch, in one call of
+// git, so that choosing a file shows it at once: a file shown by its hunks
+// alone, or one past the room kept for them, keeps none.
+func (a *app) prefetch(ctx context.Context, files []editor.FilePatch, old, now textSide) map[string][2]string {
+	texts := make(map[string][2]string, len(files))
+	var specs []string
+	var at []int // the file of each spec, and its side
+	for i, f := range files {
+		if !patch.Partial(f) || patchTooLong(f) {
+			continue
+		}
+		for side, s := range [2]textSide{old, now} {
+			switch s.kind {
+			case sideRev:
+				specs = append(specs, s.rev+":"+f.NewName)
+			case sideIndex:
+				specs = append(specs, ":"+f.NewName)
+			default:
+				continue
+			}
+			at = append(at, i*2+side)
+		}
+	}
+	if len(specs) == 0 {
+		return texts
+	}
+	if len(files) > wholeMaxFiles {
+		return texts // too many to keep the texts of, they read one at a time
+	}
+	keep, kept := specs, make([]int, len(specs))
+	for j := range specs {
+		kept[j] = j
+	}
+	// A commit of many files says their sizes before they are read, so that
+	// a file of megabytes is not pulled in with the rest; a few files read
+	// what they are, the room kept for them capping what is used.
+	if len(specs) > 20 {
+		sizes, err := a.repo.BlobSizes(ctx, specs)
+		if err != nil {
+			return texts
+		}
+		keep, kept = nil, nil
+		size := int64(0)
+		for j, n := range sizes {
+			if n < 0 || size+n > wholeMaxCache {
+				continue
+			}
+			size += n
+			keep = append(keep, specs[j])
+			kept = append(kept, j)
+		}
+		if len(keep) == 0 {
+			return texts
+		}
+	}
+	blobs, err := a.repo.Blobs(ctx, keep)
+	if err != nil || len(blobs) != len(keep) {
+		return texts // read one at a time, as before
+	}
+	for j, b := range blobs {
+		if b == nil {
+			continue
+		}
+		k := at[kept[j]]
+		name := files[k/2].NewName
+		t := texts[name]
+		t[k%2] = string(b)
+		texts[name] = t
+	}
+	return texts
+}
+
+// patchTooLong tells whether a patch's hunks say their files are too long
+// to show whole, read or not.
+func patchTooLong(f editor.FilePatch) bool {
+	for _, h := range f.Hunks {
+		if h.OldStart+h.OldLines > wholeMaxLine || h.NewStart+h.NewLines > wholeMaxLine {
+			return true
+		}
+	}
+	return false
+}
+
+// sideTexts is the texts of the two sides of a diff: a side with no file
+// has none. Those git holds are read in one call of it, as reading the two
+// of a file one call each waits twice as long for git to start.
+func (a *app) sideTexts(ctx context.Context, old, now textSide, oldPath, newPath string) (string, string, error) {
+	var specs []string
+	at := [2]int{-1, -1}
+	add := func(i int, s textSide, path string) {
+		if path == "" {
+			return
+		}
+		switch s.kind {
+		case sideRev:
+			at[i] = len(specs)
+			specs = append(specs, s.rev+":"+path)
+		case sideIndex:
+			at[i] = len(specs)
+			specs = append(specs, ":"+path)
+		}
+	}
+	add(0, old, oldPath)
+	add(1, now, newPath)
+	texts := [2]string{}
+	if len(specs) > 0 {
+		blobs, err := a.repo.Blobs(ctx, specs)
+		if err != nil {
+			return "", "", err
+		}
+		for i, j := range at {
+			if j < 0 {
+				continue
+			}
+			if j >= len(blobs) || blobs[j] == nil {
+				return "", "", errors.New("no such file in that revision")
+			}
+			texts[i] = string(blobs[j])
+		}
+	}
+	for i, s := range [2]textSide{old, now} {
+		if s.kind != sideDisk {
+			continue
+		}
+		path := oldPath
+		if i == 1 {
+			path = newPath
+		}
+		if path == "" {
+			continue
+		}
+		text, err := a.repo.ReadFile(ctx, path)
+		if err != nil {
+			return "", "", err
+		}
+		texts[i] = text
+	}
+	return texts[0], texts[1], nil
 }
 
 func patchDiff(p editor.FilePatch) *editor.DiffState {

@@ -793,6 +793,9 @@ func (a *app) detailView(c *ui.Context) {
 				ui.Badge(c, side)
 				ui.Box(c).Grow(1)
 				a.changeNav(c)
+				if d.patchWhole && d.diff != nil {
+					a.foldToggle(c)
+				}
 				if d.whole && d.diff != nil && ui.Toggle(c, &prefs.FoldUnchanged, loc.FoldUnchanged()).Changed() {
 					d.diff.ExpandUnchanged = !prefs.FoldUnchanged
 					prefs.save()
@@ -821,6 +824,7 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 			ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
 				ui.Text(c, loc.FilesDiffer(len(d.files))).TextColor(t.TextMuted)
 				ui.Box(c).Grow(1)
+				a.foldToggle(c)
 				a.whitespaceMenu(c)
 				if d.diff != nil {
 					wrapToggle(c, d.diff)
@@ -834,6 +838,7 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 			ui.Text(c, cm.Time.Format("2006-01-02 15:04")).TextColor(t.TextMuted)
 			ui.Box(c).Grow(1)
 			a.changeNav(c)
+			a.foldToggle(c)
 			a.whitespaceMenu(c)
 			if d.diff != nil {
 				wrapToggle(c, d.diff)
@@ -853,6 +858,18 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 			ui.Text(c, body).TextColor(t.TextMuted).Wrap().MaxLines(6)
 		}
 	})
+}
+
+// foldToggle folds the unchanged lines of the whole files shown away from
+// their changes, and shows them all again, as IntelliJ's button does.
+func (a *app) foldToggle(c *ui.Context) {
+	d := &a.detail
+	if !d.patchWhole || d.diff == nil {
+		return
+	}
+	if ui.Toggle(c, &d.fold, loc.FoldUnchanged()).Changed() {
+		d.diff.ExpandUnchanged = !d.fold
+	}
 }
 
 // whitespaceMenu is a pop-up button over the diff, as IntelliJ's, naming
@@ -1083,6 +1100,7 @@ func (a *app) diffView(c *ui.Context) {
 			}
 			overview(c, d.diff, row, d.starts, func(i int) int { return a.fileLine(editor.DiffNew, i) })
 		})
+		a.revealChange()
 	default:
 		ui.Column(c).Fill().Center().Children(func() { ui.Text(c, loc.NoDiff()).TextColor(t.TextMuted) })
 	}

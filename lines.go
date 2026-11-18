@@ -50,7 +50,7 @@ const (
 // files, or of the patch's own texts.
 func (a *app) lineMap() (old, new func(i int) (patch.Line, bool)) {
 	p := *a.detail.patch
-	if a.detail.whole {
+	if a.detail.whole || a.detail.patchWhole {
 		om, nm := patch.FileLines(p)
 		look := func(m map[int]patch.Line) func(int) (patch.Line, bool) {
 			return func(i int) (patch.Line, bool) { l, ok := m[i]; return l, ok }

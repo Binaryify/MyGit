@@ -1,7 +1,10 @@
 package git
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"fmt"
 	"slices"
 	"strconv"
 	"strings"
@@ -384,4 +387,82 @@ func (r *Repo) Generated(ctx context.Context, paths []string) map[string]bool {
 func (r *Repo) Blob(ctx context.Context, rev, path string) ([]byte, error) {
 	out, err := r.Git(ctx, "cat-file", "blob", rev+":"+path)
 	return []byte(out), err
+}
+
+// Blobs reads files' contents at revisions, named as git cat-file names
+// them ("rev:path", ":path" for the index's version), in one call of git:
+// nil for those git has none of.
+func (r *Repo) Blobs(ctx context.Context, specs []string) ([][]byte, error) {
+	var stdout, stderr bytes.Buffer
+	in := strings.NewReader(strings.Join(specs, "\n") + "\n")
+	if err := r.run.Exec(ctx, r.Dir, env, in, &stdout, &stderr, args([]string{"cat-file", "--batch"})...); err != nil {
+		if msg := strings.TrimSpace(stderr.String()); msg != "" {
+			return nil, errors.New(msg)
+		}
+		return nil, err
+	}
+	return parseBlobs(stdout.Bytes(), len(specs))
+}
+
+// BlobSizes is the sizes of the objects Blobs reads, -1 for those git has
+// none of, in one call of it: what to read is chosen by its size before it
+// is read.
+func (r *Repo) BlobSizes(ctx context.Context, specs []string) ([]int64, error) {
+	var stdout, stderr bytes.Buffer
+	in := strings.NewReader(strings.Join(specs, "\n") + "\n")
+	if err := r.run.Exec(ctx, r.Dir, env, in, &stdout, &stderr, args([]string{"cat-file", "--batch-check"})...); err != nil {
+		if msg := strings.TrimSpace(stderr.String()); msg != "" {
+			return nil, errors.New(msg)
+		}
+		return nil, err
+	}
+	sizes := make([]int64, 0, len(specs))
+	for _, line := range strings.Split(strings.TrimSuffix(stdout.String(), "\n"), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) == 2 && fields[1] == "missing" {
+			sizes = append(sizes, -1)
+			continue
+		}
+		if len(fields) != 3 {
+			return nil, fmt.Errorf("cat-file: %q", line)
+		}
+		size, err := strconv.ParseInt(fields[2], 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("cat-file: %q", line)
+		}
+		sizes = append(sizes, size)
+	}
+	if len(sizes) != len(specs) {
+		return nil, fmt.Errorf("cat-file: %d sizes for %d names", len(sizes), len(specs))
+	}
+	return sizes, nil
+}
+
+// parseBlobs reads what cat-file --batch printed for n names: a line of the
+// object's hash, kind and size, its content, then the next.
+func parseBlobs(b []byte, n int) ([][]byte, error) {
+	out := make([][]byte, 0, n)
+	for range n {
+		i := bytes.IndexByte(b, '\n')
+		if i < 0 {
+			return out, errors.New("cat-file: the output ended before its names did")
+		}
+		head := string(b[:i])
+		b = b[i+1:]
+		fields := strings.Fields(head)
+		if len(fields) == 2 && fields[1] == "missing" {
+			out = append(out, nil)
+			continue
+		}
+		if len(fields) != 3 {
+			return out, fmt.Errorf("cat-file: %q", head)
+		}
+		size, err := strconv.Atoi(fields[2])
+		if err != nil || size < 0 || size > len(b) {
+			return out, fmt.Errorf("cat-file: %q", head)
+		}
+		out = append(out, b[:size])
+		b = b[min(size+1, len(b)):] // the newline after the content
+	}
+	return out, nil
 }
