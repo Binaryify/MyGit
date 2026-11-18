@@ -123,6 +123,26 @@ func TestWhitespaceDiffShowsHunks(t *testing.T) {
 	}
 }
 
+// The texts of a commit's files come with its patch, in one call of git,
+// so that choosing a file shows it at once.
+func TestCommitKeepsTheFilesTexts(t *testing.T) {
+	tt := newTester(t)
+	tt.commitFiles(t, "Two files", map[string]string{"a.txt": linesOf(40), "b.txt": linesOf(60)})
+	tt.commitFiles(t, "Two files", map[string]string{"a.txt": linesOf(40, 5), "b.txt": linesOf(60, 50)})
+	tt.click(t, "Two files")
+	d := tt.a.detail
+	if len(d.texts) != 2 {
+		t.Fatalf("%d files' texts kept, want 2: %v", len(d.texts), d.texts)
+	}
+	for i, f := range d.files {
+		name := fileName(f)
+		tt.a.showFile(i)
+		if tt.a.detail.loading || tt.a.detail.diff == nil || !tt.a.detail.patchWhole {
+			t.Fatalf("%s waits for git: loading %v", name, tt.a.detail.loading)
+		}
+	}
+}
+
 // A staged change shows whole too, its lines still staged one at a time.
 func TestStagedChangeShowsWholeFile(t *testing.T) {
 	tt := newTester(t)
