@@ -63,6 +63,7 @@ type app struct {
 	leftTab                  int // the left panel's: changes or the stash
 	staged                   []git.Change
 	unstaged                 []git.Change
+	chosen                   map[string]bool // the one list's changes to commit, by path; not set, the default (#37)
 	genMarked                map[string]bool // the changes .gitattributes marks generated
 	stagedList, unstagedList ui.ListState
 	stagedSel, unstagedSel   int
@@ -155,7 +156,7 @@ type detail struct {
 func newApp(repo *git.Repo) *app {
 	return &app{repo: repo, scope: git.Scope{Ref: "HEAD"}, online: make(chan struct{}, 1), logSel: -1, stagedSel: -1, unstagedSel: -1, stashSel: -1,
 		sidebarW: prefs.SidebarW, logH: prefs.LogH, filesW: prefs.FilesW, stagedPct: prefs.StagedPct,
-		unfolded: map[string]bool{}, viewed: map[string]bool{}, pullReviews: map[int]*pullReview{}}
+		unfolded: map[string]bool{}, viewed: map[string]bool{}, pullReviews: map[int]*pullReview{}, chosen: map[string]bool{}}
 }
 
 func (a *app) start() {
@@ -375,12 +376,23 @@ func (a *app) setStatus(st git.Status) {
 	// shows it.
 	stagedPath, unstagedPath := chosenPath(a.staged, a.stagedSel), chosenPath(a.unstaged, a.unstagedSel)
 	a.staged, a.unstaged = a.staged[:0], a.unstaged[:0]
-	for _, c := range st.Changes {
-		if c.Staged != 0 {
-			a.staged = append(a.staged, c)
+	if prefs.OneList {
+		// The one list shows every change against HEAD; the index is not
+		// its own, and a check only says what the commit includes (#37).
+		a.unstaged = append(a.unstaged, st.Changes...)
+		for p := range a.chosen {
+			if _, ok := find(st.Changes, p); !ok {
+				delete(a.chosen, p)
+			}
 		}
-		if c.Work != 0 {
-			a.unstaged = append(a.unstaged, c)
+	} else {
+		for _, c := range st.Changes {
+			if c.Staged != 0 {
+				a.staged = append(a.staged, c)
+			}
+			if c.Work != 0 {
+				a.unstaged = append(a.unstaged, c)
+			}
 		}
 	}
 	a.stagedSel, a.unstagedSel = indexOf(a.staged, stagedPath), indexOf(a.unstaged, unstagedPath)
@@ -397,8 +409,8 @@ func (a *app) setStatus(st git.Status) {
 	// The diff of a change shows it as it is now, or nothing once it's gone.
 	if ch := a.detail.change; ch != nil {
 		staged := a.detail.staged
-		if c, ok := find(st.Changes, ch.Path); ok && prefs.OneList {
-			staged = stagedIn(c, false) // checked or not, it stays shown
+		if _, ok := find(st.Changes, ch.Path); ok && prefs.OneList {
+			staged = false // the one list shows the working tree's side (#37)
 		}
 		if c, ok := find(a.changes(staged), ch.Path); ok {
 			a.showChange(c, staged)
@@ -658,8 +670,9 @@ func (a *app) showChange(c git.Change, staged bool) {
 	byName := isGenerated(c.Path, a.genMarked, nil, nil)
 	unfolded := a.unfolded[foldKey("", c.Path)]
 	// The working tree's file, whole and editable, when it is changed in
-	// place and its patch, all of it, can be cut for staging.
-	whole := !staged && c.Work == 'M' && !ws.Any()
+	// place and its patch, all of it, can be cut for staging. The one list
+	// shows every file whole against HEAD, as IDEA's commit window (#37).
+	whole := !staged && !ws.Any() && (prefs.OneList || c.Work == 'M')
 	type result struct {
 		raw      string
 		patch    *editor.FilePatch
@@ -683,7 +696,13 @@ func (a *app) showChange(c git.Change, staged bool) {
 			}
 			return result{raw: text, diff: textDiff(c.Path, "", text)}, nil
 		}
-		out, err := a.repo.Diff(ctx, c.Path, staged, ws)
+		var out string
+		var err error
+		if prefs.OneList { // the change against HEAD, staged or not
+			out, err = a.repo.DiffHead(ctx, c.Path, ws)
+		} else {
+			out, err = a.repo.Diff(ctx, c.Path, staged, ws)
+		}
 		if err != nil {
 			return result{}, err
 		}
@@ -691,6 +710,7 @@ func (a *app) showChange(c git.Change, staged bool) {
 		if err != nil || len(files) == 0 {
 			return result{raw: out}, err
 		}
+		whole = whole && files[0].NewName != "" // a file gone has nothing to read
 		r := result{raw: out, patch: &files[0]}
 		if files[0].Binary { // no lines to show, and none to edit
 			r.binary = true
@@ -701,7 +721,15 @@ func (a *app) showChange(c git.Change, staged bool) {
 			return r, nil
 		}
 		if whole {
-			r.old = a.repo.ReadIndex(ctx, c.Path)
+			if prefs.OneList {
+				oldPath := c.Path
+				if c.OldPath != "" {
+					oldPath = c.OldPath
+				}
+				r.old = a.repo.ReadHead(ctx, oldPath)
+			} else {
+				r.old = a.repo.ReadIndex(ctx, c.Path)
+			}
 			if r.new, err = a.repo.ReadFile(ctx, c.Path); err != nil {
 				return result{}, err
 			}
@@ -745,8 +773,9 @@ func (a *app) showChange(c git.Change, staged bool) {
 		a.detail.starts = r.starts
 		a.detail.folded, a.detail.binary, a.detail.disk = r.folded, r.binary, r.new
 		a.detail.change = &c
-		// A generated file folded has a patch but no diff yet (#35).
-		if r.diff != nil && r.patch != nil && patch.Partial(*r.patch) && !ws.Any() {
+		// A generated file folded has a patch but no diff yet (#35). The one
+		// list does not stage lines: its check is the commit's (#37).
+		if r.diff != nil && r.patch != nil && patch.Partial(*r.patch) && !ws.Any() && !prefs.OneList {
 			a.reviewLines(r.diff)
 		}
 		// The file opens at its first change, or its last when ⇧F7 came
@@ -872,8 +901,33 @@ func (a *app) discard(c git.Change) {
 		})
 		return
 	}
+	if prefs.OneList && c.OldPath != "" { // a rename, put back as HEAD has it
+		a.ask(loc.DiscardTitle(), loc.DiscardMessage(c.Path), loc.Discard(), func() {
+			a.run(loc.OpDiscard(), func(ctx context.Context) error { return a.discardRename(ctx, c) }, nil)
+		})
+		return
+	}
+	if prefs.OneList && c.Staged == 'A' { // added, not in HEAD: unstage it, then trash it
+		a.ask(loc.TrashTitle(), loc.TrashMessage(c.Path), loc.TrashButton(), func() {
+			a.run(loc.OpDiscard(), func(ctx context.Context) error {
+				if err := a.repo.Unstage(ctx, c.Path); err != nil {
+					return err
+				}
+				if !a.local() {
+					return a.repo.Remove(ctx, c.Path)
+				}
+				return trash(a.repo.Path(c.Path))
+			}, nil)
+		})
+		return
+	}
 	a.ask(loc.DiscardTitle(), loc.DiscardMessage(c.Path), loc.Discard(), func() {
-		a.run(loc.OpDiscard(), func(ctx context.Context) error { return a.repo.Discard(ctx, c) }, nil)
+		a.run(loc.OpDiscard(), func(ctx context.Context) error {
+			if prefs.OneList { // the one list's changes are against HEAD
+				return a.repo.RestoreHead(ctx, c.Path)
+			}
+			return a.repo.Discard(ctx, c)
+		}, nil)
 	})
 }
 
@@ -900,22 +954,44 @@ func (a *app) discardAll() {
 // discardChanges throws the changes away: tracked files go back to the
 // index, untracked ones to the trash, where there is one.
 func (a *app) discardChanges(ctx context.Context, changes []git.Change) error {
-	var tracked, untracked []string
+	var tracked, untracked, added []string
+	var renames []git.Change
 	for _, c := range changes {
-		if c.Work == '?' {
+		switch {
+		case c.Work == '?':
 			untracked = append(untracked, c.Path)
-		} else {
+		case prefs.OneList && c.OldPath != "": // both sides are HEAD's to restore
+			renames = append(renames, c)
+		case prefs.OneList && c.Staged == 'A': // added, not in HEAD: unstaged, then trashed
+			added = append(added, c.Path)
+			untracked = append(untracked, c.Path)
+		default:
 			tracked = append(tracked, c.Path)
 		}
 	}
-	if err := a.repo.Restore(ctx, tracked...); err != nil {
+	restore := a.repo.Restore
+	if prefs.OneList { // the one list's changes are against HEAD
+		restore = a.repo.RestoreHead
+	}
+	if err := restore(ctx, tracked...); err != nil {
+		return err
+	}
+	if err := a.repo.Unstage(ctx, added...); err != nil {
 		return err
 	}
 	if !a.local() { // no trash to reach over SSH: deleted
-		return a.repo.Remove(ctx, untracked...)
+		if err := a.repo.Remove(ctx, untracked...); err != nil {
+			return err
+		}
+	} else {
+		for _, p := range untracked {
+			if err := trash(a.repo.Path(p)); err != nil {
+				return err
+			}
+		}
 	}
-	for _, p := range untracked {
-		if err := trash(a.repo.Path(p)); err != nil {
+	for _, c := range renames {
+		if err := a.discardRename(ctx, c); err != nil {
 			return err
 		}
 	}
@@ -939,7 +1015,8 @@ func folderItems(changes []git.Change, items []int, dir string) []int {
 func folderChanges(changes []git.Change, items []int, dir string) []git.Change {
 	var out []git.Change
 	for _, i := range folderItems(changes, items, dir) {
-		if c := changes[i]; !c.Conflict && c.Work != 0 { // the one list's staged have none to discard
+		// The one list's changes are all against HEAD, so all can go back.
+		if c := changes[i]; !c.Conflict && (prefs.OneList || c.Work != 0) {
 			out = append(out, c)
 		}
 	}
@@ -991,7 +1068,7 @@ func (a *app) unstagePaths(paths ...string) {
 }
 
 func (a *app) canCommit() bool {
-	return a.busy == "" && a.message != "" && (len(a.staged) > 0 || a.amend)
+	return a.busy == "" && a.message != "" && (a.commitCount() > 0 || a.amend)
 }
 
 func (a *app) commit() {
@@ -1001,8 +1078,8 @@ func (a *app) commit() {
 	if !a.canCommit() {
 		return
 	}
-	msg, amend := a.message, a.amend
-	a.run(loc.OpCommit(), func(ctx context.Context) error { return a.repo.Commit(ctx, msg, amend) }, func() {
+	msg, amend, chosen := a.message, a.amend, a.chosenChanges()
+	a.run(loc.OpCommit(), func(ctx context.Context) error { return a.commitChanges(ctx, msg, amend, chosen) }, func() {
 		a.message, a.amend, a.recall = "", false, 0
 	})
 }

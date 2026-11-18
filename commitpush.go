@@ -14,7 +14,7 @@ import (
 // a branch to push, and nothing running. Amending isn't, as its push would
 // have to force.
 func (a *app) canCommitAndPush() bool {
-	return a.busy == "" && len(a.staged) > 0 && !a.amend && a.status.Branch != "" &&
+	return a.busy == "" && a.commitCount() > 0 && !a.amend && a.status.Branch != "" &&
 		(strings.TrimSpace(a.message) != "" || prefs.AI.on())
 }
 
@@ -29,17 +29,17 @@ func (a *app) commitAndPush() {
 	if !a.canCommitAndPush() {
 		return
 	}
-	msg, s := a.message, prefs.AI
+	msg, s, chosen := a.message, prefs.AI, a.chosenChanges()
 	a.run(loc.OpCommitAndPush(), func(ctx context.Context) error {
 		if strings.TrimSpace(msg) == "" {
-			m, err := a.writeMessage(ctx, s)
+			m, err := a.writeMessage(ctx, s, chosen)
 			if err != nil {
 				return err
 			}
 			msg = m
 			a.update(func() { a.message = m })
 		}
-		if err := a.repo.Commit(ctx, msg, false); err != nil {
+		if err := a.commitChanges(ctx, msg, false, chosen); err != nil {
 			return err
 		}
 		a.update(func() { a.message, a.recall = "", 0 })
@@ -60,7 +60,7 @@ func (a *app) commitAndPush() {
 // what's wanted, so it shows rather than hides in a menu (#33).
 func (a *app) commitButtons(c *ui.Context) {
 	label := loc.Commit()
-	if n := len(a.staged); n > 0 {
+	if n := a.commitCount(); n > 0 {
 		label = loc.CommitFiles(n)
 	}
 	ui.Row(c).Gap(8).Children(func() {

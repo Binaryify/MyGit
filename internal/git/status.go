@@ -109,6 +109,34 @@ func (r *Repo) ReadIndex(ctx context.Context, path string) string {
 	return out
 }
 
+// ReadHead reads a file as HEAD has it, "" for one not in it: the one
+// list shows files against HEAD, as IDEA's commit window does.
+func (r *Repo) ReadHead(ctx context.Context, path string) string {
+	out, err := r.Git(ctx, "show", "HEAD:"+path)
+	if err != nil {
+		return ""
+	}
+	return out
+}
+
+// DiffHead is a file's change against HEAD, in the index or the working
+// tree, as the one list shows it.
+func (r *Repo) DiffHead(ctx context.Context, path string, ws Whitespace) (string, error) {
+	return r.Git(ctx, ws.with([]string{"diff", "-M", "--no-ext-diff", r.Base(ctx), "--"}, path)...)
+}
+
+// Base is what the one list's changes are against: HEAD, or before the
+// first commit the empty tree, which git knows without its being written.
+func (r *Repo) Base(ctx context.Context) string {
+	if _, err := r.Git(ctx, "rev-parse", "--verify", "-q", "HEAD"); err == nil {
+		return "HEAD"
+	}
+	if t, err := r.Git(ctx, "hash-object", "-t", "tree", "--stdin"); err == nil && strings.TrimSpace(t) != "" {
+		return strings.TrimSpace(t)
+	}
+	return "HEAD"
+}
+
 // WriteFile writes a file of the working tree, keeping its mode.
 func (r *Repo) WriteFile(ctx context.Context, path, text string) error {
 	return r.run.WriteFile(ctx, r.Path(path), []byte(text))
@@ -175,15 +203,28 @@ func inBatches(paths []string, fn func(batch []string) error) error {
 	return nil
 }
 
-// Commit commits the index, the message's lines ending at \n however
+// CommitPaths commits only the files at paths, as IntelliJ commits the
+// checked ones: their working tree content, which the index need not hold,
+// leaving other staged changes for another commit.
+func (r *Repo) CommitPaths(ctx context.Context, message string, amend bool, paths []string) error {
+	_, err := r.Git(ctx, append(append(commitArgs(message, amend), "--"), paths...)...)
+	return err
+}
+
+// commitArgs are git commit's, the message's lines ending at \n however
 // they were typed or pasted, as git expects them (#28).
-func (r *Repo) Commit(ctx context.Context, message string, amend bool) error {
+func commitArgs(message string, amend bool) []string {
 	message = strings.ReplaceAll(strings.ReplaceAll(message, "\r\n", "\n"), "\r", "\n")
 	args := []string{"commit", "-m", message}
 	if amend {
 		args = append(args, "--amend")
 	}
-	_, err := r.Git(ctx, args...)
+	return args
+}
+
+// Commit commits the index.
+func (r *Repo) Commit(ctx context.Context, message string, amend bool) error {
+	_, err := r.Git(ctx, commitArgs(message, amend)...)
 	return err
 }
 
@@ -237,6 +278,15 @@ func (r *Repo) Restore(ctx context.Context, paths ...string) error {
 	})
 }
 
+// RestoreHead brings files back to HEAD, in the index and the working
+// tree: what the one list discards, its changes being against HEAD.
+func (r *Repo) RestoreHead(ctx context.Context, paths ...string) error {
+	return inBatches(paths, func(batch []string) error {
+		_, err := r.Git(ctx, append([]string{"restore", "--source=HEAD", "--staged", "--worktree", "--"}, batch...)...)
+		return err
+	})
+}
+
 // Stage is a version of a file in conflict, as the index holds it.
 type Stage int
 
@@ -281,6 +331,14 @@ func (r *Repo) Resolve(ctx context.Context, path, text string) error {
 		return err
 	}
 	return r.Stage(ctx, path)
+}
+
+// RestoreFrom writes a file of the working tree as rev has it, leaving the
+// index as it is: IntelliJ's Get takes a file from a branch this way. The
+// file has to be at rev; those not there have nothing to take.
+func (r *Repo) RestoreFrom(ctx context.Context, rev, path string) error {
+	_, err := r.Git(ctx, "restore", "--source="+rev, "--worktree", "--", path)
+	return err
 }
 
 // TakeSide resolves a file in conflict with one side's version whole,

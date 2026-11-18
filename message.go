@@ -12,6 +12,7 @@ import (
 	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
 
+	"mygit/internal/git"
 	"mygit/internal/llm"
 	loc "mygit/locales"
 )
@@ -78,42 +79,49 @@ var (
 )
 
 // canGenerateMessage tells whether the model can write the message: one
-// is set, there are staged changes for it to read, and nothing runs.
+// is set, there are changes to commit for it to read, and nothing runs.
 func (a *app) canGenerateMessage() bool {
-	return prefs.AI.on() && len(a.staged) > 0 && a.busy == ""
+	return prefs.AI.on() && a.commitCount() > 0 && a.busy == ""
 }
 
-// generateMessage has the model write the commit message from the staged
-// changes, in the way of the repository's recent ones. What it writes
+// generateMessage has the model write the commit message from the changes
+// to commit, in the way of the repository's recent ones. What it writes
 // fills the box, to read before committing.
 func (a *app) generateMessage() {
 	if !a.canGenerateMessage() {
 		return
 	}
-	s := prefs.AI
+	s, chosen := prefs.AI, a.chosenChanges()
 	var msg string
 	a.run(loc.OpGenerateMessage(), func(ctx context.Context) (err error) {
-		msg, err = a.writeMessage(ctx, s)
+		msg, err = a.writeMessage(ctx, s, chosen)
 		return err
 	}, func() {
 		a.message, a.recall = msg, 0
 	})
 }
 
-// writeMessage has the model s sets write the message of the staged
-// changes; it runs off the main thread.
-func (a *app) writeMessage(ctx context.Context, s aiSettings) (string, error) {
+// writeMessage has the model s sets write the message of the changes to
+// commit, in the one list those chosen; it runs off the main thread.
+func (a *app) writeMessage(ctx context.Context, s aiSettings, chosen []git.Change) (string, error) {
 	key, err := aiKey()
 	if err != nil {
 		return "", err
 	}
-	stat, err := a.repo.Git(ctx, "diff", "--staged", "--no-ext-diff", "--stat")
-	if err != nil {
-		return "", err
-	}
-	diff, err := a.repo.Git(ctx, "diff", "--staged", "--no-ext-diff")
-	if err != nil {
-		return "", err
+	stat, diff := "", ""
+	if prefs.OneList {
+		var err error
+		if stat, diff, err = a.oneListMessageDiff(ctx, chosen); err != nil {
+			return "", err
+		}
+	} else {
+		var err error
+		if stat, err = a.repo.Git(ctx, "diff", "--staged", "--no-ext-diff", "--stat"); err != nil {
+			return "", err
+		}
+		if diff, err = a.repo.Git(ctx, "diff", "--staged", "--no-ext-diff"); err != nil {
+			return "", err
+		}
 	}
 	prompt := messagePrompt(a.repo.RecentMessages(ctx, 10), stat, diff)
 	cfg := llm.Config{API: s.API, BaseURL: s.BaseURL, Model: strings.TrimSpace(s.Model), Key: key, HTTP: s.client()}
@@ -122,6 +130,48 @@ func (a *app) writeMessage(ctx context.Context, s aiSettings) (string, error) {
 		err = errors.New(loc.ErrNoMessage())
 	}
 	return msg, err
+}
+
+// oneListMessageDiff is the stat and the diff the model reads in the one
+// list: the chosen changes against HEAD, new files shown as they would be
+// once added.
+func (a *app) oneListMessageDiff(ctx context.Context, chosen []git.Change) (stat, diff string, err error) {
+	var paths []string
+	var added []git.Change
+	for _, c := range chosen {
+		if c.Work == '?' {
+			added = append(added, c)
+		} else {
+			paths = append(paths, c.Path)
+			if c.OldPath != "" {
+				paths = append(paths, c.OldPath)
+			}
+		}
+	}
+	if len(paths) > 0 {
+		base := a.repo.Base(ctx)
+		if stat, err = a.repo.Git(ctx, append([]string{"diff", base, "--no-ext-diff", "--stat", "--"}, paths...)...); err != nil {
+			return "", "", err
+		}
+		if diff, err = a.repo.Git(ctx, append([]string{"diff", base, "--no-ext-diff", "--"}, paths...)...); err != nil {
+			return "", "", err
+		}
+	}
+	for _, c := range added {
+		text, err := a.repo.ReadFile(ctx, c.Path)
+		if err != nil || isBinary(text) {
+			continue
+		}
+		lines := strings.Split(strings.TrimSuffix(text, "\n"), "\n")
+		var b strings.Builder
+		fmt.Fprintf(&b, "diff --git a/%s b/%s\nnew file mode 100644\n--- /dev/null\n+++ b/%s\n@@ -0,0 +1,%d @@\n", c.Path, c.Path, c.Path, len(lines))
+		for _, l := range lines {
+			b.WriteString("+" + l + "\n")
+		}
+		diff += b.String()
+		stat += fmt.Sprintf(" %s | %d +\n", c.Path, len(lines))
+	}
+	return stat, diff, nil
 }
 
 // generateButton is the Generate button, with the sparkles AI tools mark

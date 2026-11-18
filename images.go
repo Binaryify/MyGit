@@ -126,8 +126,20 @@ func changeSides(c git.Change, staged bool) (old, new *side) {
 	if staged {
 		code = c.Staged
 	}
+	if prefs.OneList { // against HEAD: added has no old side, deleted no new
+		switch {
+		case c.Staged == 'A' || c.Work == '?':
+			code = 'A'
+		case c.Staged == 'D' || c.Work == 'D':
+			code = 'D'
+		case c.Staged != 0:
+			code = c.Staged
+		}
+	}
 	if staged {
 		old, new = &side{rev: "HEAD", path: oldPath}, &side{rev: "", path: c.Path}
+	} else if prefs.OneList { // against HEAD, the working tree as it is now
+		old, new = &side{rev: "HEAD", path: oldPath}, &side{path: c.Path, worktree: true}
 	} else {
 		old, new = &side{rev: "", path: c.Path}, &side{path: c.Path, worktree: true}
 	}

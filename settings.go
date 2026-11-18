@@ -29,7 +29,7 @@ type settings struct {
 	Wrap           bool             `json:"wrap"`                     // the diffs wrap long lines rather than scrolling them sideways
 	FoldedBranches map[string]bool  `json:"foldedBranches,omitempty"` // the branches' popover's sections folded, by kind
 	TreeView       bool             `json:"treeView"`                 // the lists of files show as trees
-	OneList        bool             `json:"oneList,omitempty"`        // the changes, staged or not, in one list, as IDEA's (#34)
+	OneList        bool             `json:"oneList,omitempty"`        // the changes in one list, a check saying what the commit includes, as IDEA's (#37)
 	// The history's columns, as its menu sets them: the commit hash,
 	// tags and branches, and whether they show before the subject or
 	// after it.
@@ -166,7 +166,12 @@ type settingsDialog struct {
 	ai       aiDialog // the AI's settings, a dialog of their own over these
 }
 
-func (a *app) settingsView(c *ui.Context) { a.settings.view(c, true, a.reloadDiff) }
+func (a *app) settingsView(c *ui.Context) {
+	a.settings.view(c, true, func() {
+		a.reloadDiff()
+		a.refresh() // the one list's setting changes how the changes split (#37)
+	})
+}
 
 // view shows the settings while they are open, the shortcuts too in a
 // repository's window, and saves them as they close, then calls closed.

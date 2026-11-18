@@ -54,8 +54,8 @@ func (a *app) shownRows(staged bool) []int {
 }
 
 // oneList tells whether the section of the changes not staged lists them
-// all, staged or not, as IDEA's commit window: a check stages a file and
-// leaves it where it is (#34).
+// all, staged or not, as IDEA's commit window: a check says what the
+// commit includes, and stages nothing (#37).
 func (a *app) oneList(staged bool) bool { return prefs.OneList && !staged }
 
 // listed are the changes a section lists, and the rows of them the filter

@@ -630,7 +630,7 @@
       }
     }
   },
-  "oneList": "One list of changes: a check stages, the file stays put, as IDEA's",
+  "oneList": "One list of changes: checking a file includes it in the commit, as IDEA's",
   "newFiles": "New Files",
   "untrackedFiles": "Untracked Files",
   "stageUntracked": "Stage Untracked Files",
@@ -966,7 +966,7 @@
   "pullFF": "Pull (Fast-Forward Only)",
   "pullRebase": "Pull and Rebase",
   "pullMerge": "Pull and Merge",
-  "pushMenu": "Push…",
+  "pushMenu": "Push",
   "pushTooltip": "See the commits to push",
   "refresh": "Refresh",
   "sidebar": "Sidebar",
@@ -1587,7 +1587,7 @@
       }
     }
   },
-  "pushMenuAhead": "Push ↑{count}…",
+  "pushMenuAhead": "Push ↑{count}",
   "@pushMenuAhead": {
     "placeholders": {
       "count": {
@@ -1624,5 +1624,85 @@
         "type": "String"
       }
     }
-  }
+  },
+  "commitsToPush": "{count} commits to push",
+  "@commitsToPush": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commitsToPull": "{count} commits to pull",
+  "@commitsToPull": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "getFromRev": "Get This File from {rev}",
+  "@getFromRev": {
+    "placeholders": {
+      "rev": {
+        "type": "String"
+      }
+    }
+  },
+  "getFile": "Get",
+  "getFileTitle": "Overwrite {path}?",
+  "@getFileTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "getFileMessage": "The file has changes of its own: they will be replaced by {rev}'s version.",
+  "@getFileMessage": {
+    "placeholders": {
+      "rev": {
+        "type": "String"
+      }
+    }
+  },
+  "opGetFile": "Get {path}",
+  "@opGetFile": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "gotFile": "Got {path} from {rev}",
+  "@gotFile": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      },
+      "rev": {
+        "type": "String"
+      }
+    }
+  },
+  "includeInCommit": "Include {path} in the commit",
+  "@includeInCommit": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "excludeFromCommit": "Exclude {path} from the commit",
+  "@excludeFromCommit": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "includeInCommitMenu": "Include in Commit",
+  "excludeFromCommitMenu": "Exclude from Commit",
+  "selectAllChanges": "Select All Changes",
+  "deselectAllChanges": "Deselect All Changes"
 }

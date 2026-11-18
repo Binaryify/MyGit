@@ -78,8 +78,11 @@ type tester struct {
 	queue chan func()
 }
 
-func newTester(t *testing.T) *tester {
-	a := newApp(testRepo(t))
+func newTester(t *testing.T) *tester { return newTesterOn(testRepo(t)) }
+
+// newTesterOn shows the app of repo without a window.
+func newTesterOn(repo *git.Repo) *tester {
+	a := newApp(repo)
 	tt := &tester{a: a, queue: make(chan func(), 64)}
 	a.update = func(fn func()) { tt.queue <- fn }
 	tt.Tester = ui.NewTester(a.view, 1200, 800)
@@ -705,7 +708,7 @@ func TestPushDialog(t *testing.T) {
 	}
 	tt.a.refresh()
 	tt.settle()
-	tt.click(t, "推送…")
+	tt.click(t, "推送")
 	if !tt.HasText("推送 main → origin/main（新建）") || !tt.HasText("4 个提交") {
 		t.Fatalf("texts %q", tt.Texts())
 	}
@@ -1045,6 +1048,29 @@ func TestCompare(t *testing.T) {
 	tt.settle()
 	if n := len(tt.a.detail.files); n != 2 {
 		t.Fatalf("Start against the working tree: %d files", n)
+	}
+}
+
+// TestGetFileFromCompare takes a file of a comparison from the branch
+// compared with, as IntelliJ's Get does (#36).
+func TestGetFileFromCompare(t *testing.T) {
+	tt := newTester(t)
+	tt.a.showCompare("main → feature", "main", "feature")
+	tt.settle()
+	if err := tt.RightClick("main.go"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem(loc.GetFromRev("feature")); err != nil {
+		t.Fatalf("%v; menu %q", err, tt.Menu())
+	}
+	tt.settle()
+	b, err := os.ReadFile(filepath.Join(tt.a.repo.Dir, "main.go"))
+	if err != nil || string(b) != "package main\n" {
+		t.Fatalf("main.go %q, %v", b, err)
+	}
+	// The index is left as it was: the file shows as a change, not staged.
+	if c, ok := find(tt.a.unstaged, "main.go"); !ok || c.Staged != 0 {
+		t.Fatalf("changes %+v", tt.a.unstaged)
 	}
 }
 

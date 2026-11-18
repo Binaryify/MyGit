@@ -2262,11 +2262,11 @@ func (msgs Messages) ErrSaveAPIKey(error string) string {
 	return Catalog.Format(msgs.locale, "errSaveAPIKey", map[string]any{"error": error})
 }
 
-// OneList says "One list of changes: a check stages, the file stays put, as IDEA's"
+// OneList says "One list of changes: checking a file includes it in the commit, as IDEA's"
 // in the language the app shows.
 func OneList() string { return In(i18n.Locale()).OneList() }
 
-// OneList says "One list of changes: a check stages, the file stays put, as IDEA's"
+// OneList says "One list of changes: checking a file includes it in the commit, as IDEA's"
 // in the language of msgs.
 func (msgs Messages) OneList() string {
 	return Catalog.Format(msgs.locale, "oneList", nil)
@@ -3660,11 +3660,11 @@ func (msgs Messages) PullMerge() string {
 	return Catalog.Format(msgs.locale, "pullMerge", nil)
 }
 
-// PushMenu says "Push…"
+// PushMenu says "Push"
 // in the language the app shows.
 func PushMenu() string { return In(i18n.Locale()).PushMenu() }
 
-// PushMenu says "Push…"
+// PushMenu says "Push"
 // in the language of msgs.
 func (msgs Messages) PushMenu() string {
 	return Catalog.Format(msgs.locale, "pushMenu", nil)
@@ -5850,11 +5850,11 @@ func (msgs Messages) PullBehind(count int) string {
 	return Catalog.Format(msgs.locale, "pullBehind", map[string]any{"count": count})
 }
 
-// PushMenuAhead says "Push ↑{count}…"
+// PushMenuAhead says "Push ↑{count}"
 // in the language the app shows.
 func PushMenuAhead(count int) string { return In(i18n.Locale()).PushMenuAhead(count) }
 
-// PushMenuAhead says "Push ↑{count}…"
+// PushMenuAhead says "Push ↑{count}"
 // in the language of msgs.
 func (msgs Messages) PushMenuAhead(count int) string {
 	return Catalog.Format(msgs.locale, "pushMenuAhead", map[string]any{"count": count})
@@ -5920,4 +5920,144 @@ func CopiedText(text string) string { return In(i18n.Locale()).CopiedText(text) 
 // in the language of msgs.
 func (msgs Messages) CopiedText(text string) string {
 	return Catalog.Format(msgs.locale, "copiedText", map[string]any{"text": text})
+}
+
+// CommitsToPush says "{count} commits to push"
+// in the language the app shows.
+func CommitsToPush(count int) string { return In(i18n.Locale()).CommitsToPush(count) }
+
+// CommitsToPush says "{count} commits to push"
+// in the language of msgs.
+func (msgs Messages) CommitsToPush(count int) string {
+	return Catalog.Format(msgs.locale, "commitsToPush", map[string]any{"count": count})
+}
+
+// CommitsToPull says "{count} commits to pull"
+// in the language the app shows.
+func CommitsToPull(count int) string { return In(i18n.Locale()).CommitsToPull(count) }
+
+// CommitsToPull says "{count} commits to pull"
+// in the language of msgs.
+func (msgs Messages) CommitsToPull(count int) string {
+	return Catalog.Format(msgs.locale, "commitsToPull", map[string]any{"count": count})
+}
+
+// GetFromRev says "Get This File from {rev}"
+// in the language the app shows.
+func GetFromRev(rev string) string { return In(i18n.Locale()).GetFromRev(rev) }
+
+// GetFromRev says "Get This File from {rev}"
+// in the language of msgs.
+func (msgs Messages) GetFromRev(rev string) string {
+	return Catalog.Format(msgs.locale, "getFromRev", map[string]any{"rev": rev})
+}
+
+// GetFile says "Get"
+// in the language the app shows.
+func GetFile() string { return In(i18n.Locale()).GetFile() }
+
+// GetFile says "Get"
+// in the language of msgs.
+func (msgs Messages) GetFile() string {
+	return Catalog.Format(msgs.locale, "getFile", nil)
+}
+
+// GetFileTitle says "Overwrite {path}?"
+// in the language the app shows.
+func GetFileTitle(path string) string { return In(i18n.Locale()).GetFileTitle(path) }
+
+// GetFileTitle says "Overwrite {path}?"
+// in the language of msgs.
+func (msgs Messages) GetFileTitle(path string) string {
+	return Catalog.Format(msgs.locale, "getFileTitle", map[string]any{"path": path})
+}
+
+// GetFileMessage says "The file has changes of its own: they will be replaced by {rev}'s version."
+// in the language the app shows.
+func GetFileMessage(rev string) string { return In(i18n.Locale()).GetFileMessage(rev) }
+
+// GetFileMessage says "The file has changes of its own: they will be replaced by {rev}'s version."
+// in the language of msgs.
+func (msgs Messages) GetFileMessage(rev string) string {
+	return Catalog.Format(msgs.locale, "getFileMessage", map[string]any{"rev": rev})
+}
+
+// OpGetFile says "Get {path}"
+// in the language the app shows.
+func OpGetFile(path string) string { return In(i18n.Locale()).OpGetFile(path) }
+
+// OpGetFile says "Get {path}"
+// in the language of msgs.
+func (msgs Messages) OpGetFile(path string) string {
+	return Catalog.Format(msgs.locale, "opGetFile", map[string]any{"path": path})
+}
+
+// GotFile says "Got {path} from {rev}"
+// in the language the app shows.
+func GotFile(path string, rev string) string { return In(i18n.Locale()).GotFile(path, rev) }
+
+// GotFile says "Got {path} from {rev}"
+// in the language of msgs.
+func (msgs Messages) GotFile(path string, rev string) string {
+	return Catalog.Format(msgs.locale, "gotFile", map[string]any{"path": path, "rev": rev})
+}
+
+// IncludeInCommit says "Include {path} in the commit"
+// in the language the app shows.
+func IncludeInCommit(path string) string { return In(i18n.Locale()).IncludeInCommit(path) }
+
+// IncludeInCommit says "Include {path} in the commit"
+// in the language of msgs.
+func (msgs Messages) IncludeInCommit(path string) string {
+	return Catalog.Format(msgs.locale, "includeInCommit", map[string]any{"path": path})
+}
+
+// ExcludeFromCommit says "Exclude {path} from the commit"
+// in the language the app shows.
+func ExcludeFromCommit(path string) string { return In(i18n.Locale()).ExcludeFromCommit(path) }
+
+// ExcludeFromCommit says "Exclude {path} from the commit"
+// in the language of msgs.
+func (msgs Messages) ExcludeFromCommit(path string) string {
+	return Catalog.Format(msgs.locale, "excludeFromCommit", map[string]any{"path": path})
+}
+
+// IncludeInCommitMenu says "Include in Commit"
+// in the language the app shows.
+func IncludeInCommitMenu() string { return In(i18n.Locale()).IncludeInCommitMenu() }
+
+// IncludeInCommitMenu says "Include in Commit"
+// in the language of msgs.
+func (msgs Messages) IncludeInCommitMenu() string {
+	return Catalog.Format(msgs.locale, "includeInCommitMenu", nil)
+}
+
+// ExcludeFromCommitMenu says "Exclude from Commit"
+// in the language the app shows.
+func ExcludeFromCommitMenu() string { return In(i18n.Locale()).ExcludeFromCommitMenu() }
+
+// ExcludeFromCommitMenu says "Exclude from Commit"
+// in the language of msgs.
+func (msgs Messages) ExcludeFromCommitMenu() string {
+	return Catalog.Format(msgs.locale, "excludeFromCommitMenu", nil)
+}
+
+// SelectAllChanges says "Select All Changes"
+// in the language the app shows.
+func SelectAllChanges() string { return In(i18n.Locale()).SelectAllChanges() }
+
+// SelectAllChanges says "Select All Changes"
+// in the language of msgs.
+func (msgs Messages) SelectAllChanges() string {
+	return Catalog.Format(msgs.locale, "selectAllChanges", nil)
+}
+
+// DeselectAllChanges says "Deselect All Changes"
+// in the language the app shows.
+func DeselectAllChanges() string { return In(i18n.Locale()).DeselectAllChanges() }
+
+// DeselectAllChanges says "Deselect All Changes"
+// in the language of msgs.
+func (msgs Messages) DeselectAllChanges() string {
+	return Catalog.Format(msgs.locale, "deselectAllChanges", nil)
 }

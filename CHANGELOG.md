@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.36
+
+- 单一更改列表改成和 IDEA 的提交窗口一样（[#37](https://github.com/Binaryify/MyGit/issues/37)，感谢 [@nuo010](https://github.com/nuo010) 的建议）：打勾只表示「这次提交包含这个文件」，不再写暂存区。改过的已跟踪文件默认勾上，新文件默认不勾；提交时只提交勾上的文件，内容取工作区当前的样子。所有改动都和上次提交对比，点开显示整个文件；放弃更改会恢复成上次提交的样子。列表标题和右键菜单里有「全选更改 / 取消全选」，文件夹也能一次勾选或取消。合并进行中提交时，勾上的文件会先暂存，再完成合并提交
+- 比较分支时可以直接取对方的文件（[#36](https://github.com/Binaryify/MyGit/issues/36)，感谢 [@EGo14T](https://github.com/EGo14T) 的建议）：在分支比较的文件列表里右键文件，选「从 xxx 获取此文件」，就会用那个分支的版本覆盖工作区里的文件，和 IDEA 的「获取」一样。文件有本地改动时会先确认
+- 推送、拉取数量更醒目，按钮不再有歧义（[#39](https://github.com/Binaryify/MyGit/issues/39)，感谢 [@nuo010](https://github.com/nuo010) 的反馈）：工具栏远程分支名旁的 ↑待推送数用强调色、↓待拉取数用警告色显示，为 0 时不显示，鼠标停上去会说明含义。推送按钮去掉了末尾容易看不懂的「…」
+
 ## 0.3.35
 
 - 修复点开改过的生成文件时闪退（[#35](https://github.com/Binaryify/MyGit/issues/35)，感谢 [@georgewuw](https://github.com/georgewuw) 的报告）：`go mod tidy` 之后点「更改」里的 `go.sum`（`yarn.lock`、`package-lock.json` 等同理）会直接退出。这类文件默认折叠，还没有对比内容，却仍被挂上了逐行暂存的按钮。所有系统都有这个问题，不只是 Windows

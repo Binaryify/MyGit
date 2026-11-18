@@ -146,7 +146,7 @@ func (a *app) toolbar(c *ui.Context) {
 		}
 		a.branchesButton(c, "⎇ "+branch+" ▾")
 		if st.Upstream != "" {
-			ui.Text(c, fmt.Sprintf("%s  ↑%d ↓%d", st.Upstream, st.Ahead, st.Behind)).TextColor(t.TextMuted)
+			a.upstreamCounts(c, st)
 		}
 		ui.Box(c).Grow(1)
 		if a.busy != "" {
@@ -176,7 +176,11 @@ func (a *app) toolbar(c *ui.Context) {
 		if st.Ahead > 0 {
 			pushText = loc.PushMenuAhead(st.Ahead)
 		}
-		ui.Button(c, pullText+" ▾").Label(loc.Pull()).Disabled(!idle || st.Upstream == "").Menu(func(m *ui.Menu) {
+		pullTip := loc.Pull()
+		if st.Behind > 0 {
+			pullTip = loc.CommitsToPull(st.Behind)
+		}
+		ui.Button(c, pullText+" ▾").Label(loc.Pull()).Tooltip(pullTip).Disabled(!idle || st.Upstream == "").Menu(func(m *ui.Menu) {
 			pull := func(mode git.PullMode) {
 				a.runPull(loc.OpPull(), func(ctx context.Context) error { return a.repo.Pull(ctx, mode) })
 			}
@@ -190,7 +194,11 @@ func (a *app) toolbar(c *ui.Context) {
 				pull(git.PullMerge)
 			}
 		})
-		if ui.Button(c, pushText).Label(loc.PushMenu()).Tooltip(loc.PushTooltip()).Disabled(!idle || st.Branch == "").Clicked() {
+		pushTip := loc.PushTooltip()
+		if st.Ahead > 0 {
+			pushTip = loc.CommitsToPush(st.Ahead) + " · " + pushTip
+		}
+		if ui.Button(c, pushText).Label(loc.PushMenu()).Tooltip(pushTip).Disabled(!idle || st.Branch == "").Clicked() {
 			a.openPush()
 		}
 		a.commentsButton(c)
@@ -198,6 +206,24 @@ func (a *app) toolbar(c *ui.Context) {
 			a.refresh()
 		}
 		ui.Button(c, "⋯").Label(loc.Repository()).Menu(a.repoMenu)
+	})
+}
+
+// upstreamCounts tells how the branch stands against its upstream: the
+// commits to push and to pull, colored and with what they mean, and left
+// out when none (#39).
+func (a *app) upstreamCounts(c *ui.Context, st git.Status) {
+	t := c.Theme()
+	ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
+		ui.Text(c, st.Upstream).FontSize(12).TextColor(t.TextMuted).SingleLine()
+		if st.Ahead > 0 {
+			ui.Text(c, fmt.Sprintf("↑%d", st.Ahead)).FontSize(12).Bold().TextColor(t.Accent).
+				Tooltip(loc.CommitsToPush(st.Ahead))
+		}
+		if st.Behind > 0 {
+			ui.Text(c, fmt.Sprintf("↓%d", st.Behind)).FontSize(12).Bold().TextColor(t.Warning).
+				Tooltip(loc.CommitsToPull(st.Behind))
+		}
 	})
 }
 
@@ -346,17 +372,35 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		}
 		if len(items) > 0 {
 			idle := a.busy == ""
-			if (staged || one) && len(a.staged) > 0 {
-				if iconButton(c, "minus", loc.UnstageAll()) && idle {
-					a.unstageAll()
+			switch {
+			case one:
+				// A check of the commit's, not a staging (#37): all of the
+				// list in it, or none.
+				all := a.allInCommit()
+				icon, label := "check", loc.SelectAllChanges()
+				if all {
+					icon, label = "minus", loc.DeselectAllChanges()
 				}
-			}
-			if !staged && len(a.unstaged) > 0 {
+				if iconButton(c, icon, label) && idle {
+					a.chooseAllCommits(!all)
+				}
 				if iconButton(c, "undo", loc.DiscardAll()) && idle {
 					a.discardAll()
 				}
-				if iconButton(c, "plus", loc.StageAll()) && idle {
-					a.stageAll()
+			case staged:
+				if len(a.staged) > 0 {
+					if iconButton(c, "minus", loc.UnstageAll()) && idle {
+						a.unstageAll()
+					}
+				}
+			default:
+				if len(a.unstaged) > 0 {
+					if iconButton(c, "undo", loc.DiscardAll()) && idle {
+						a.discardAll()
+					}
+					if iconButton(c, "plus", loc.StageAll()) && idle {
+						a.stageAll()
+					}
 				}
 			}
 		}
@@ -374,6 +418,21 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 			row := a.folderRow(c, foldKey(i), tree[i])
 			if row.Hovered() {
 				row.Children(func() {
+					if one {
+						paths := folderPaths(changes, items, folder)
+						if iconButton(c, "check", loc.IncludeInCommitMenu()) {
+							a.choosePathsCommits(true, paths...)
+						}
+						if iconButton(c, "undo", loc.DiscardFolder()) {
+							if chosen := folderChanges(changes, items, folder); len(chosen) > 0 {
+								a.discardFolder(folder, chosen)
+							}
+						}
+						if iconButton(c, "minus", loc.ExcludeFromCommitMenu()) {
+							a.choosePathsCommits(false, paths...)
+						}
+						return
+					}
 					if staged {
 						if iconButton(c, "minus", loc.UnstageFolder()) {
 							a.unstagePaths(folderPaths(changes, items, folder)...)
@@ -392,6 +451,16 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 			}
 			if !staged {
 				row.ContextMenu(func(m *ui.Menu) {
+					if one {
+						paths := folderPaths(changes, items, folder)
+						if m.Item(loc.IncludeInCommitMenu()).Chosen() {
+							a.choosePathsCommits(true, paths...)
+						}
+						if m.Item(loc.ExcludeFromCommitMenu()).Chosen() {
+							a.choosePathsCommits(false, paths...)
+						}
+						m.Separator()
+					}
 					chosen := folderChanges(changes, items, folder)
 					if len(chosen) > 0 && m.Item(loc.DiscardFolderMenu()).Chosen() {
 						a.discardFolder(folder, chosen)
@@ -418,16 +487,29 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		if chosen {
 			row.TextColor(t.AccentText)
 		}
-		// In the one list, a change staged reads so once nothing more of it
-		// is in the working tree; partly, its box shows a dash.
-		on, partly := stagedIn(ch, staged), one && ch.Staged != 0 && ch.Work != 0
+		// In the one list, the box says whether the commit includes the
+		// change, and checking it stages nothing (#37).
+		on, partly := stagedIn(ch, staged), false
+		if one {
+			on = a.inCommit(ch)
+		}
 		row.Children(func() {
 			label := loc.StageFile(ch.Path)
 			if on {
 				label = loc.UnstageFile(ch.Path)
 			}
+			if one {
+				label = loc.IncludeInCommit(ch.Path)
+				if on {
+					label = loc.ExcludeFromCommit(ch.Path)
+				}
+			}
 			if changeCheckbox(c, on, partly, chosen, label) {
-				a.toggleStage(ch, on)
+				if one {
+					a.toggleCommit(ch)
+				} else {
+					a.toggleStage(ch, on)
+				}
 			}
 			code := ch.Work
 			if staged || one && ch.Staged != 0 { // in the one list, as against HEAD
@@ -455,15 +537,17 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 				if iconButton(c, "open", loc.OpenFile()) {
 					a.openInEditor(a.repo.Path(ch.Path), 0)
 				}
-				if !on && !ch.Conflict && iconButton(c, "undo", loc.DiscardChanges()) {
+				if (one || !on) && !ch.Conflict && iconButton(c, "undo", loc.DiscardChanges()) {
 					a.discard(ch)
 				}
-				icon, label := "plus", loc.Stage()
-				if on {
-					icon, label = "minus", loc.Unstage()
-				}
-				if iconButton(c, icon, label) {
-					a.toggleStage(ch, on)
+				if !one {
+					icon, label := "plus", loc.Stage()
+					if on {
+						icon, label = "minus", loc.Unstage()
+					}
+					if iconButton(c, icon, label) {
+						a.toggleStage(ch, on)
+					}
 				}
 			}
 			letter := string(code)
@@ -474,10 +558,14 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 				Width(14).TextAlign(ui.Center).Tooltip(changeName(code))
 		})
 		row.ContextMenu(func(m *ui.Menu) {
-			if m.Item(map[bool]string{true: loc.Unstage(), false: loc.Stage()}[on]).Chosen() {
+			if one {
+				if m.Item(map[bool]string{true: loc.ExcludeFromCommitMenu(), false: loc.IncludeInCommitMenu()}[on]).Chosen() {
+					a.toggleCommit(ch)
+				}
+			} else if m.Item(map[bool]string{true: loc.Unstage(), false: loc.Stage()}[on]).Chosen() {
 				a.toggleStage(ch, on)
 			}
-			if !on && !ch.Conflict && m.Item(loc.DiscardMenu()).Chosen() {
+			if (one || !on) && !ch.Conflict && m.Item(loc.DiscardMenu()).Chosen() {
 				a.discard(ch)
 			}
 			m.Separator()
@@ -501,7 +589,11 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		a.chooseListed(changes[at(*row)], staged)
 	} else if l.Submitted() && *row >= 0 && *row < n {
 		ch := changes[at(*row)]
-		a.toggleStage(ch, stagedIn(ch, staged))
+		if one {
+			a.toggleCommit(ch)
+		} else {
+			a.toggleStage(ch, stagedIn(ch, staged))
+		}
 	}
 	// The keys of VS Code's and Finder's lists: space stages or unstages
 	// the change chosen, delete discards it, asking first.
@@ -512,10 +604,16 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 			}
 		}
 	}
-	list.Handle.OnShortcut(c, 0, ui.KeySpace, chosen(func(ch git.Change) { a.toggleStage(ch, stagedIn(ch, staged)) }))
+	list.Handle.OnShortcut(c, 0, ui.KeySpace, chosen(func(ch git.Change) {
+		if one {
+			a.toggleCommit(ch)
+		} else {
+			a.toggleStage(ch, stagedIn(ch, staged))
+		}
+	}))
 	if !staged {
 		discard := chosen(func(ch git.Change) {
-			if !ch.Conflict && ch.Work != 0 {
+			if !ch.Conflict && (one || ch.Work != 0) { // the one list's are all against HEAD
 				a.discard(ch)
 			}
 		})
@@ -556,7 +654,11 @@ func (a *app) untrackedRow(c *ui.Context, key string, changes []git.Change, item
 				a.run(loc.OpDiscard(), func(ctx context.Context) error { return a.discardChanges(ctx, chosen) }, nil)
 			})
 		}
-		if iconButton(c, "plus", loc.StageUntracked()) && a.busy == "" {
+		if prefs.OneList {
+			if iconButton(c, "check", loc.IncludeInCommitMenu()) && a.busy == "" {
+				a.choosePathsCommits(true, paths...)
+			}
+		} else if iconButton(c, "plus", loc.StageUntracked()) && a.busy == "" {
 			a.stagePaths(paths...)
 		}
 	})
@@ -599,6 +701,10 @@ func stagedIn(ch git.Change, staged bool) bool { return staged || ch.Work == 0 }
 // chooseListed chooses the change of a section's row, in the one list of
 // the staged changes when it reads staged, else of the working tree's.
 func (a *app) chooseListed(ch git.Change, staged bool) {
+	if prefs.OneList { // the one list always shows the working tree's side
+		a.chooseChange(indexOf(a.status.Changes, ch.Path), false)
+		return
+	}
 	s := stagedIn(ch, staged)
 	a.chooseChange(indexOf(a.changes(s), ch.Path), s)
 }
@@ -783,6 +889,36 @@ func wrapToggle(c *ui.Context, d *editor.DiffState) {
 	}
 }
 
+// compareTake tells the revision a comparison of two takes a file from,
+// the one compared with, when it has the file: a file deleted there has
+// none to take (#36).
+func compareTake(c *git.Commit, f editor.FilePatch) (string, bool) {
+	if c == nil || !comparing(c) {
+		return "", false
+	}
+	_, to, _ := strings.Cut(c.Hash, "..")
+	if to == "" || f.NewName == "" {
+		return "", false
+	}
+	return to, true
+}
+
+// getFrom overwrites a file of the working tree with the version of a
+// revision, as IntelliJ's Get does, asking first when the file has changes
+// of its own to lose.
+func (a *app) getFrom(rev, path string) {
+	get := func() {
+		a.run(loc.OpGetFile(path), func(ctx context.Context) error {
+			return a.repo.RestoreFrom(ctx, rev, path)
+		}, func() { a.notice = loc.GotFile(path, shortRev(rev)) })
+	}
+	if _, changed := find(a.status.Changes, path); !changed {
+		get()
+		return
+	}
+	a.ask(loc.GetFileTitle(path), loc.GetFileMessage(shortRev(rev)), loc.GetFile(), get)
+}
+
 // fileMenu is a file's context menu, of a commit's files or the changes.
 func (a *app) fileMenu(m *ui.Menu, path, rev string) {
 	if m.Item(loc.OpenInEditor()).Chosen() {
@@ -856,6 +992,14 @@ func (a *app) filesList(c *ui.Context) {
 		}
 		row := ui.Row(c).Height(24).Padding(0, 8, 0, indent).Gap(6).AlignItems(ui.Center).Tooltip(name)
 		row.ContextMenu(func(m *ui.Menu) {
+			// A comparison takes the file from the branch compared with,
+			// as IntelliJ's Get does (#36).
+			if take, ok := compareTake(a.detail.commit, f); ok {
+				if m.Item(loc.GetFromRev(shortRev(take))).Chosen() {
+					a.getFrom(take, name)
+				}
+				m.Separator()
+			}
 			if m.Item(map[bool]string{true: loc.MarkUnviewed(), false: loc.MarkViewed()}[viewed]).Chosen() {
 				a.toggleViewed(i)
 			}
@@ -963,7 +1107,7 @@ func (a *app) lineButtons(c *ui.Context) {
 		}
 		c.OnShortcut(ui.Cmd, ui.KeyS, a.saveFile)
 	}
-	if a.detail.patch == nil || !patch.Partial(*a.detail.patch) || prefs.whitespace().Any() {
+	if a.detail.patch == nil || !patch.Partial(*a.detail.patch) || prefs.whitespace().Any() || prefs.OneList {
 		return
 	}
 	chosen := a.selectedLines()
