@@ -30,6 +30,7 @@ type settings struct {
 	FoldedBranches map[string]bool  `json:"foldedBranches,omitempty"` // the branches' popover's sections folded, by kind
 	TreeView       bool             `json:"treeView"`                 // the lists of files show as trees
 	OneList        bool             `json:"oneList,omitempty"`        // the changes in one list, a check saying what the commit includes, as IDEA's (#37)
+	CommitAll      bool             `json:"commitAll,omitempty"`      // a commit's files show one after another (#44)
 	// The history's columns, as its menu sets them: the commit hash,
 	// tags and branches, and whether they show before the subject or
 	// after it.

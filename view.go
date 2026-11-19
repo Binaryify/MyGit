@@ -794,6 +794,9 @@ func (a *app) detailView(c *ui.Context) {
 				}
 				ui.Badge(c, side)
 				ui.Box(c).Grow(1)
+				if diffs := a.shownDiffs(); len(diffs) > 0 {
+					wrapToggle(c, diffs...)
+				}
 				a.whitespaceMenu(c)
 			})
 			a.diffView(c)
@@ -842,8 +845,8 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 				ui.Box(c).Grow(1)
 				a.foldToggle(c)
 				a.whitespaceMenu(c)
-				if d.diff != nil {
-					wrapToggle(c, d.diff)
+				if diffs := a.shownDiffs(); len(diffs) > 0 {
+					wrapToggle(c, diffs...)
 				}
 			})
 			return
@@ -856,8 +859,8 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 			a.changeNav(c)
 			a.foldToggle(c)
 			a.whitespaceMenu(c)
-			if d.diff != nil {
-				wrapToggle(c, d.diff)
+			if diffs := a.shownDiffs(); len(diffs) > 0 {
+				wrapToggle(c, diffs...)
 			}
 			if n := len(cm.Parents); n > 1 {
 				labels := make([]string, n)
@@ -913,11 +916,13 @@ func (a *app) whitespaceMenu(c *ui.Context) {
 	})
 }
 
-// wrapToggle turns wrapping on or off for the diff shown, kept for the
-// diffs opened next too.
-func wrapToggle(c *ui.Context, d *editor.DiffState) {
+// wrapToggle turns wrapping on or off for the diffs shown, one or those
+// one after another, kept for the diffs opened next too.
+func wrapToggle(c *ui.Context, diffs ...*editor.DiffState) {
 	if ui.Toggle(c, &prefs.Wrap, loc.WrapLines()).Changed() {
-		d.Wrap = prefs.Wrap
+		for _, d := range diffs {
+			d.Wrap = prefs.Wrap
+		}
 		prefs.save()
 	}
 }
@@ -976,9 +981,10 @@ func (a *app) filesPane(c *ui.Context) {
 	t := c.Theme()
 	files := a.detail.files
 	ui.Column(c).Fill().Children(func() {
-		if len(files) > 1 {
+		if len(files) > 1 || prefs.CommitAll { // the way back from one after another too
 			ui.Row(c).Height(26).Padding(0, 10).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 				ui.Text(c, loc.ViewedCount(a.viewedCount(), len(files))).FontSize(11).TextColor(t.TextMuted).Grow(1)
+				a.commitAllToggle(c)
 				treeToggle(c)
 			})
 		}
@@ -1078,6 +1084,9 @@ func (a *app) filesList(c *ui.Context) {
 	if r := a.fileRow; l.Changed() && r >= 0 && r < n {
 		if at(r) < 0 {
 			a.toggleFolder("files", tree[r].dir)
+		} else if prefs.CommitAll { // to the file, one after another
+			a.detail.fileSel = at(r)
+			a.detail.allReveal = at(r) + 1
 		} else {
 			a.detail.fileSel = at(r)
 			a.showFile(a.detail.fileSel)
@@ -1096,6 +1105,13 @@ func (a *app) diffView(c *ui.Context) {
 		ui.Column(c).Fill().Center().Children(func() { ui.Spinner(c).Size(18, 18) })
 	case d.all != nil:
 		a.allView(c, d.all)
+	case d.commit != nil && prefs.CommitAll && d.commitAll != nil:
+		a.allFiles(c, d.commitAll, func(i int) { // the file alone
+			prefs.CommitAll = false
+			prefs.save()
+			d.fileSel = i
+			a.commitAllChanged()
+		})
 	case d.images != nil:
 		a.imageView(c, d.images)
 	case d.folded:

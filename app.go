@@ -149,6 +149,8 @@ type detail struct {
 	patch      *editor.FilePatch    // the change's, when its lines can be chosen
 	patchWhole bool                 // the diff shows the whole files, a patch's changes on them
 	all        *allChanges          // a list's changes one after another, in place of one (#44)
+	commitAll  []allFile            // the commit's files one after another, as prefs.CommitAll asks
+	allReveal  int                  // the file one after another to scroll to, plus 1; 0 for none
 	fold       bool                 // the whole files fold away from the changes, as the file is long
 	reveal     bool                 // the first change waits to be scrolled into view
 	sides      [2]textSide          // where the diff's texts come from: old first, then new
@@ -633,6 +635,10 @@ func (a *app) loadPatch(load patchLoad, keep string) {
 			a.detail.generated[i] = isGenerated(fileName(r.files[i]), r.marked, &r.files[i], nil)
 		}
 		a.detail.fileSel = -1
+		if prefs.CommitAll && len(r.files) > 0 { // one after another (#44)
+			a.showCommitAll()
+			return
+		}
 		kept := slices.IndexFunc(r.files, func(f editor.FilePatch) bool { return fileName(f) == keep })
 		// The first file people wrote, past lockfiles and the like.
 		if kept >= 0 {

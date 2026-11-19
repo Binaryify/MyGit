@@ -1754,5 +1754,6 @@
   },
   "historyCurrentBranch": "Current Branch",
   "historyAllBranches": "All Branches",
-  "historyBranchFilter": "Show the commits of"
+  "historyBranchFilter": "Show the commits of",
+  "showFileAlone": "Show One File at a Time"
 }

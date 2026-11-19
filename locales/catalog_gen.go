@@ -6281,3 +6281,13 @@ func HistoryBranchFilter() string { return In(i18n.Locale()).HistoryBranchFilter
 func (msgs Messages) HistoryBranchFilter() string {
 	return Catalog.Format(msgs.locale, "historyBranchFilter", nil)
 }
+
+// ShowFileAlone says "Show One File at a Time"
+// in the language the app shows.
+func ShowFileAlone() string { return In(i18n.Locale()).ShowFileAlone() }
+
+// ShowFileAlone says "Show One File at a Time"
+// in the language of msgs.
+func (msgs Messages) ShowFileAlone() string {
+	return Catalog.Format(msgs.locale, "showFileAlone", nil)
+}

@@ -620,5 +620,6 @@
   "allChangesTitle": "{count} 个改动的文件",
   "historyCurrentBranch": "当前分支",
   "historyAllBranches": "所有分支",
-  "historyBranchFilter": "显示哪些分支的提交"
+  "historyBranchFilter": "显示哪些分支的提交",
+  "showFileAlone": "逐个文件查看"
 }

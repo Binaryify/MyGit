@@ -1012,4 +1012,10 @@ func TestDumpIssues(t *testing.T) {
 	tt.a.openIdentity()
 	tt.settle()
 	save("identity")
+	tt.a.identity.open = false
+	defer func(on bool) { prefs.CommitAll = on }(prefs.CommitAll)
+	prefs.CommitAll = true
+	tt.a.showCommit(0)
+	tt.settle()
+	save("commit-all")
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"testing"
 
 	loc "mygit/locales"
@@ -18,7 +19,7 @@ func TestShowAllChanges(t *testing.T) {
 	}
 	for _, f := range all.files {
 		if f.diff == nil || !f.diff.FitContent {
-			t.Fatalf("%s: no diff fitting its lines, %q", f.change.Path, f.note)
+			t.Fatalf("%s: no diff fitting its lines, %q", f.path, f.note)
 		}
 	}
 	if !tt.HasText(loc.AllChangesTitle(2)) || !tt.HasText("-1") {
@@ -50,5 +51,62 @@ func TestShowAllChanges(t *testing.T) {
 	tt.settle()
 	if d := tt.a.detail; d.all != nil || d.change == nil {
 		t.Fatalf("chosen: %+v", d)
+	}
+}
+
+// A commit's files show one after another too, kept for the next commit;
+// a file chosen in the list scrolls to it, and its name shows it alone.
+// Wrapping wraps them all (#44).
+func TestCommitAll(t *testing.T) {
+	defer func(on, wrap bool) { prefs.CommitAll, prefs.Wrap = on, wrap }(prefs.CommitAll, prefs.Wrap)
+	prefs.CommitAll, prefs.Wrap = false, false
+	tt := newTester(t)
+	ctx := context.Background()
+	// No changes, so the list's button of the same name isn't there.
+	tt.write(t, map[string]string{"a.txt": "a\n", "b.txt": "b\n"})
+	for _, args := range [][]string{{"add", "a.txt", "b.txt"}, {"commit", "-qm", "Two files"}, {"clean", "-qf"}} {
+		if _, err := tt.a.repo.Git(ctx, args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	tt.a.refresh()
+	tt.settle()
+	tt.click(t, "Two files")
+	if d := tt.a.detail; d.diff == nil || d.commitAll != nil {
+		t.Fatalf("one file: %+v", d)
+	}
+	tt.click(t, loc.ShowAllChanges())
+	if d := tt.a.detail; !prefs.CommitAll || len(d.commitAll) != 2 || d.commitAll[0].diff == nil || !d.commitAll[0].diff.FitContent {
+		t.Fatalf("all: %+v", d.commitAll)
+	}
+	if !tt.HasText("a.txt") || !tt.HasText(loc.WrapLines()) {
+		t.Fatalf("texts %q", tt.Texts())
+	}
+	tt.click(t, loc.WrapLines())
+	for _, f := range tt.a.detail.commitAll {
+		if !f.diff.Wrap {
+			t.Fatalf("%s not wrapped", f.path)
+		}
+	}
+
+	// Another commit opens one after another too.
+	tt.click(t, "Merge the feature")
+	if d := tt.a.detail; d.commit == nil || d.commit.Subject != "Merge the feature" || d.commitAll == nil {
+		t.Fatalf("next commit: %+v", d)
+	}
+	tt.click(t, "Two files")
+
+	// The list scrolls to a file, staying one after another.
+	tt.click(t, "b.txt")
+	if d := tt.a.detail; d.fileSel != 1 || d.allReveal != 0 || d.commitAll == nil || d.diff != nil {
+		t.Fatalf("revealed: sel %d, reveal %d", d.fileSel, d.allReveal)
+	}
+
+	// A name clicked shows its file alone, as its header does.
+	prefs.CommitAll = false
+	tt.a.commitAllChanged()
+	tt.settle()
+	if d := tt.a.detail; prefs.CommitAll || d.diff == nil || d.commitAll != nil {
+		t.Fatalf("alone: %+v", d)
 	}
 }
