@@ -84,6 +84,9 @@ func (a *app) branchItems(m *ui.Menu, b string) {
 	if a.chose(m.Item(loc.WorktreeNew())) {
 		a.newWorktree(b, true)
 	}
+	if b != cur && a.chose(m.Item(loc.BranchUpdate())) { // without switching to it (#45)
+		a.run(loc.OpUpdateBranch(b), func(ctx context.Context) error { return a.repo.UpdateBranch(ctx, b) }, nil)
+	}
 	if b != cur && a.chose(m.Item(loc.BranchHistory())) { // the current one's is the history's own
 		a.setScope(git.Scope{Ref: b})
 	}

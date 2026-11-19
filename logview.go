@@ -44,10 +44,11 @@ func (a *app) logView(c *ui.Context) {
 				ui.Spinner(c).Size(12, 12)
 			}
 			ui.Box(c).Grow(1)
+			a.historyBranches(c)
 			a.historyColumns(c)
 			a.searchField(c)
 		})
-		if a.scope.Ref != "HEAD" {
+		if a.scope.Ref != "HEAD" && a.scope.Ref != "" { // all of them says so above
 			a.scopeBanner(c, loc.RefOnly(a.scope.Ref), loc.BackToCurrentBranch(), git.Scope{Ref: "HEAD", Path: a.scope.Path})
 		}
 		if a.scope.Path != "" {
@@ -207,6 +208,41 @@ func (a *app) logRow(c *ui.Context, cm *git.Commit, row *graph.Row, lanes int, c
 		}
 		ui.Text(c, cm.Author).TextColor(muted).SingleLine().Width(120)
 		ui.Text(c, cm.Time.Format("2006-01-02 15:04")).TextColor(muted).Font("monospace").FontSize(11).Width(110)
+	})
+}
+
+// historyBranches chooses whose commits the history shows, as IntelliJ's
+// Branch filter: the current branch's, all of them, or one's (#45), to
+// cherry-pick another branch's commits without switching to it.
+func (a *app) historyBranches(c *ui.Context) {
+	label := a.scope.Ref
+	switch label {
+	case "HEAD":
+		label = loc.HistoryCurrentBranch()
+	case "":
+		label = loc.HistoryAllBranches()
+	}
+	choose := func(m *ui.Menu, label, ref string) {
+		if m.Item(label).Checked(a.scope.Ref == ref).Chosen() {
+			a.setScope(git.Scope{Ref: ref, Path: a.scope.Path})
+		}
+	}
+	ui.Button(c.Key("history-branches"), label+" ▾").Label(loc.HistoryBranchFilter()).Tooltip(loc.HistoryBranchFilter()).Menu(func(m *ui.Menu) {
+		choose(m, loc.HistoryCurrentBranch(), "HEAD")
+		choose(m, loc.HistoryAllBranches(), "")
+		if len(a.branches) > 0 {
+			m.Separator()
+			for _, b := range a.branches {
+				choose(m, b, b)
+			}
+		}
+		if len(a.remotes) > 0 {
+			m.Submenu(loc.BranchesRemote(), func(m *ui.Menu) {
+				for _, b := range a.remotes {
+					choose(m, b, b)
+				}
+			})
+		}
 	})
 }
 

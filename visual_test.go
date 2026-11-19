@@ -983,3 +983,33 @@ func TestDumpBranchDelete(t *testing.T) {
 	t.Logf("menu of a branch: %q", menu.Menu())
 	save(menu, "branch-menu")
 }
+
+// TestDumpIssues renders what 0.3.38 adds into MYGIT_DUMP, as
+// TestDumpThemes does: the settings' checkboxes (#41), the commit
+// author's dialog (#43), all the changes in one scroll (#44) and the
+// history's branch filter (#45).
+func TestDumpIssues(t *testing.T) {
+	out := os.Getenv("MYGIT_DUMP")
+	if out == "" {
+		t.Skip()
+	}
+	tt := newTester(t)
+	save := func(name string) {
+		tt.Frame()
+		f, _ := os.Create(out + "/" + name + ".png")
+		png.Encode(f, tt.Image())
+		f.Close()
+	}
+	tt.write(t, map[string]string{"main.go": "package main\n\nfunc main() {\n\tprintln(1)\n}\n", "lib/util.go": "package lib\n\nfunc Util() int { return 1 }\n"})
+	tt.a.showAll(false)
+	tt.settle()
+	tt.a.setScope(git.Scope{})
+	tt.settle()
+	save("all-changes")
+	tt.a.settings.open = true
+	save("settings")
+	tt.a.settings.open = false
+	tt.a.openIdentity()
+	tt.settle()
+	save("identity")
+}

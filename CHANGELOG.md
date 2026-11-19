@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.38
+
+- 连续查看全部改动（[#44](https://github.com/Binaryify/MyGit/issues/44)，感谢 [@karasHou](https://github.com/karasHou) 的建议）：「暂存的更改」和「更改」标题右侧多了一个按钮，点一下就把这个列表里所有文件的改动上下接在一起，一路滚动看完，和 VS Code 的多文件对比一样。每个文件上方是文件名和增删行数，点文件名回到单独查看这个文件。二进制、生成文件和有冲突的文件只显示文件名和说明。文件变化后内容会自动更新
+- 历史可以显示所有分支的提交（[#45](https://github.com/Binaryify/MyGit/issues/45)，感谢 [@EGo14T](https://github.com/EGo14T) 的建议）：历史标题栏多了分支筛选，可选「当前分支」「所有分支」，或者任意一个本地、远程分支，和 IDEA 的 Branch 筛选一样，方便从别的分支挑提交 cherry-pick。选了「所有分支」后切换分支也会保持
+- 不用切换就能更新别的分支（[#45](https://github.com/Binaryify/MyGit/issues/45)）：在分支菜单里右键一个非当前分支，选「从上游更新」，会直接把它快进到远程的最新提交。如果它和上游已经分叉，会提示你切过去再拉取
+- 可以修改提交者的用户名和邮箱（[#43](https://github.com/Binaryify/MyGit/issues/43)，感谢 [@nuo010](https://github.com/nuo010) 的建议）：「⋯ → 提交者信息…」里填写，可以只用于当前仓库，也可以用于所有仓库（等同于 `git config --local / --global user.name`、`user.email`）。如果因为没设置用户名而提交失败，会自动打开这个窗口
+- 修复设置里「显示侧边栏」「单一更改列表」显示成按钮、说明文字被截断（[#41](https://github.com/Binaryify/MyGit/issues/41)，感谢 [@nuo010](https://github.com/nuo010) 的反馈）：现在和「上下对比」一样是勾选框，说明文字放在下方，能完整显示
+
 ## 0.3.37
 
 - 查看提交和暂存的改动时显示整个文件，和 IDEA 一样（[#38](https://github.com/Binaryify/MyGit/issues/38)、[#40](https://github.com/Binaryify/MyGit/pull/40)，感谢 [@yangdev02](https://github.com/yangdev02) 的贡献）：以前只显示每处改动前后 3 行，现在两侧都是整份文件，行号就是文件里的行号，改动标在原位置。看提交、比较分支、储藏、PR 评审和已暂存的改动都是这样。2000 行以内的文件打开就全部展开；更长的文件先折叠没改的部分，点分隔条可以展开，标题栏右侧有「折叠未更改」开关。超大文件、忽略空白的对比和重命名等，仍按原来的方式只显示改动片段。生成文件和锁文件照旧整份折叠

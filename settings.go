@@ -220,13 +220,16 @@ func (d *settingsDialog) view(c *ui.Context, withShortcuts bool, closed func()) 
 				themeSelect(c)
 				// The sidebar's way back for those who never learn the key.
 				shown := !prefs.SidebarHidden
-				if ui.Toggle(c, &shown, loc.Sidebar()).Changed() {
+				// A checkbox, not a toggle button: a toggle reads as a button
+				// to press and gives no room for the hint (#41).
+				ui.Checkbox(c, &shown, loc.ShowSidebarSetting()).OnClick(func() {
 					prefs.SidebarHidden = !shown
 					prefs.save()
-				}
-				if ui.Toggle(c, &prefs.OneList, loc.OneList()).Changed() {
+				})
+				if ui.Checkbox(c, &prefs.OneList, loc.OneList()).Changed() {
 					prefs.save()
 				}
+				ui.Text(c, loc.OneListHint()).FontSize(11).TextColor(t.TextMuted).Wrap()
 				ui.Text(c, loc.DiffSection()).Bold().TextColor(t.TextMuted)
 				ui.Checkbox(c, &prefs.Unified, loc.DiffUnified())
 				whitespaceSelect(c)

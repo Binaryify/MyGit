@@ -99,6 +99,7 @@ type app struct {
 	push         pushPlan
 	cred         credPrompt
 	remotes2     remotesPlan // the remotes dialog
+	identity     identityDialog
 	settings     settingsDialog
 	palette      palette   // ⌘P's files and ⌘K's commands
 	comments     []comment // the review's, to copy as Markdown
@@ -147,6 +148,7 @@ type detail struct {
 	whole      bool                 // the change shows whole files, the new one to edit
 	patch      *editor.FilePatch    // the change's, when its lines can be chosen
 	patchWhole bool                 // the diff shows the whole files, a patch's changes on them
+	all        *allChanges          // a list's changes one after another, in place of one (#44)
 	fold       bool                 // the whole files fold away from the changes, as the file is long
 	reveal     bool                 // the first change waits to be scrolled into view
 	sides      [2]textSide          // where the diff's texts come from: old first, then new
@@ -265,6 +267,9 @@ func (a *app) run(label string, fn func(ctx context.Context) error, then func())
 		a.busy = ""
 		if err != nil {
 			a.errMsg = loc.OpFailed(label, err.Error())
+			if git.NoIdentity(err) {
+				a.openIdentity() // what git asks for, to commit again
+			}
 		} else if then != nil {
 			then()
 		}
@@ -360,8 +365,9 @@ func (a *app) refresh() {
 		}
 		a.genMarked, a.unpushed = s.marked, s.unpushed
 		reload := s.refs != a.refs || a.commits == nil && !a.loading
-		if s.status.Branch != a.status.Branch && a.scope.Ref != "HEAD" {
-			// Switching branches shows the new one's history.
+		if s.status.Branch != a.status.Branch && a.scope.Ref != "HEAD" && a.scope.Ref != "" {
+			// Switching branches shows the new one's history; all of
+			// them stay all.
 			a.scope.Ref, reload = "HEAD", true
 		}
 		a.setStatus(s.status)
@@ -411,6 +417,9 @@ func (a *app) setStatus(st git.Status) {
 				return
 			}
 		}
+	}
+	if all := a.detail.all; all != nil { // the list's changes as they are now
+		a.showAll(all.staged)
 	}
 	// The diff of a change shows it as it is now, or nothing once it's gone.
 	if ch := a.detail.change; ch != nil {
@@ -1513,6 +1522,9 @@ func (a *app) remoteNames() []string {
 // changed.
 func (a *app) reloadDiff() {
 	switch d := a.detail; {
+	case d.all != nil: // read again, as what it leaves out may have changed
+		a.detail.all = nil
+		a.showAll(d.all.staged)
 	case d.change != nil && d.merge == nil:
 		a.detail = detail{gen: d.gen}
 		a.showChange(*d.change, d.staged)

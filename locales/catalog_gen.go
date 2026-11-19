@@ -2262,14 +2262,24 @@ func (msgs Messages) ErrSaveAPIKey(error string) string {
 	return Catalog.Format(msgs.locale, "errSaveAPIKey", map[string]any{"error": error})
 }
 
-// OneList says "One list of changes: checking a file includes it in the commit, as IDEA's"
+// OneList says "One list of changes (as IDEA's)"
 // in the language the app shows.
 func OneList() string { return In(i18n.Locale()).OneList() }
 
-// OneList says "One list of changes: checking a file includes it in the commit, as IDEA's"
+// OneList says "One list of changes (as IDEA's)"
 // in the language of msgs.
 func (msgs Messages) OneList() string {
 	return Catalog.Format(msgs.locale, "oneList", nil)
+}
+
+// OneListHint says "Checking a file includes it in the next commit without staging it."
+// in the language the app shows.
+func OneListHint() string { return In(i18n.Locale()).OneListHint() }
+
+// OneListHint says "Checking a file includes it in the next commit without staging it."
+// in the language of msgs.
+func (msgs Messages) OneListHint() string {
+	return Catalog.Format(msgs.locale, "oneListHint", nil)
 }
 
 // NewFiles says "New Files"
@@ -3698,6 +3708,16 @@ func Sidebar() string { return In(i18n.Locale()).Sidebar() }
 // in the language of msgs.
 func (msgs Messages) Sidebar() string {
 	return Catalog.Format(msgs.locale, "sidebar", nil)
+}
+
+// ShowSidebarSetting says "Show the sidebar"
+// in the language the app shows.
+func ShowSidebarSetting() string { return In(i18n.Locale()).ShowSidebarSetting() }
+
+// ShowSidebarSetting says "Show the sidebar"
+// in the language of msgs.
+func (msgs Messages) ShowSidebarSetting() string {
+	return Catalog.Format(msgs.locale, "showSidebarSetting", nil)
 }
 
 // HideSidebar says "Hide Sidebar"
@@ -6060,4 +6080,204 @@ func DeselectAllChanges() string { return In(i18n.Locale()).DeselectAllChanges()
 // in the language of msgs.
 func (msgs Messages) DeselectAllChanges() string {
 	return Catalog.Format(msgs.locale, "deselectAllChanges", nil)
+}
+
+// IdentityMenu says "Commit Author…"
+// in the language the app shows.
+func IdentityMenu() string { return In(i18n.Locale()).IdentityMenu() }
+
+// IdentityMenu says "Commit Author…"
+// in the language of msgs.
+func (msgs Messages) IdentityMenu() string {
+	return Catalog.Format(msgs.locale, "identityMenu", nil)
+}
+
+// IdentityTitle says "Commit Author"
+// in the language the app shows.
+func IdentityTitle() string { return In(i18n.Locale()).IdentityTitle() }
+
+// IdentityTitle says "Commit Author"
+// in the language of msgs.
+func (msgs Messages) IdentityTitle() string {
+	return Catalog.Format(msgs.locale, "identityTitle", nil)
+}
+
+// IdentityName says "Name"
+// in the language the app shows.
+func IdentityName() string { return In(i18n.Locale()).IdentityName() }
+
+// IdentityName says "Name"
+// in the language of msgs.
+func (msgs Messages) IdentityName() string {
+	return Catalog.Format(msgs.locale, "identityName", nil)
+}
+
+// IdentityEmail says "Email"
+// in the language the app shows.
+func IdentityEmail() string { return In(i18n.Locale()).IdentityEmail() }
+
+// IdentityEmail says "Email"
+// in the language of msgs.
+func (msgs Messages) IdentityEmail() string {
+	return Catalog.Format(msgs.locale, "identityEmail", nil)
+}
+
+// IdentityGlobal says "Use for all repositories"
+// in the language the app shows.
+func IdentityGlobal() string { return In(i18n.Locale()).IdentityGlobal() }
+
+// IdentityGlobal says "Use for all repositories"
+// in the language of msgs.
+func (msgs Messages) IdentityGlobal() string {
+	return Catalog.Format(msgs.locale, "identityGlobal", nil)
+}
+
+// IdentityLocalHint says "Only this repository's new commits use it (git config --local)."
+// in the language the app shows.
+func IdentityLocalHint() string { return In(i18n.Locale()).IdentityLocalHint() }
+
+// IdentityLocalHint says "Only this repository's new commits use it (git config --local)."
+// in the language of msgs.
+func (msgs Messages) IdentityLocalHint() string {
+	return Catalog.Format(msgs.locale, "identityLocalHint", nil)
+}
+
+// IdentityGlobalHint says "New commits in every repository use it (git config --global); this repository's own setting is removed."
+// in the language the app shows.
+func IdentityGlobalHint() string { return In(i18n.Locale()).IdentityGlobalHint() }
+
+// IdentityGlobalHint says "New commits in every repository use it (git config --global); this repository's own setting is removed."
+// in the language of msgs.
+func (msgs Messages) IdentityGlobalHint() string {
+	return Catalog.Format(msgs.locale, "identityGlobalHint", nil)
+}
+
+// OpSaveIdentity says "Save the commit author"
+// in the language the app shows.
+func OpSaveIdentity() string { return In(i18n.Locale()).OpSaveIdentity() }
+
+// OpSaveIdentity says "Save the commit author"
+// in the language of msgs.
+func (msgs Messages) OpSaveIdentity() string {
+	return Catalog.Format(msgs.locale, "opSaveIdentity", nil)
+}
+
+// BranchUpdate says "Update from Upstream"
+// in the language the app shows.
+func BranchUpdate() string { return In(i18n.Locale()).BranchUpdate() }
+
+// BranchUpdate says "Update from Upstream"
+// in the language of msgs.
+func (msgs Messages) BranchUpdate() string {
+	return Catalog.Format(msgs.locale, "branchUpdate", nil)
+}
+
+// OpUpdateBranch says "Update {branch}"
+// in the language the app shows.
+func OpUpdateBranch(branch string) string { return In(i18n.Locale()).OpUpdateBranch(branch) }
+
+// OpUpdateBranch says "Update {branch}"
+// in the language of msgs.
+func (msgs Messages) OpUpdateBranch(branch string) string {
+	return Catalog.Format(msgs.locale, "opUpdateBranch", map[string]any{"branch": branch})
+}
+
+// ErrNoUpstream says "{branch} has no upstream branch to update from."
+// in the language the app shows.
+func ErrNoUpstream(branch string) string { return In(i18n.Locale()).ErrNoUpstream(branch) }
+
+// ErrNoUpstream says "{branch} has no upstream branch to update from."
+// in the language of msgs.
+func (msgs Messages) ErrNoUpstream(branch string) string {
+	return Catalog.Format(msgs.locale, "errNoUpstream", map[string]any{"branch": branch})
+}
+
+// ErrUpdateDiverged says "{branch} and its upstream have diverged, so it can't fast-forward. Switch to it and pull."
+// in the language the app shows.
+func ErrUpdateDiverged(branch string) string { return In(i18n.Locale()).ErrUpdateDiverged(branch) }
+
+// ErrUpdateDiverged says "{branch} and its upstream have diverged, so it can't fast-forward. Switch to it and pull."
+// in the language of msgs.
+func (msgs Messages) ErrUpdateDiverged(branch string) string {
+	return Catalog.Format(msgs.locale, "errUpdateDiverged", map[string]any{"branch": branch})
+}
+
+// ShowAllChanges says "Show All Changes in One Scroll"
+// in the language the app shows.
+func ShowAllChanges() string { return In(i18n.Locale()).ShowAllChanges() }
+
+// ShowAllChanges says "Show All Changes in One Scroll"
+// in the language of msgs.
+func (msgs Messages) ShowAllChanges() string {
+	return Catalog.Format(msgs.locale, "showAllChanges", nil)
+}
+
+// AllOpenFile says "Show this file alone"
+// in the language the app shows.
+func AllOpenFile() string { return In(i18n.Locale()).AllOpenFile() }
+
+// AllOpenFile says "Show this file alone"
+// in the language of msgs.
+func (msgs Messages) AllOpenFile() string {
+	return Catalog.Format(msgs.locale, "allOpenFile", nil)
+}
+
+// AllGenerated says "A generated file, folded. Click its name to see it."
+// in the language the app shows.
+func AllGenerated() string { return In(i18n.Locale()).AllGenerated() }
+
+// AllGenerated says "A generated file, folded. Click its name to see it."
+// in the language of msgs.
+func (msgs Messages) AllGenerated() string {
+	return Catalog.Format(msgs.locale, "allGenerated", nil)
+}
+
+// AllConflict says "In conflict. Click its name to resolve it."
+// in the language the app shows.
+func AllConflict() string { return In(i18n.Locale()).AllConflict() }
+
+// AllConflict says "In conflict. Click its name to resolve it."
+// in the language of msgs.
+func (msgs Messages) AllConflict() string {
+	return Catalog.Format(msgs.locale, "allConflict", nil)
+}
+
+// AllChangesTitle says "{count, plural, one {# changed file} other {# changed files}}"
+// in the language the app shows.
+func AllChangesTitle(count int) string { return In(i18n.Locale()).AllChangesTitle(count) }
+
+// AllChangesTitle says "{count, plural, one {# changed file} other {# changed files}}"
+// in the language of msgs.
+func (msgs Messages) AllChangesTitle(count int) string {
+	return Catalog.Format(msgs.locale, "allChangesTitle", map[string]any{"count": count})
+}
+
+// HistoryCurrentBranch says "Current Branch"
+// in the language the app shows.
+func HistoryCurrentBranch() string { return In(i18n.Locale()).HistoryCurrentBranch() }
+
+// HistoryCurrentBranch says "Current Branch"
+// in the language of msgs.
+func (msgs Messages) HistoryCurrentBranch() string {
+	return Catalog.Format(msgs.locale, "historyCurrentBranch", nil)
+}
+
+// HistoryAllBranches says "All Branches"
+// in the language the app shows.
+func HistoryAllBranches() string { return In(i18n.Locale()).HistoryAllBranches() }
+
+// HistoryAllBranches says "All Branches"
+// in the language of msgs.
+func (msgs Messages) HistoryAllBranches() string {
+	return Catalog.Format(msgs.locale, "historyAllBranches", nil)
+}
+
+// HistoryBranchFilter says "Show the commits of"
+// in the language the app shows.
+func HistoryBranchFilter() string { return In(i18n.Locale()).HistoryBranchFilter() }
+
+// HistoryBranchFilter says "Show the commits of"
+// in the language of msgs.
+func (msgs Messages) HistoryBranchFilter() string {
+	return Catalog.Format(msgs.locale, "historyBranchFilter", nil)
 }

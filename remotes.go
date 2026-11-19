@@ -114,6 +114,9 @@ func (a *app) repoMenu(m *ui.Menu) {
 	if m.Item(loc.RemotesMenu()).Chosen() {
 		a.openRemotes()
 	}
+	if m.Item(loc.IdentityMenu()).Chosen() {
+		a.openIdentity()
+	}
 	if m.Item(loc.PullRequestsMenu()).Chosen() {
 		a.openPulls()
 	}

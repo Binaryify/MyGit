@@ -630,7 +630,8 @@
       }
     }
   },
-  "oneList": "One list of changes: checking a file includes it in the commit, as IDEA's",
+  "oneList": "One list of changes (as IDEA's)",
+  "oneListHint": "Checking a file includes it in the next commit without staging it.",
   "newFiles": "New Files",
   "untrackedFiles": "Untracked Files",
   "stageUntracked": "Stage Untracked Files",
@@ -970,6 +971,7 @@
   "pushTooltip": "See the commits to push",
   "refresh": "Refresh",
   "sidebar": "Sidebar",
+  "showSidebarSetting": "Show the sidebar",
   "hideSidebar": "Hide Sidebar",
   "showSidebar": "Show Sidebar",
   "toggleSidebar": "Show or hide the sidebar",
@@ -1704,5 +1706,53 @@
   "includeInCommitMenu": "Include in Commit",
   "excludeFromCommitMenu": "Exclude from Commit",
   "selectAllChanges": "Select All Changes",
-  "deselectAllChanges": "Deselect All Changes"
+  "deselectAllChanges": "Deselect All Changes",
+  "identityMenu": "Commit Author…",
+  "identityTitle": "Commit Author",
+  "identityName": "Name",
+  "identityEmail": "Email",
+  "identityGlobal": "Use for all repositories",
+  "identityLocalHint": "Only this repository's new commits use it (git config --local).",
+  "identityGlobalHint": "New commits in every repository use it (git config --global); this repository's own setting is removed.",
+  "opSaveIdentity": "Save the commit author",
+  "branchUpdate": "Update from Upstream",
+  "opUpdateBranch": "Update {branch}",
+  "@opUpdateBranch": {
+    "placeholders": {
+      "branch": {
+        "type": "String"
+      }
+    }
+  },
+  "errNoUpstream": "{branch} has no upstream branch to update from.",
+  "@errNoUpstream": {
+    "placeholders": {
+      "branch": {
+        "type": "String"
+      }
+    }
+  },
+  "errUpdateDiverged": "{branch} and its upstream have diverged, so it can't fast-forward. Switch to it and pull.",
+  "@errUpdateDiverged": {
+    "placeholders": {
+      "branch": {
+        "type": "String"
+      }
+    }
+  },
+  "showAllChanges": "Show All Changes in One Scroll",
+  "allOpenFile": "Show this file alone",
+  "allGenerated": "A generated file, folded. Click its name to see it.",
+  "allConflict": "In conflict. Click its name to resolve it.",
+  "allChangesTitle": "{count, plural, one {# changed file} other {# changed files}}",
+  "@allChangesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "historyCurrentBranch": "Current Branch",
+  "historyAllBranches": "All Branches",
+  "historyBranchFilter": "Show the commits of"
 }

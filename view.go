@@ -80,6 +80,7 @@ func (a *app) view(c *ui.Context) {
 	a.promptView(c)
 	a.worktreeView(c)
 	a.remotesView(c)
+	a.identityView(c)
 	a.settingsView(c)
 	a.confirmView(c)
 	a.cred.view(c)
@@ -369,6 +370,9 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 		// stacked, keep theirs to those with files.
 		if len(items) > 0 || fill {
 			treeToggle(c)
+		}
+		if len(items) > 0 && iconButton(c, "rows", loc.ShowAllChanges()) {
+			a.showAll(staged) // one after another, to read them through (#44)
 		}
 		if len(items) > 0 {
 			idle := a.busy == ""
@@ -781,6 +785,18 @@ func (a *app) detailView(c *ui.Context) {
 			a.blameView(c, d.blame)
 		case d.merge != nil:
 			a.mergeView(c, d.merge)
+		case d.all != nil:
+			ui.Row(c).Padding(8, 12).Gap(8).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
+				ui.Text(c, loc.AllChangesTitle(len(d.all.files))).Bold().SingleLine()
+				side := loc.SideWorktree()
+				if d.all.staged {
+					side = loc.SideStaged()
+				}
+				ui.Badge(c, side)
+				ui.Box(c).Grow(1)
+				a.whitespaceMenu(c)
+			})
+			a.diffView(c)
 		case d.change != nil && d.change.Conflict:
 			ui.Column(c).Fill().Center().Children(func() { ui.Spinner(c).Size(18, 18) })
 		case d.change != nil:
@@ -1078,6 +1094,8 @@ func (a *app) diffView(c *ui.Context) {
 	switch {
 	case d.loading:
 		ui.Column(c).Fill().Center().Children(func() { ui.Spinner(c).Size(18, 18) })
+	case d.all != nil:
+		a.allView(c, d.all)
 	case d.images != nil:
 		a.imageView(c, d.images)
 	case d.folded:

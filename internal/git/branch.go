@@ -2,8 +2,11 @@ package git
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"strings"
+
+	loc "mygit/locales"
 )
 
 // Branches are the local branches, by name.
@@ -199,4 +202,20 @@ func (r *Repo) RenameBranch(ctx context.Context, from, to string) error {
 func (r *Repo) ValidBranchName(ctx context.Context, name string) bool {
 	_, err := r.Git(ctx, "check-ref-format", "--branch", name)
 	return err == nil && name != ""
+}
+
+// UpdateBranch brings a branch not checked out up to its upstream without
+// switching to it (#45): it fetches the upstream's branch into it, which
+// git does only as a fast-forward.
+func (r *Repo) UpdateBranch(ctx context.Context, branch string) error {
+	remote := r.config(ctx, "", "branch."+branch+".remote")
+	merge := r.config(ctx, "", "branch."+branch+".merge")
+	if remote == "" || merge == "" {
+		return errors.New(loc.ErrNoUpstream(branch))
+	}
+	_, err := r.Git(ctx, "fetch", remote, merge+":refs/heads/"+branch)
+	if err != nil && (strings.Contains(err.Error(), "non-fast-forward") || strings.Contains(err.Error(), "rejected")) {
+		return errors.New(loc.ErrUpdateDiverged(branch))
+	}
+	return err
 }
