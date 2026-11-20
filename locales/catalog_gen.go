@@ -1380,6 +1380,16 @@ func (msgs Messages) CherryPick() string {
 	return Catalog.Format(msgs.locale, "cherryPick", nil)
 }
 
+// CherryPickCommits says "Cherry-Pick {count} Commits"
+// in the language the app shows.
+func CherryPickCommits(count int) string { return In(i18n.Locale()).CherryPickCommits(count) }
+
+// CherryPickCommits says "Cherry-Pick {count} Commits"
+// in the language of msgs.
+func (msgs Messages) CherryPickCommits(count int) string {
+	return Catalog.Format(msgs.locale, "cherryPickCommits", map[string]any{"count": count})
+}
+
 // RevertCommit says "Revert Commit"
 // in the language the app shows.
 func RevertCommit() string { return In(i18n.Locale()).RevertCommit() }

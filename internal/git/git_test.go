@@ -811,3 +811,49 @@ func TestSubjectOneLine(t *testing.T) {
 		t.Fatalf("message %q", m)
 	}
 }
+
+func TestCherryPickSeveral(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	commit := func(name, text string) {
+		t.Helper()
+		write(t, r, name, text)
+		if err := r.Stage(ctx, name); err != nil {
+			t.Fatal(err)
+		}
+		if err := r.Commit(ctx, name, false); err != nil {
+			t.Fatal(err)
+		}
+	}
+	commit("a.txt", "a\n")
+	if err := r.CreateBranch(ctx, "topic", "", true); err != nil {
+		t.Fatal(err)
+	}
+	commit("b.txt", "b\n")
+	commit("c.txt", "c\n")
+	commit("b.txt", "b2\n") // needs b.txt's first commit before it
+	var log []Commit
+	_ = r.Log(ctx, Scope{}, 10, func(c []Commit) { log = append(log, c...) })
+	if err := r.Switch(ctx, "main"); err != nil {
+		t.Fatal(err)
+	}
+	// the first and last of topic's three, oldest first, skipping c.txt's
+	if err := r.CherryPick(ctx, log[2], log[0]); err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	_ = r.Log(ctx, Scope{Ref: "HEAD"}, 10, func(c []Commit) {
+		for _, cm := range c {
+			got = append(got, cm.Subject)
+		}
+	})
+	if !slices.Equal(got, []string{"b.txt", "b.txt", "a.txt"}) {
+		t.Fatalf("history after cherry-picking two commits %v", got)
+	}
+	if b, _ := os.ReadFile(filepath.Join(r.Dir, "b.txt")); string(b) != "b2\n" {
+		t.Fatalf("b.txt %q", b)
+	}
+	if _, err := os.Stat(filepath.Join(r.Dir, "c.txt")); !os.IsNotExist(err) {
+		t.Fatalf("c.txt was not picked: %v", err)
+	}
+}

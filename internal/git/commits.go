@@ -33,9 +33,21 @@ func mainline(c Commit) []string {
 	return nil
 }
 
-// CherryPick applies a commit's change on HEAD as a new commit.
-func (r *Repo) CherryPick(ctx context.Context, c Commit) error {
-	_, err := r.Git(ctx, append(append([]string{"cherry-pick"}, mainline(c)...), c.Hash)...)
+// CherryPick applies commits' changes on HEAD as new commits, in the order
+// given. It is one git cherry-pick, so a conflict stops it with the rest
+// still to do, and continuing it goes on with them.
+func (r *Repo) CherryPick(ctx context.Context, commits ...Commit) error {
+	args := []string{"cherry-pick"}
+	for _, c := range commits {
+		if m := mainline(c); m != nil { // git takes -m for the plain commits too
+			args = append(args, m...)
+			break
+		}
+	}
+	for _, c := range commits {
+		args = append(args, c.Hash)
+	}
+	_, err := r.Git(ctx, args...)
 	return err
 }
 

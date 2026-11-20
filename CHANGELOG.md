@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.40
+
+- 一次 cherry-pick 多个提交（[#45](https://github.com/Binaryify/MyGit/issues/45)，感谢 [@EGo14T](https://github.com/EGo14T) 的反馈）：以前在历史里多选提交后点 cherry-pick，只会摘最后右键的那一个。现在右键选中的提交会显示「Cherry-pick N 个提交」，按历史里从旧到新（自下而上）的顺序依次摘过来，和 IDEA 一样，与点选的先后无关。中途遇到冲突会停下，解决后点「继续」接着摘剩下的，也可以「中止」全部撤回
+
 ## 0.3.39
 
 以下改进来自 [@karasHou](https://github.com/karasHou) 在 [#44](https://github.com/Binaryify/MyGit/issues/44) 里的补充建议，感谢！

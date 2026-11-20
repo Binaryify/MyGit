@@ -134,6 +134,7 @@
   "worktree": "工作区",
   "checkoutCommit": "检出此提交",
   "cherryPick": "Cherry-pick",
+  "cherryPickCommits": "Cherry-pick {count} 个提交",
   "revertCommit": "撤销提交（revert）",
   "rebaseFromHere": "从此处交互式变基…",
   "resetTo": "将 {branch} 重置到此",

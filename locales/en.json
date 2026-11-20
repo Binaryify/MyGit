@@ -462,6 +462,14 @@
   "worktree": "working tree",
   "checkoutCommit": "Check Out This Commit",
   "cherryPick": "Cherry-Pick",
+  "cherryPickCommits": "Cherry-Pick {count} Commits",
+  "@cherryPickCommits": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "revertCommit": "Revert Commit",
   "rebaseFromHere": "Interactively Rebase from Here…",
   "resetTo": "Reset {branch} to Here",

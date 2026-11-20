@@ -456,7 +456,13 @@ func (a *app) commitMenu(m *ui.Menu, cm git.Commit) {
 		a.run(loc.OpCheckout(cm.Short()), func(ctx context.Context) error { return a.repo.CheckoutDetached(ctx, cm.Hash) }, nil)
 	}
 	m.Separator()
-	if m.Item(loc.CherryPick()).Chosen() {
+	if n := a.logChosen.Len(); n > 1 && a.logChosen.Has(cm.Hash) {
+		// oldest first, as the history has them, whatever order they were picked in
+		if m.Item(loc.CherryPickCommits(n)).Chosen() {
+			commits := a.chosenCommits()
+			a.run(loc.CherryPickCommits(n), func(ctx context.Context) error { return a.repo.CherryPick(ctx, commits...) }, nil)
+		}
+	} else if m.Item(loc.CherryPick()).Chosen() {
 		a.run(loc.CherryPick()+" "+cm.Short(), func(ctx context.Context) error { return a.repo.CherryPick(ctx, cm) }, nil)
 	}
 	if m.Item(loc.RevertCommit()).Chosen() {
