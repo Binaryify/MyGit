@@ -147,3 +147,40 @@ func TestPreviewSpans(t *testing.T) {
 		t.Fatalf("spans %+v", spans[:2])
 	}
 }
+
+// The minimap's box drags as a scroll bar's thumb, down the file and back
+// up, scrolling the diff by as much of it as the strip stands for (#47).
+func TestDragTheMinimapBoxScrolls(t *testing.T) {
+	var b strings.Builder
+	for i := range 400 {
+		if i == 100 {
+			b.WriteString("changed ")
+		}
+		b.WriteString("line\n")
+	}
+	tt := newTester(t)
+	tt.commitFiles(t, "Long file", map[string]string{"f.txt": strings.Repeat("line\n", 400)})
+	tt.write(t, map[string]string{"f.txt": b.String()})
+	tt.click(t, "f.txt")
+	d := tt.a.detail.diff
+	d.SetScrollY(0)
+	tt.Frame()
+	r, ok := tt.Find(loc.OverviewSliderTip())
+	if !ok {
+		t.Fatalf("no slider; texts %q", tt.Texts())
+	}
+	x, y := r.X+r.W/2, r.Y+r.H/2
+	tt.Press(x, y)
+	tt.Move(x, y+100)
+	tt.Frame()
+	tt.Release(x, y+100)
+	tt.Frame()
+	// The slider is as much of the strip as the view is of the diff.
+	want := 100 * d.ViewportHeight() / float64(r.H)
+	if got := d.ScrollY(); got < want*0.9 || got > want*1.1 {
+		t.Fatalf("scrolled to %v, want about %v", got, want)
+	}
+	if r2, _ := tt.Find(loc.OverviewSliderTip()); r2.Y <= r.Y {
+		t.Fatalf("slider at %v, from %v", r2.Y, r.Y)
+	}
+}

@@ -755,9 +755,10 @@ func (a *app) revealChange() {
 }
 
 // foldWhole folds the unchanged lines of whole files away from their
-// changes, as a file long enough to read a screen at a time is opened.
+// changes, as the last choice of the toggle keeps (#47) or as a file long
+// enough to read a screen at a time is opened.
 func (a *app) foldWhole(d *editor.DiffState) {
-	d.ExpandUnchanged = max(d.Old.LineCount(), d.New.LineCount()) <= wholeLines
+	d.ExpandUnchanged = !prefs.FoldUnchanged && max(d.Old.LineCount(), d.New.LineCount()) <= wholeLines
 	a.detail.fold = !d.ExpandUnchanged
 }
 

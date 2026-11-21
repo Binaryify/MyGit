@@ -118,3 +118,16 @@ func TestOursKnowsTheOldScript(t *testing.T) {
 		t.Error("the script of before the mark isn't seen as MyGit's")
 	}
 }
+
+// The app takes the terminals' PATH, so git finds the credential helpers
+// the terminal finds (#49).
+func TestUseShellPATH(t *testing.T) {
+	t.Setenv("PATH", "/usr/bin")
+	old := shellPATH
+	shellPATH = func() []string { return []string{"/opt/homebrew/bin", "/usr/bin"} }
+	defer func() { shellPATH = old }()
+	useShellPATH()
+	if got := os.Getenv("PATH"); got != "/opt/homebrew/bin:/usr/bin" {
+		t.Fatalf("PATH %q", got)
+	}
+}

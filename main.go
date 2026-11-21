@@ -44,6 +44,7 @@ func main() {
 	if !mygo.App.RequestSingleInstanceLock() {
 		return // the running MyGit opens it
 	}
+	go useShellPATH() // a login shell takes its time; git asks for no password before a fetch
 	mygo.App.OnSecondInstance(func(args []string, cwd string) { openArg(args, cwd) })
 	// Folders dropped on the icon, Open Recent, the Dock menu: those that
 	// come as the app starts wait for it to be ready.

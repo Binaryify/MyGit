@@ -812,9 +812,8 @@ func (a *app) detailView(c *ui.Context) {
 				ui.Badge(c, side)
 				ui.Box(c).Grow(1)
 				a.changeNav(c)
-				if d.patchWhole && d.diff != nil {
-					a.foldToggle(c)
-				}
+				a.foldToggle(c)
+				a.popButton(c)
 				if d.whole && d.diff != nil && ui.Toggle(c, &prefs.FoldUnchanged, loc.FoldUnchanged()).Changed() {
 					d.diff.ExpandUnchanged = !prefs.FoldUnchanged
 					prefs.save()
@@ -844,6 +843,7 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 				ui.Text(c, loc.FilesDiffer(len(d.files))).TextColor(t.TextMuted)
 				ui.Box(c).Grow(1)
 				a.foldToggle(c)
+				a.popButton(c)
 				a.whitespaceMenu(c)
 				if diffs := a.shownDiffs(); len(diffs) > 0 {
 					wrapToggle(c, diffs...)
@@ -858,6 +858,7 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 			ui.Box(c).Grow(1)
 			a.changeNav(c)
 			a.foldToggle(c)
+			a.popButton(c)
 			a.whitespaceMenu(c)
 			if diffs := a.shownDiffs(); len(diffs) > 0 {
 				wrapToggle(c, diffs...)
@@ -880,7 +881,8 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 }
 
 // foldToggle folds the unchanged lines of the whole files shown away from
-// their changes, and shows them all again, as IntelliJ's button does.
+// their changes, and shows them all again, as IntelliJ's button does;
+// the choice is kept for the files opened next (#47).
 func (a *app) foldToggle(c *ui.Context) {
 	d := &a.detail
 	if !d.patchWhole || d.diff == nil {
@@ -888,6 +890,8 @@ func (a *app) foldToggle(c *ui.Context) {
 	}
 	if ui.Toggle(c, &d.fold, loc.FoldUnchanged()).Changed() {
 		d.diff.ExpandUnchanged = !d.fold
+		prefs.FoldUnchanged = d.fold
+		prefs.save()
 	}
 }
 

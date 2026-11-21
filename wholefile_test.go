@@ -40,6 +40,8 @@ func showFileNamed(t *testing.T, tt *tester, name string) {
 // A commit's diff shows the whole file, as IntelliJ's does, its changes
 // marked where they are in it, not the patch's hunks alone.
 func TestCommitShowsWholeFile(t *testing.T) {
+	defer func(on bool) { prefs.FoldUnchanged = on }(prefs.FoldUnchanged)
+	prefs.FoldUnchanged = false
 	tt := newTester(t)
 	tt.commitFiles(t, "Change two lines", map[string]string{"a.txt": linesOf(40)})
 	tt.commitFiles(t, "Change two lines", map[string]string{"a.txt": linesOf(40, 5, 30)})
@@ -68,9 +70,36 @@ func TestCommitShowsWholeFile(t *testing.T) {
 	}
 }
 
+// Folding a commit's file is kept for the files opened next, short ones
+// too, until it is turned off (#47).
+func TestCommitFoldKept(t *testing.T) {
+	defer func(on bool) { prefs.FoldUnchanged = on }(prefs.FoldUnchanged)
+	prefs.FoldUnchanged = false
+	tt := newTester(t)
+	tt.commitFiles(t, "Change two files", map[string]string{"a.txt": linesOf(40), "b.txt": linesOf(40)})
+	tt.commitFiles(t, "Change two files", map[string]string{"a.txt": linesOf(40, 5), "b.txt": linesOf(40, 30)})
+	tt.click(t, "Change two files")
+	showFileNamed(t, tt, "a.txt")
+	tt.click(t, "折叠未更改")
+	if !prefs.FoldUnchanged || tt.a.detail.diff.ExpandUnchanged {
+		t.Fatalf("not folded: pref %v", prefs.FoldUnchanged)
+	}
+	showFileNamed(t, tt, "b.txt")
+	if d := tt.a.detail; !d.fold || d.diff.ExpandUnchanged {
+		t.Fatal("the next file opens unfolded")
+	}
+	tt.click(t, "折叠未更改")
+	showFileNamed(t, tt, "a.txt")
+	if d := tt.a.detail; prefs.FoldUnchanged || d.fold || !d.diff.ExpandUnchanged {
+		t.Fatal("unfolding is not kept")
+	}
+}
+
 // A file long enough opens with the lines away from its changes folded,
 // as IntelliJ folds them, and the button shows them all.
 func TestLongFileOpensFolded(t *testing.T) {
+	defer func(on bool) { prefs.FoldUnchanged = on }(prefs.FoldUnchanged)
+	prefs.FoldUnchanged = false
 	tt := newTester(t)
 	tt.commitFiles(t, "Change one line", map[string]string{"a.txt": linesOf(2600)})
 	tt.commitFiles(t, "Change one line", map[string]string{"a.txt": linesOf(2600, 1200)})

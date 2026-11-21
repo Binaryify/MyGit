@@ -110,3 +110,35 @@ func TestCommitAll(t *testing.T) {
 		t.Fatalf("alone: %+v", d)
 	}
 }
+
+// Shown as a tree, the tree's toggle and the commit's toggle both stay
+// their own buttons once the commit shows all its files (#48).
+func TestCommitAllBesideTree(t *testing.T) {
+	defer func(on, tree bool) { prefs.CommitAll, prefs.TreeView = on, tree }(prefs.CommitAll, prefs.TreeView)
+	prefs.CommitAll, prefs.TreeView = false, false
+	tt := newTester(t)
+	ctx := context.Background()
+	tt.write(t, map[string]string{"a.txt": "a\n", "b.txt": "b\n"})
+	for _, args := range [][]string{{"add", "a.txt", "b.txt"}, {"commit", "-qm", "Two files"}, {"clean", "-qf"}} {
+		if _, err := tt.a.repo.Git(ctx, args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	tt.a.refresh()
+	tt.settle()
+	tt.click(t, "Two files")
+	tt.click(t, loc.ViewAsTree())
+	tt.click(t, loc.ShowAllChanges())
+	if !prefs.TreeView || !prefs.CommitAll {
+		t.Fatalf("tree %v, all %v", prefs.TreeView, prefs.CommitAll)
+	}
+	tt.click(t, loc.ShowFileAlone())
+	if !prefs.TreeView || prefs.CommitAll {
+		t.Fatalf("alone: tree %v, all %v", prefs.TreeView, prefs.CommitAll)
+	}
+	tt.click(t, loc.ShowAllChanges())
+	tt.click(t, loc.ViewAsList())
+	if prefs.TreeView || !prefs.CommitAll {
+		t.Fatalf("list: tree %v, all %v", prefs.TreeView, prefs.CommitAll)
+	}
+}

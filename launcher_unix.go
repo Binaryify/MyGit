@@ -58,6 +58,15 @@ var shellPATH = func() []string {
 	return dirs
 }
 
+// useShellPATH gives the app, and the git it runs, the terminals' PATH:
+// started from the Finder, it ran the system's git, which missed the
+// credential helpers the terminal's config names (Homebrew's osxkeychain,
+// gh, Git Credential Manager) and asked for a password the terminal never
+// does (#49).
+func useShellPATH() {
+	_ = os.Setenv("PATH", strings.Join(shellPATH(), string(os.PathListSeparator)))
+}
+
 func contains(list []string, s string) bool {
 	for _, v := range list {
 		if v == s {

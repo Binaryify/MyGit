@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.41
+
+- 对比可以在新窗口中查看（[#46](https://github.com/Binaryify/MyGit/issues/46)，感谢 [@nuo010](https://github.com/nuo010) 的建议）：对比区标题栏多了一个「在新窗口中查看对比」按钮，把当前文件的对比单独开成一个窗口，可以最大化或拖到另一块屏幕上看，带 minimap 和自动换行开关。新窗口里是打开那一刻的只读副本，主窗口可以继续点别的文件
+- minimap 可以当滚动条拖（[#47](https://github.com/Binaryify/MyGit/issues/47)，感谢 [@mojie126](https://github.com/mojie126) 的建议）：按住 minimap 上表示当前可见区域的方框上下拖，对比就跟着滚动，比窄窄的滚动条好抓
+- 「折叠未更改」会记住了（[#47](https://github.com/Binaryify/MyGit/issues/47)）：看提交时打开或关掉它，接下来打开的文件都照这个来，不用每个文件再点一次。超过 2000 行的文件仍默认折叠
+- 图片对比可以缩放和拖动（[#50](https://github.com/Binaryify/MyGit/issues/50)，感谢 [@georgewuw](https://github.com/georgewuw) 的建议）：图片默认按面板大小缩放到完整显示，不再被挡住。鼠标滚轮或触控板捏合以指针为中心缩放，按住拖动或用触控板双指滑动平移，双击恢复。右上角有缩小、放大按钮，中间显示当前比例，点它恢复完整显示
+- 拉取、推送用上终端里的凭据（[#49](https://github.com/Binaryify/MyGit/issues/49)，感谢 [@nuo010](https://github.com/nuo010) 的反馈）：从访达或程序坞打开的 MyGit 只拿到系统默认的 PATH，用的是系统自带的 git，找不到终端里配置的凭据助手（Homebrew git 的钥匙串、`gh`、Git Credential Manager 等），于是每次都要输账号密码。现在启动后会读取登录 shell 的 PATH，和终端用同一个 git、同一套凭据
+- 修复先点「以树形式查看」再点「连续查看全部改动」后，两个按钮显示错乱、提示框卡在角落（[#48](https://github.com/Binaryify/MyGit/issues/48)，感谢 [@EGo14T](https://github.com/EGo14T) 的反馈）。「逐个文件查看」也换成了文件图标，不再和「以列表形式查看」长得一样
+
 ## 0.3.40
 
 - 一次 cherry-pick 多个提交（[#45](https://github.com/Binaryify/MyGit/issues/45)，感谢 [@EGo14T](https://github.com/EGo14T) 的反馈）：以前在历史里多选提交后点 cherry-pick，只会摘最后右键的那一个。现在右键选中的提交会显示「Cherry-pick N 个提交」，按历史里从旧到新（自下而上）的顺序依次摘过来，和 IDEA 一样，与点选的先后无关。中途遇到冲突会停下，解决后点「继续」接着摘剩下的，也可以「中止」全部撤回

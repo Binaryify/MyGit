@@ -202,7 +202,7 @@ func (a *app) showCommitAll() {
 func (a *app) commitAllToggle(c *ui.Context) {
 	icon, label := "rows", loc.ShowAllChanges()
 	if prefs.CommitAll {
-		icon, label = "list", loc.ShowFileAlone()
+		icon, label = "file", loc.ShowFileAlone()
 	}
 	if iconButton(c, icon, label) {
 		prefs.CommitAll = !prefs.CommitAll

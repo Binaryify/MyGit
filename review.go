@@ -73,8 +73,11 @@ func (a *app) diffPatch() *editor.FilePatch {
 
 // fileLine is the line of the file (from 1) a line of the diff (from 0)
 // is, and toDiff the other way.
-func (a *app) fileLine(side editor.DiffSide, i int) int {
-	p := a.diffPatch()
+func (a *app) fileLine(side editor.DiffSide, i int) int { return patchLine(a.diffPatch(), side, i) }
+
+// patchLine is the line of the file (from 1) a line of a diff of p (from
+// 0) is, p nil for a diff of whole files.
+func patchLine(p *editor.FilePatch, side editor.DiffSide, i int) int {
 	if p == nil {
 		return i + 1
 	}

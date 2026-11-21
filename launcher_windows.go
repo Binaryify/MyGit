@@ -13,6 +13,9 @@ import (
 	loc "mygit/locales"
 )
 
+// useShellPATH does nothing: a Windows app has the PATH its terminals have.
+func useShellPATH() {}
+
 // launcherDir is where the command goes: a folder of the user's own,
 // added to their PATH, as no installer's folder is.
 func launcherDir() (string, error) {

@@ -1982,6 +1982,16 @@ func (msgs Messages) OverviewWidthTip() string {
 	return Catalog.Format(msgs.locale, "overviewWidthTip", nil)
 }
 
+// OverviewSliderTip says "Drag to scroll"
+// in the language the app shows.
+func OverviewSliderTip() string { return In(i18n.Locale()).OverviewSliderTip() }
+
+// OverviewSliderTip says "Drag to scroll"
+// in the language of msgs.
+func (msgs Messages) OverviewSliderTip() string {
+	return Catalog.Format(msgs.locale, "overviewSliderTip", nil)
+}
+
 // DiscardFolderMenu says "Discard Changes in Folder…"
 // in the language the app shows.
 func DiscardFolderMenu() string { return In(i18n.Locale()).DiscardFolderMenu() }
@@ -4382,6 +4392,46 @@ func ImageBefore() string { return In(i18n.Locale()).ImageBefore() }
 // in the language of msgs.
 func (msgs Messages) ImageBefore() string {
 	return Catalog.Format(msgs.locale, "imageBefore", nil)
+}
+
+// ZoomIn says "Zoom in"
+// in the language the app shows.
+func ZoomIn() string { return In(i18n.Locale()).ZoomIn() }
+
+// ZoomIn says "Zoom in"
+// in the language of msgs.
+func (msgs Messages) ZoomIn() string {
+	return Catalog.Format(msgs.locale, "zoomIn", nil)
+}
+
+// ZoomOut says "Zoom out"
+// in the language the app shows.
+func ZoomOut() string { return In(i18n.Locale()).ZoomOut() }
+
+// ZoomOut says "Zoom out"
+// in the language of msgs.
+func (msgs Messages) ZoomOut() string {
+	return Catalog.Format(msgs.locale, "zoomOut", nil)
+}
+
+// ZoomFit says "Fit to window"
+// in the language the app shows.
+func ZoomFit() string { return In(i18n.Locale()).ZoomFit() }
+
+// ZoomFit says "Fit to window"
+// in the language of msgs.
+func (msgs Messages) ZoomFit() string {
+	return Catalog.Format(msgs.locale, "zoomFit", nil)
+}
+
+// PopOutDiff says "Open the diff in a new window"
+// in the language the app shows.
+func PopOutDiff() string { return In(i18n.Locale()).PopOutDiff() }
+
+// PopOutDiff says "Open the diff in a new window"
+// in the language of msgs.
+func (msgs Messages) PopOutDiff() string {
+	return Catalog.Format(msgs.locale, "popOutDiff", nil)
 }
 
 // ImageAfter says "After"

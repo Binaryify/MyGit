@@ -15,6 +15,8 @@ func init() {
 		"check":            `<path d="M20 6 9 17l-5-5"/>`,
 		"edit":             `<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>`,
 		"circle":           `<circle cx="12" cy="12" r="9"/>`,
+		"maximize":         `<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/>`,
+		"file":             `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>`,
 		"undo":             `<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>`,
 		"rows":             `<rect width="18" height="7" x="3" y="3" rx="1"/><rect width="18" height="7" x="3" y="14" rx="1"/>`,
 		"list":             `<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/>`,
@@ -40,13 +42,15 @@ func init() {
 
 // iconButton is a small borderless button of an icon, as the actions on
 // a row of VS Code's changes; its label names it to assistive technology
-// and shows as its tooltip, or tip does when given.
+// and shows as its tooltip, or tip does when given. It is known by its
+// icon and label both, so two buttons of one icon side by side, as the
+// tree's and the commit's toggles can be, stay apart (#48).
 func iconButton(c *ui.Context, name, label string, tip ...string) bool {
 	tooltip := label
 	if len(tip) > 0 {
 		tooltip = tip[0]
 	}
-	b := ui.ButtonBase(c.Key(name)).Size(22, 22).Radius(5).Center().Tooltip(tooltip).Label(label).Cursor(ui.CursorPointer)
+	b := ui.ButtonBase(c.Key(name+"\x00"+label)).Size(22, 22).Radius(5).Center().Tooltip(tooltip).Label(label).Cursor(ui.CursorPointer)
 	if b.Hovered() {
 		b.Background(c.Theme().Text.Alpha(0.12))
 	}

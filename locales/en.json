@@ -588,6 +588,7 @@
   "historyShowBranches": "Show Branches",
   "historyRefsRight": "Show Hash and Refs After the Subject",
   "overviewWidthTip": "Drag to resize",
+  "overviewSliderTip": "Drag to scroll",
   "discardFolderMenu": "Discard Changes in Folder…",
   "discardFolder": "Discard Changes in Folder",
   "stageFolder": "Stage Folder",
@@ -1162,6 +1163,10 @@
   "markViewed": "Mark as Viewed",
   "markUnviewed": "Mark as Not Viewed",
   "imageBefore": "Before",
+  "zoomIn": "Zoom in",
+  "zoomOut": "Zoom out",
+  "zoomFit": "Fit to window",
+  "popOutDiff": "Open the diff in a new window",
   "imageAfter": "After",
   "imageError": "Can't show the image: {error}",
   "@imageError": {

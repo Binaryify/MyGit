@@ -25,7 +25,7 @@ func overview(c *ui.Context, d *editor.DiffState, area ui.Element, starts []int,
 	hunks := d.Hunks() // none still keeps the strip, lest the diff widen as the last goes
 	t := c.Theme()
 	total := max(d.New.LineCount(), 1)
-	col := ui.Column(c).Width(overviewWidth()).AlignSelf(ui.Stretch).Padding(2).BorderWidth(0, 0, 0, 1).BorderColor(t.Border).Children(func() {
+	col := ui.Column(c).Bind(&overviewStrip).Width(overviewWidth()).AlignSelf(ui.Stretch).Padding(2).BorderWidth(0, 0, 0, 1).BorderColor(t.Border).Children(func() {
 		at := 0
 		space := func(lines int) {
 			if lines > 0 {
@@ -55,6 +55,7 @@ func overview(c *ui.Context, d *editor.DiffState, area ui.Element, starts []int,
 			at = h.NewStart + n
 		}
 		space(total - at)
+		overviewSlider(c, d)
 		overviewGrip(c) // last, over the marks, to take the pointer at its edge
 	})
 	col.Draw(minimap(t, d, hunks))
@@ -360,6 +361,30 @@ func lineLength(line string) int {
 		}
 	}
 	return length
+}
+
+// overviewStrip is the overview strip shown, for the height its slider
+// scrolls the diff by.
+var overviewStrip ui.Handle
+
+// overviewSlider lies over the box of the rows in view, which the pointer
+// drags to scroll the diff as a scroll bar's thumb does: the strip is
+// wider and easier to hit than the diff's scroll bar (#47).
+func overviewSlider(c *ui.Context, d *editor.DiffState) {
+	total, view := diffHeight(d), d.ViewportHeight()
+	if view <= 0 || view >= total {
+		return // nothing to scroll
+	}
+	top := min(max(d.ScrollY()/total, 0), 1)
+	size := max(view/total, 0.02)
+	s := ui.Box(c.Key("slider")).Absolute().Left(0).Right(0).
+		TopPercent(float32(min(top, 1-size) * 100)).HeightPercent(float32(size * 100)).
+		Label(loc.OverviewSliderTip()).Cursor(ui.CursorPointer)
+	if _, dy, held := s.Dragged(); held && dy != 0 {
+		if h := minimapInner(overviewStrip.Bounds(c)).H; h > 0 {
+			d.SetScrollY(max(d.ScrollY()+float64(dy)*total/float64(h), 0))
+		}
+	}
 }
 
 // overviewResizing is set while the pointer drags the overview strip's
