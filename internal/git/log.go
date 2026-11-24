@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"strconv"
 	"strings"
@@ -88,6 +89,20 @@ func (r *Repo) Log(ctx context.Context, scope Scope, batchSize int, batch func([
 		return err
 	}
 	return ctx.Err()
+}
+
+// CommitOf reads a commit as the history lists it, for one the history
+// shown leaves out.
+func (r *Repo) CommitOf(ctx context.Context, hash string) (Commit, error) {
+	out, err := r.Git(ctx, "log", "-1", "-z", "--format="+logFormat, hash, "--")
+	if err != nil {
+		return Commit{}, err
+	}
+	c, ok := parseCommit(strings.TrimSuffix(out, "\x00"))
+	if !ok {
+		return Commit{}, errors.New("no such commit: " + hash)
+	}
+	return c, nil
 }
 
 func parseCommit(record string) (Commit, bool) {

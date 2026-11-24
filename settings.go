@@ -31,6 +31,7 @@ type settings struct {
 	TreeView       bool             `json:"treeView"`                 // the lists of files show as trees
 	OneList        bool             `json:"oneList,omitempty"`        // the changes in one list, a check saying what the commit includes, as IDEA's (#37)
 	CommitAll      bool             `json:"commitAll,omitempty"`      // a commit's files show one after another (#44)
+	Annotate       bool             `json:"annotate,omitempty"`       // the diffs show who last changed their lines beside them (#51)
 	// The history's columns, as its menu sets them: the commit hash,
 	// tags and branches, and whether they show before the subject or
 	// after it.

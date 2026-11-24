@@ -30,9 +30,11 @@ func (a *app) changeNav(c *ui.Context) {
 			text = loc.ChangeOf(i+1, n)
 		}
 	}
-	ui.Row(c).Gap(2).AlignItems(ui.Center).Children(func() {
+	// On one line, kept whole: a crowded header wrapping it grows taller,
+	// and moves the diff when it goes with the last change.
+	ui.Row(c).Gap(2).AlignItems(ui.Center).Shrink(0).Children(func() {
 		if text != "" {
-			ui.Text(c, text).FontSize(11).TextColor(color).Padding(0, 4, 0, 0)
+			ui.Text(c, text).FontSize(11).TextColor(color).Padding(0, 4, 0, 0).SingleLine()
 		}
 		if iconButton(c, "up", loc.PreviousChange()+" "+shiftKey("F7")) {
 			a.stepChange(true)

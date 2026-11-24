@@ -385,6 +385,34 @@ func TestRebaseInteractive(t *testing.T) {
 	}
 }
 
+// TestBlameSides blames the index's text and the working tree's, as a
+// change's diff annotates its sides (#51), and reads a commit by its hash.
+func TestBlameSides(t *testing.T) {
+	r := repo(t)
+	ctx := context.Background()
+	write(t, r, "a.txt", "one\ntwo\n")
+	_ = r.Stage(ctx, "a.txt")
+	_ = r.Commit(ctx, "first", false)
+	write(t, r, "a.txt", "one\nTWO\n")
+	_ = r.Stage(ctx, "a.txt")
+	write(t, r, "a.txt", "zero\none\nTWO\n")
+	staged, err := r.Blame(ctx, "INDEX", "a.txt")
+	if err != nil || len(staged) != 2 || staged[0].Summary != "first" || !staged[1].NotCommitted() || staged[1].Text != "TWO" {
+		t.Fatalf("index %+v, %v", staged, err)
+	}
+	disk, err := r.Blame(ctx, "WORKTREE", "a.txt")
+	if err != nil || len(disk) != 3 || !disk[0].NotCommitted() || disk[1].Summary != "first" || !disk[2].NotCommitted() {
+		t.Fatalf("working tree %+v, %v", disk, err)
+	}
+	c, err := r.CommitOf(ctx, staged[0].Hash)
+	if err != nil || c.Hash != staged[0].Hash || c.Subject != "first" || c.Author != "Ada" || len(c.Parents) != 0 {
+		t.Fatalf("commit %+v, %v", c, err)
+	}
+	if _, err := r.CommitOf(ctx, "0123456789abcdef0123456789abcdef01234567"); err == nil {
+		t.Fatal("a commit that isn't there")
+	}
+}
+
 func TestBlameAndRemote(t *testing.T) {
 	r := repo(t)
 	ctx := context.Background()

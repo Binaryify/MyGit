@@ -78,7 +78,9 @@ func (a *app) blameView(c *ui.Context, b *blame) {
 	})
 }
 
-// revealCommit chooses a commit in the history and scrolls to it.
+// revealCommit chooses a commit in the history and scrolls to it, or
+// shows it alone when the history shown leaves it out, as its branch
+// filter may.
 func (a *app) revealCommit(hash string) {
 	a.search = ""
 	for i := range a.commits {
@@ -89,7 +91,15 @@ func (a *app) revealCommit(hash string) {
 			return
 		}
 	}
-	a.errMsg = loc.ErrNotInHistory(hash[:8])
+	work(a, func(ctx context.Context) (git.Commit, error) { return a.repo.CommitOf(ctx, hash) },
+		func(cm git.Commit, err error) {
+			if err != nil {
+				a.errMsg = err.Error()
+				return
+			}
+			a.logSel = -1
+			a.showCommitOf(cm)
+		})
 }
 
 // pushPlan is the push dialog: the commits a push would send.

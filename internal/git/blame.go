@@ -16,14 +16,21 @@ type BlameLine struct {
 	Text    string
 }
 
-// Blame says which commit last changed each line of a file at rev, HEAD
-// when empty, or the working tree's file when rev is "WORKTREE".
+// Blame says which commit last changed each line of a file at rev: the
+// working tree's file when rev is empty or "WORKTREE", the index's when
+// "INDEX", its lines staged and not committed yet as NotCommitted.
 func (r *Repo) Blame(ctx context.Context, rev, path string) ([]BlameLine, error) {
 	args := []string{"blame", "--porcelain"}
-	if rev != "" && rev != "WORKTREE" {
+	input := ""
+	switch rev {
+	case "", "WORKTREE":
+	case "INDEX": // git blame has no --cached: the index's text, against HEAD
+		input = r.ReadIndex(ctx, path)
+		args = append(args, "--contents", "-")
+	default:
 		args = append(args, rev)
 	}
-	out, err := r.Git(ctx, append(args, "--", path)...)
+	out, err := git(ctx, r.run, r.Dir, input, nil, append(args, "--", path)...)
 	if err != nil {
 		return nil, err
 	}

@@ -466,16 +466,6 @@ func (msgs Messages) ErrGitignore(error string) string {
 	return Catalog.Format(msgs.locale, "errGitignore", map[string]any{"error": error})
 }
 
-// ErrNotInHistory says "{hash} isn't in the history shown (the branch filter may hide it)"
-// in the language the app shows.
-func ErrNotInHistory(hash string) string { return In(i18n.Locale()).ErrNotInHistory(hash) }
-
-// ErrNotInHistory says "{hash} isn't in the history shown (the branch filter may hide it)"
-// in the language of msgs.
-func (msgs Messages) ErrNotInHistory(hash string) string {
-	return Catalog.Format(msgs.locale, "errNotInHistory", map[string]any{"hash": hash})
-}
-
 // ErrNotInHead says "An interactive rebase starts from a commit of the current branch's history"
 // in the language the app shows.
 func ErrNotInHead() string { return In(i18n.Locale()).ErrNotInHead() }
@@ -5738,6 +5728,26 @@ func FoldUnchanged() string { return In(i18n.Locale()).FoldUnchanged() }
 // in the language of msgs.
 func (msgs Messages) FoldUnchanged() string {
 	return Catalog.Format(msgs.locale, "foldUnchanged", nil)
+}
+
+// Annotate says "Annotate"
+// in the language the app shows.
+func Annotate() string { return In(i18n.Locale()).Annotate() }
+
+// Annotate says "Annotate"
+// in the language of msgs.
+func (msgs Messages) Annotate() string {
+	return Catalog.Format(msgs.locale, "annotate", nil)
+}
+
+// AnnotateTip says "Show which commit last changed each line beside the diff; click a line to open its commit"
+// in the language the app shows.
+func AnnotateTip() string { return In(i18n.Locale()).AnnotateTip() }
+
+// AnnotateTip says "Show which commit last changed each line beside the diff; click a line to open its commit"
+// in the language of msgs.
+func (msgs Messages) AnnotateTip() string {
+	return Catalog.Format(msgs.locale, "annotateTip", nil)
 }
 
 // WrapLines says "Wrap Lines"

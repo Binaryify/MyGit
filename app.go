@@ -141,6 +141,7 @@ type detail struct {
 	starts     []int                // the lines of the diff's new side its hunks start at, for the minimap's bubble
 	merge      *merger              // a file in conflict's
 	blame      *blame               // a file's, shown in place of the diff
+	notes      *annotations         // who last changed the diff's lines, beside them (#51)
 	load       patchLoad            // reads the commit's patch
 	message    string               // the commit's whole message
 	parent     int                  // the merge's parent its change is against
@@ -518,10 +519,14 @@ func (a *app) loadLog() {
 
 // showCommit loads the files a commit changed.
 func (a *app) showCommit(i int) {
-	if a.leaving(func() { a.showCommit(i) }) {
+	a.showCommitOf(a.commits[i])
+}
+
+// showCommitOf loads the files a commit changed, one the history lists or not.
+func (a *app) showCommitOf(c git.Commit) {
+	if a.leaving(func() { a.showCommitOf(c) }) {
 		return
 	}
-	c := a.commits[i]
 	old := textSide{}
 	if len(c.Parents) > 0 {
 		old = revSide(c.Parents[0])
@@ -809,14 +814,7 @@ func (a *app) showChange(c git.Change, staged bool) {
 	// place and its patch, all of it, can be cut for staging. The one list
 	// shows every file whole against HEAD, as IDEA's commit window (#37).
 	whole := !staged && !ws.Any() && (prefs.OneList || c.Work == 'M')
-	// Where the patch's sides come from, for the file shown whole.
-	old, now := indexSide, diskSide
-	switch {
-	case prefs.OneList: // against HEAD, staged or not
-		old = revSide("HEAD")
-	case staged:
-		old, now = revSide("HEAD"), indexSide
-	}
+	old, now := changeTexts(staged)
 	type result struct {
 		raw      string
 		patch    *editor.FilePatch
@@ -1038,6 +1036,19 @@ var (
 	indexSide = textSide{kind: sideIndex}
 	diskSide  = textSide{kind: sideDisk}
 )
+
+// changeTexts is where the sides of a change's diff come from: the index
+// and the working tree, HEAD and the index when staged, or HEAD and the
+// working tree in the one list (#37).
+func changeTexts(staged bool) (old, now textSide) {
+	switch {
+	case prefs.OneList: // against HEAD, staged or not
+		return revSide("HEAD"), diskSide
+	case staged:
+		return revSide("HEAD"), indexSide
+	}
+	return indexSide, diskSide
+}
 
 // patchFull shows a patch over the whole files of its sides, as IntelliJ
 // shows a change, and whether it could: a patch whose sides are too long,

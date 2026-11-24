@@ -19,9 +19,9 @@ type popout struct {
 	patch  *editor.FilePatch // numbers a patch's lines, nil for whole files
 }
 
-// canPopOut tells whether a diff shows by itself, to pop out: not a
-// picture, a binary or folded file, or files one after another.
-func (a *app) canPopOut() bool {
+// diffAlone tells whether a diff shows by itself, to pop out or annotate:
+// not a picture, a binary or folded file, or files one after another.
+func (a *app) diffAlone() bool {
 	d := &a.detail
 	return d.diff != nil && d.images == nil && !d.folded && !d.binary && d.all == nil &&
 		(d.commit == nil || !prefs.CommitAll || d.commitAll == nil)
@@ -30,7 +30,7 @@ func (a *app) canPopOut() bool {
 // popOut copies the diff shown, nil when none shows by itself.
 func (a *app) popOut() *popout {
 	d := &a.detail
-	if !a.canPopOut() {
+	if !a.diffAlone() {
 		return nil
 	}
 	var f editor.FilePatch
@@ -62,7 +62,7 @@ func (a *app) popOut() *popout {
 
 // popButton opens the diff shown in a window of its own.
 func (a *app) popButton(c *ui.Context) {
-	if !a.canPopOut() {
+	if !a.diffAlone() {
 		return
 	}
 	if iconButton(c, "maximize", loc.PopOutDiff()) {

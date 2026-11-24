@@ -813,6 +813,7 @@ func (a *app) detailView(c *ui.Context) {
 				ui.Box(c).Grow(1)
 				a.changeNav(c)
 				a.foldToggle(c)
+				a.annotateToggle(c)
 				a.popButton(c)
 				if d.whole && d.diff != nil && ui.Toggle(c, &prefs.FoldUnchanged, loc.FoldUnchanged()).Changed() {
 					d.diff.ExpandUnchanged = !prefs.FoldUnchanged
@@ -843,6 +844,7 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 				ui.Text(c, loc.FilesDiffer(len(d.files))).TextColor(t.TextMuted)
 				ui.Box(c).Grow(1)
 				a.foldToggle(c)
+				a.annotateToggle(c)
 				a.popButton(c)
 				a.whitespaceMenu(c)
 				if diffs := a.shownDiffs(); len(diffs) > 0 {
@@ -858,6 +860,7 @@ func (a *app) commitHeader(c *ui.Context, cm *git.Commit) {
 			ui.Box(c).Grow(1)
 			a.changeNav(c)
 			a.foldToggle(c)
+			a.annotateToggle(c)
 			a.popButton(c)
 			a.whitespaceMenu(c)
 			if diffs := a.shownDiffs(); len(diffs) > 0 {
@@ -1130,12 +1133,15 @@ func (a *app) diffView(c *ui.Context) {
 		ui.Column(c).Fill().Center().Children(func() { ui.Text(c, loc.BinaryFile()).TextColor(t.TextMuted) })
 	case d.diff != nil:
 		a.reviewDiff(c, d.diff)
+		a.annotate()
 		row := ui.Row(c).Fill()
 		row.Children(func() {
+			a.annotationColumn(c, d.diff, true)
 			dv := editor.DiffView(c.Key(d.gen*1000+d.fileSel), d.diff).Grow(1).Basis(0).AlignSelf(ui.Stretch)
 			if d.whole {
 				dv.OnShortcut(ui.Cmd, ui.KeyS, a.saveFile) // as the file is typed in
 			}
+			a.annotationColumn(c, d.diff, false)
 			overview(c, d.diff, row, d.starts, func(i int) int { return a.fileLine(editor.DiffNew, i) })
 		})
 		a.revealChange()

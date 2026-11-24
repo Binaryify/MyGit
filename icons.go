@@ -34,6 +34,7 @@ func init() {
 		"open":             `<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>`,
 		"chevrons-down-up": `<path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/>`,
 		"chevrons-up-down": `<path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>`,
+		"history":          `<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>`,
 		"copy":             `<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>`,
 	} {
 		icons[name] = ui.MustParseSVG([]byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">` + body + `</svg>`))
@@ -50,12 +51,32 @@ func iconButton(c *ui.Context, name, label string, tip ...string) bool {
 	if len(tip) > 0 {
 		tooltip = tip[0]
 	}
-	b := ui.ButtonBase(c.Key(name+"\x00"+label)).Size(22, 22).Radius(5).Center().Tooltip(tooltip).Label(label).Cursor(ui.CursorPointer)
-	if b.Hovered() {
-		b.Background(c.Theme().Text.Alpha(0.12))
+	return iconBase(c, name, label, tooltip, false).Clicked()
+}
+
+// iconToggle is an iconButton that stays highlighted while on, which a
+// click turns off and on, telling whether it did.
+func iconToggle(c *ui.Context, name, label, tip string, on *bool) bool {
+	if !iconBase(c, name, label, tip, *on).Checked(*on).Clicked() {
+		return false
 	}
-	b.Children(func() { ui.Icon(c, icons[name]).Size(14, 14) })
-	return b.Clicked()
+	*on = !*on
+	return true
+}
+
+func iconBase(c *ui.Context, name, label, tip string, on bool) ui.Element {
+	t := c.Theme()
+	b := ui.ButtonBase(c.Key(name+"\x00"+label)).Size(22, 22).Radius(5).Center().Tooltip(tip).Label(label).Cursor(ui.CursorPointer)
+	color := t.Text
+	switch {
+	case on:
+		b.Background(t.Accent.Alpha(0.18))
+		color = t.Accent
+	case b.Hovered():
+		b.Background(t.Text.Alpha(0.12))
+	}
+	b.Children(func() { ui.Icon(c, icons[name]).Size(14, 14).TextColor(color) })
+	return b
 }
 
 // iconMenu is an icon button opening a menu, as iconButton looks.

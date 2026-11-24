@@ -214,14 +214,6 @@
       }
     }
   },
-  "errNotInHistory": "{hash} isn't in the history shown (the branch filter may hide it)",
-  "@errNotInHistory": {
-    "placeholders": {
-      "hash": {
-        "type": "String"
-      }
-    }
-  },
   "errNotInHead": "An interactive rebase starts from a commit of the current branch's history",
   "gitUnsafe": "{dir} is owned by another user, and git refuses to work in it for safety",
   "@gitUnsafe": {
@@ -1555,6 +1547,8 @@
     }
   },
   "foldUnchanged": "Fold Unchanged",
+  "annotate": "Annotate",
+  "annotateTip": "Show which commit last changed each line beside the diff; click a line to open its commit",
   "wrapLines": "Wrap Lines",
   "whitespaceChanges": "Whitespace changes",
   "whitespaceKept": "Do Not Ignore",
