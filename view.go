@@ -253,18 +253,7 @@ func (a *app) changesPanel(c *ui.Context) {
 		// The message on top, as VS Code has it, where it shows however
 		// many files changed.
 		ui.Column(c).Gap(8).Padding(10).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
-			a.messageField(c).Lines(2, 8)
-			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
-				if ui.Checkbox(c, &a.amend, loc.Amend()).Changed() {
-					a.toggleAmend()
-				}
-				ui.Box(c).Grow(1)
-				// Only with a model set: without one, nothing of AI shows.
-				if prefs.AI.on() && generateButton(c, !a.canGenerateMessage()) {
-					a.generateMessage()
-				}
-			})
-			a.commitButtons(c)
+			a.commitArea(c, 2)
 		})
 		if len(a.staged)+len(a.unstaged) > 0 || a.filter.query != "" {
 			a.filterField(c)
@@ -294,6 +283,44 @@ func (a *app) messageField(c *ui.Context) ui.Element {
 		a.recallEnd = false
 	}
 	return in
+}
+
+// commitArea is the message's box, with Amend and Generate under it and
+// Commit and Commit & Push below them. With nothing to commit, a line says
+// so in their place: a message would go nowhere (#54).
+func (a *app) commitArea(c *ui.Context, lines int) {
+	if a.nothingToCommit() {
+		a.noChanges(c)
+		return
+	}
+	a.messageField(c).Lines(lines, 8)
+	ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+		if ui.Checkbox(c, &a.amend, loc.Amend()).Changed() {
+			a.toggleAmend()
+		}
+		ui.Box(c).Grow(1)
+		// Only with a model set: without one, nothing of AI shows.
+		if prefs.AI.on() && generateButton(c, !a.canGenerateMessage()) {
+			a.generateMessage()
+		}
+	})
+	a.commitButtons(c)
+}
+
+// nothingToCommit says there is no change for a message to describe, and
+// no amend under way, which writes one without them.
+func (a *app) nothingToCommit() bool {
+	return len(a.staged)+len(a.unstaged) == 0 && !a.amend
+}
+
+// noChanges says the working tree has nothing to commit, where the
+// message's box would be.
+func (a *app) noChanges(c *ui.Context) {
+	t := c.Theme()
+	ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
+		ui.Icon(c, icons["check"]).Size(13, 13).TextColor(t.TextMuted)
+		ui.Text(c, loc.NoChanges()).FontSize(12).TextColor(t.TextMuted).Wrap()
+	})
 }
 
 // changeSection lists the staged changes or the others, those the filter

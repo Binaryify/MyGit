@@ -1020,6 +1020,7 @@
   "toggleSidebar": "Show or hide the sidebar",
   "messagePlaceholder": "Commit message ({shortcut} to commit)",
   "message": "Commit message",
+  "noChanges": "No changes to commit",
   "amend": "Amend last commit",
   "commit": "Commit",
   "commitFiles": "{count, plural, one {Commit # File} other {Commit # Files}}",

@@ -109,8 +109,22 @@ func (a *app) remotesView(c *ui.Context) {
 	})
 }
 
-// repoMenu is the toolbar's menu of the repository's own things.
+// repoMenu is the toolbar's menu: in a workspace, the window's alone, each
+// repository's things sitting beside its name's menu instead, so that the
+// two aren't the same menu twice (#54); a window of one repository has
+// both.
 func (a *app) repoMenu(m *ui.Menu) {
+	if a.ws == nil {
+		a.repoItems(m)
+		m.Separator()
+	}
+	a.appItems(m)
+}
+
+// repoItems are the menu's things of this repository: its remotes, its
+// committer, its pull requests, its submodules, where it is and whether it
+// shows in the workspace.
+func (a *app) repoItems(m *ui.Menu) {
 	if m.Item(loc.RemotesMenu()).Chosen() {
 		a.openRemotes()
 	}
@@ -130,6 +144,11 @@ func (a *app) repoMenu(m *ui.Menu) {
 	if a.ws != nil && m.Item(loc.HideRepoMenu()).Chosen() {
 		a.ws.hide(a)
 	}
+}
+
+// appItems are the menu's things of the app: the sidebar, other
+// repositories, the helper and the settings.
+func (a *app) appItems(m *ui.Menu) {
 	if m.Item(loc.Sidebar()).Checked(!prefs.SidebarHidden).Chosen() {
 		a.toggleSidebar()
 	}

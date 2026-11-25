@@ -384,6 +384,7 @@
   "toggleSidebar": "顯示或隱藏側邊欄",
   "messagePlaceholder": "提交訊息（{shortcut} 提交）",
   "message": "提交訊息",
+  "noChanges": "沒有變更",
   "amend": "修改上次提交",
   "commit": "提交",
   "commitFiles": "提交 {count} 個檔案",

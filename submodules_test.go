@@ -1,11 +1,19 @@
 package main
 
 import (
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
+
+	"mygit/internal/llm"
+	loc "mygit/locales"
 )
 
 // blogWithTheme makes a repository with another as a submodule in
@@ -112,5 +120,107 @@ func TestAddSubmodule(t *testing.T) {
 	}
 	if _, ok := find(a.staged, ".gitmodules"); !ok {
 		t.Errorf(".gitmodules not staged: %+v", a.staged)
+	}
+}
+
+// countText is how many of texts are s.
+func countText(texts []string, s string) int {
+	n := 0
+	for _, text := range texts {
+		if text == s {
+			n++
+		}
+	}
+	return n
+}
+
+// A repository with nothing to commit says so where the message's box
+// would be, rather than offering a box no commit would take; one with a
+// staged change has the box, and Generate beside it writes its own message
+// (#54).
+func TestWorkspaceCommitArea(t *testing.T) {
+	defer func(s aiSettings) { prefs.AI = s }(prefs.AI)
+	*fakeKey(t) = "sk-test"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Messages []struct{ Content string } `json:"messages"`
+		}
+		data, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(data, &body)
+		if !strings.Contains(body.Messages[len(body.Messages)-1].Content, "deploy.sh") {
+			t.Errorf("asked %q", body.Messages[len(body.Messages)-1].Content)
+		}
+		io.WriteString(w, `{"choices":[{"message":{"content":"Add the deploy script"}}]}`)
+	}))
+	defer srv.Close()
+	prefs.AI = aiSettings{API: llm.OpenAI, BaseURL: srv.URL, Model: "m", KeySaved: true}
+
+	blog := blogWithTheme(t)
+	os.WriteFile(filepath.Join(blog, "deploy.sh"), []byte("#!/bin/sh\n"), 0o644)
+	run(t, blog, "add", "deploy.sh")
+	ws, tt, settle := newWorkspace(t, blog)
+	settle()
+	if ws.apps[0].repo.Name() != "zola_blog" || ws.apps[1].repo.Name() != "nivis" {
+		t.Fatalf("repositories %v", ws.apps)
+	}
+	if ws.apps[0].nothingToCommit() || !ws.apps[1].nothingToCommit() {
+		t.Fatalf("blog %v, theme %v", ws.apps[0].nothingToCommit(), ws.apps[1].nothingToCommit())
+	}
+	texts := tt.Texts()
+	if n := countText(texts, loc.NoChanges()); n != 1 {
+		t.Fatalf("%d lines of no changes in %q", n, texts)
+	}
+	// One box, the blog's, with Generate beside it; the clean theme has
+	// neither.
+	if n := countText(texts, loc.Message()); n != 1 {
+		t.Fatalf("%d message boxes in %q", n, texts)
+	}
+	// Generate's label and its text, one button.
+	if n := countText(texts, loc.GenerateMessage()); n != 2 {
+		t.Fatalf("%d Generate texts in %q", n, texts)
+	}
+	if err := tt.Click(loc.GenerateMessage()); err != nil {
+		t.Fatal(err)
+	}
+	settle()
+	if ws.apps[0].message != "Add the deploy script" || ws.apps[1].message != "" || ws.apps[0].errMsg != "" {
+		t.Fatalf("messages %q %q, error %q", ws.apps[0].message, ws.apps[1].message, ws.apps[0].errMsg)
+	}
+}
+
+// The toolbar's menu in a workspace is the window's; each repository's own
+// things sit in the menu beside its name, so that the two aren't the same
+// menu twice (#54).
+func TestWorkspaceMenus(t *testing.T) {
+	ws, tt, settle := newWorkspace(t, workspaceDir(t))
+	settle()
+	// The toolbar's "..." comes first in the frame.
+	if err := tt.Click(loc.Repository()); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	menu := tt.Menu()
+	if !slices.Contains(menu, loc.MenuOpenRepo()) || !slices.Contains(menu, loc.SettingsMenu()) {
+		t.Fatalf("toolbar menu %q", menu)
+	}
+	if slices.Contains(menu, loc.RemotesMenu()) || slices.Contains(menu, loc.HideRepoMenu()) {
+		t.Fatalf("toolbar menu has a repository's items: %q", menu)
+	}
+	tt.CloseMenu()
+	tt.Frame()
+	// The section's, at the right of filmcraft's row (a repository not in
+	// the toolbar, whose name would be found there first).
+	r, ok := tt.Find("filmcraft")
+	if !ok {
+		t.Fatalf("texts %q", tt.Texts())
+	}
+	tt.ClickAt(ws.apps[0].sidebarW-17, r.Y+r.H/2)
+	tt.Frame()
+	menu = tt.Menu()
+	if !slices.Contains(menu, loc.RemotesMenu()) || !slices.Contains(menu, loc.HideRepoMenu()) {
+		t.Fatalf("section menu %q", menu)
+	}
+	if slices.Contains(menu, loc.MenuOpenRepo()) || slices.Contains(menu, loc.SettingsMenu()) {
+		t.Fatalf("section menu has the window's items: %q", menu)
 	}
 }

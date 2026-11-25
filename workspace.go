@@ -453,17 +453,21 @@ func (ws *workspace) section(c *ui.Context, i int, a *app) {
 			if iconButton(c, "refresh", loc.Refresh()) {
 				a.refresh()
 			}
+			// This repository's own things; the window's are the toolbar's
+			// menu, so that the two aren't the same menu twice (#54).
 			iconMenu(c, "more", loc.Repository(), func(m *ui.Menu) {
 				ws.activate(i)
-				a.repoMenu(m)
+				a.repoItems(m)
 			})
 		})
 		if !open {
 			return
 		}
 		ui.Column(c).Gap(6).Padding(4, 10, 8, 10).Children(func() {
-			// A line, growing with what is typed, as VS Code's.
-			a.messageField(c).Lines(1, 6).MinHeight(0)
+			// A line, growing with what is typed, as VS Code's, with the
+			// commit's things beside it, as the window of one repository
+			// has them (#54).
+			a.commitArea(c, 1)
 			if st.Upstream != "" && counts(st) != "" {
 				if ui.Button(c, loc.SyncChanges(counts(st))).FillWidth().Disabled(a.busy != "").Clicked() {
 					a.sync()

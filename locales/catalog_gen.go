@@ -3892,6 +3892,16 @@ func (msgs Messages) Message() string {
 	return Catalog.Format(msgs.locale, "message", nil)
 }
 
+// NoChanges says "No changes to commit"
+// in the language the app shows.
+func NoChanges() string { return In(i18n.Locale()).NoChanges() }
+
+// NoChanges says "No changes to commit"
+// in the language of msgs.
+func (msgs Messages) NoChanges() string {
+	return Catalog.Format(msgs.locale, "noChanges", nil)
+}
+
 // Amend says "Amend last commit"
 // in the language the app shows.
 func Amend() string { return In(i18n.Locale()).Amend() }
