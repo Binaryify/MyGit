@@ -177,12 +177,9 @@ func openFolders(ctx context.Context, run git.Runner, list lister, dir string) (
 	repo, err := git.OpenOn(run, dir)
 	if err == nil {
 		// A workspace folder can itself be a repository, with separately
-		// cloned repositories in folders it ignores. Keep it as one section
-		// beside those, but not with the repositories it tracks (submodules).
+		// cloned repositories in folders it ignores, and its submodules,
+		// each a section of its own (#54).
 		found := ignoredRepos(ctx, list, repo, 3, 64)
-		if len(found) == 0 {
-			return repo.Dir, []*git.Repo{repo}, nil
-		}
 		repos := []*git.Repo{repo}
 		for _, p := range found {
 			r, err := git.OpenOn(run, p)
@@ -191,7 +188,7 @@ func openFolders(ctx context.Context, run git.Runner, list lister, dir string) (
 			}
 			repos = append(repos, r)
 		}
-		return repo.Dir, repos, nil
+		return repo.Dir, withSubmodules(ctx, repos), nil
 	}
 	var unsafe *git.UnsafeError
 	if errors.As(err, &unsafe) {
@@ -214,7 +211,7 @@ func openFolders(ctx context.Context, run git.Runner, list lister, dir string) (
 	if len(repos) == 0 {
 		return "", nil, first
 	}
-	return whole, repos, nil
+	return whole, withSubmodules(ctx, repos), nil
 }
 
 func firstErr(a, b error) error {
@@ -473,6 +470,7 @@ func (ws *workspace) section(c *ui.Context, i int, a *app) {
 				}
 			}
 		})
+		a.submodulesRow(c)
 		if len(a.staged) > 0 && !prefs.OneList {
 			a.changeSection(c, loc.Staged(), true, false)
 		}

@@ -57,7 +57,8 @@ type app struct {
 	remoteURLs               []git.Remote
 	tags                     []string // the newest first
 	worktrees                []git.Worktree
-	super                    string // the superproject's working tree, of a submodule
+	super                    string          // the superproject's working tree, of a submodule
+	submodules               []git.Submodule // the repository's, theirs too, checked out or not
 	op                       git.Operation
 	stashes                  []git.Stash
 	stashList                ui.ListState
@@ -323,6 +324,7 @@ type snapshot struct {
 	stashes  []git.Stash
 	marked   map[string]bool // the changes .gitattributes marks generated
 	unpushed map[string]bool // the branch's commits its upstream hasn't, by hash
+	subs     []git.Submodule
 }
 
 // refresh reads the status, and the history again when a ref moved. A
@@ -352,7 +354,8 @@ func (a *app) refresh() {
 		if st.Upstream != "" && st.Ahead > 0 {
 			unpushed = a.repo.Unpushed(ctx)
 		}
-		return snapshot{st, b, rb, urls, tags, a.repo.Refs(ctx), a.repo.Operation(ctx), stashes, a.repo.Generated(ctx, paths), unpushed}, nil
+		subs, _ := a.repo.Submodules(ctx)
+		return snapshot{st, b, rb, urls, tags, a.repo.Refs(ctx), a.repo.Operation(ctx), stashes, a.repo.Generated(ctx, paths), unpushed, subs}, nil
 	}, func(s snapshot, err error) {
 		a.refreshing = false
 		if a.again {
@@ -377,6 +380,7 @@ func (a *app) refresh() {
 		a.setStatus(s.status)
 		a.branches, a.remotes, a.tags, a.op, a.stashes = s.branches, s.remotes, s.tags, s.op, s.stashes
 		a.remoteURLs = s.urls
+		a.submodules = s.subs
 		a.stashSel = min(a.stashSel, len(a.stashes)-1)
 		if reload {
 			a.refs = s.refs
@@ -814,7 +818,7 @@ func (a *app) showChange(c git.Change, staged bool) {
 	// The working tree's file, whole and editable, when it is changed in
 	// place and its patch, all of it, can be cut for staging. The one list
 	// shows every file whole against HEAD, as IDEA's commit window (#37).
-	whole := !staged && !ws.Any() && (prefs.OneList || c.Work == 'M')
+	whole := !staged && !ws.Any() && (prefs.OneList || c.Work == 'M') && !c.Submodule // a submodule's folder, no file (#54)
 	old, now := changeTexts(staged)
 	type result struct {
 		raw      string
@@ -1287,7 +1291,7 @@ var trash = func(path string) error { return mygo.Shell.TrashItem(path) }
 
 // onDisk tells whether a change's file is in the working tree, to trash.
 func onDisk(c git.Change) bool {
-	return !c.Conflict && c.Work != 'D' && (c.Work != 0 || c.Staged != 'D')
+	return !c.Conflict && !c.Submodule && c.Work != 'D' && (c.Work != 0 || c.Staged != 'D')
 }
 
 // trashFile moves a file of the working tree to the trash, once the user

@@ -2396,6 +2396,106 @@ func (msgs Messages) HideRepoMenu() string {
 	return Catalog.Format(msgs.locale, "hideRepoMenu", nil)
 }
 
+// AddSubmoduleMenu says "Add Submodule…"
+// in the language the app shows.
+func AddSubmoduleMenu() string { return In(i18n.Locale()).AddSubmoduleMenu() }
+
+// AddSubmoduleMenu says "Add Submodule…"
+// in the language of msgs.
+func (msgs Messages) AddSubmoduleMenu() string {
+	return Catalog.Format(msgs.locale, "addSubmoduleMenu", nil)
+}
+
+// AddSubmoduleTitle says "Add a submodule"
+// in the language the app shows.
+func AddSubmoduleTitle() string { return In(i18n.Locale()).AddSubmoduleTitle() }
+
+// AddSubmoduleTitle says "Add a submodule"
+// in the language of msgs.
+func (msgs Messages) AddSubmoduleTitle() string {
+	return Catalog.Format(msgs.locale, "addSubmoduleTitle", nil)
+}
+
+// AddSubmoduleNote says "The URL of the repository to clone; the folder, left empty, takes the repository's name."
+// in the language the app shows.
+func AddSubmoduleNote() string { return In(i18n.Locale()).AddSubmoduleNote() }
+
+// AddSubmoduleNote says "The URL of the repository to clone; the folder, left empty, takes the repository's name."
+// in the language of msgs.
+func (msgs Messages) AddSubmoduleNote() string {
+	return Catalog.Format(msgs.locale, "addSubmoduleNote", nil)
+}
+
+// SubmodulePath says "Folder (optional)"
+// in the language the app shows.
+func SubmodulePath() string { return In(i18n.Locale()).SubmodulePath() }
+
+// SubmodulePath says "Folder (optional)"
+// in the language of msgs.
+func (msgs Messages) SubmodulePath() string {
+	return Catalog.Format(msgs.locale, "submodulePath", nil)
+}
+
+// OpAddSubmodule says "Add submodule"
+// in the language the app shows.
+func OpAddSubmodule() string { return In(i18n.Locale()).OpAddSubmodule() }
+
+// OpAddSubmodule says "Add submodule"
+// in the language of msgs.
+func (msgs Messages) OpAddSubmodule() string {
+	return Catalog.Format(msgs.locale, "opAddSubmodule", nil)
+}
+
+// UpdateSubmodules says "Initialize and Update Submodules"
+// in the language the app shows.
+func UpdateSubmodules() string { return In(i18n.Locale()).UpdateSubmodules() }
+
+// UpdateSubmodules says "Initialize and Update Submodules"
+// in the language of msgs.
+func (msgs Messages) UpdateSubmodules() string {
+	return Catalog.Format(msgs.locale, "updateSubmodules", nil)
+}
+
+// OpUpdateSubmodules says "Update submodules"
+// in the language the app shows.
+func OpUpdateSubmodules() string { return In(i18n.Locale()).OpUpdateSubmodules() }
+
+// OpUpdateSubmodules says "Update submodules"
+// in the language of msgs.
+func (msgs Messages) OpUpdateSubmodules() string {
+	return Catalog.Format(msgs.locale, "opUpdateSubmodules", nil)
+}
+
+// InitSubmodules says "Initialize"
+// in the language the app shows.
+func InitSubmodules() string { return In(i18n.Locale()).InitSubmodules() }
+
+// InitSubmodules says "Initialize"
+// in the language of msgs.
+func (msgs Messages) InitSubmodules() string {
+	return Catalog.Format(msgs.locale, "initSubmodules", nil)
+}
+
+// SubmodulesEmpty says "{count, plural, one {# submodule isn't initialized, its folder empty} other {# submodules aren't initialized, their f…"
+// in the language the app shows.
+func SubmodulesEmpty(count int) string { return In(i18n.Locale()).SubmodulesEmpty(count) }
+
+// SubmodulesEmpty says "{count, plural, one {# submodule isn't initialized, its folder empty} other {# submodules aren't initialized, their f…"
+// in the language of msgs.
+func (msgs Messages) SubmodulesEmpty(count int) string {
+	return Catalog.Format(msgs.locale, "submodulesEmpty", map[string]any{"count": count})
+}
+
+// RepoShown says "Repository Shown"
+// in the language the app shows.
+func RepoShown() string { return In(i18n.Locale()).RepoShown() }
+
+// RepoShown says "Repository Shown"
+// in the language of msgs.
+func (msgs Messages) RepoShown() string {
+	return Catalog.Format(msgs.locale, "repoShown", nil)
+}
+
 // HiddenReposCount says "{count, plural, one {# repository hidden} other {# repositories hidden}}"
 // in the language the app shows.
 func HiddenReposCount(count int) string { return In(i18n.Locale()).HiddenReposCount(count) }

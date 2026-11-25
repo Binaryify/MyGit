@@ -40,6 +40,18 @@ func (a *app) projectMenu(m *ui.Menu) {
 		}
 	}
 	m.Separator()
+	if ws := a.ws; ws != nil && len(ws.apps) > 1 {
+		// The repository the history shows, as choosing its changes
+		// makes it, chosen here too (#54).
+		m.Submenu(loc.RepoShown(), func(m *ui.Menu) {
+			for i, b := range ws.apps {
+				if !ws.hidden(i) && m.Item(b.repo.Name()).Checked(i == ws.active).Chosen() {
+					ws.activate(i)
+				}
+			}
+		})
+		m.Separator()
+	}
 	here := a.locations()
 	if slices.ContainsFunc(recentLocations(), func(l string) bool { return !slices.Contains(here, l) }) {
 		m.Submenu(loc.SwitchProject(), func(m *ui.Menu) {

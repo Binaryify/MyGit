@@ -13,11 +13,12 @@ import (
 // Change is a file that differs from HEAD, in the index, the working tree
 // or both.
 type Change struct {
-	Path     string
-	OldPath  string // where a renamed file was
-	Staged   byte   // the index against HEAD: 'M', 'A', 'D', 'R', … or 0 for none
-	Work     byte   // the working tree against the index, '?' untracked, 0 for none
-	Conflict bool
+	Path      string
+	OldPath   string // where a renamed file was
+	Staged    byte   // the index against HEAD: 'M', 'A', 'D', 'R', … or 0 for none
+	Work      byte   // the working tree against the index, '?' untracked, 0 for none
+	Conflict  bool
+	Submodule bool // a submodule's folder, its commit or its working tree changed
 }
 
 // Status is the branch and the files changed.
@@ -59,7 +60,9 @@ func parseStatus(out string) Status {
 			}
 		case strings.HasPrefix(f, "1 "): // 1 XY sub mH mI mW hH hI path
 			if p := strings.SplitN(f, " ", 9); len(p) == 9 {
-				s.Changes = append(s.Changes, change(p[1], p[8]))
+				c := change(p[1], p[8])
+				c.Submodule = p[2][0] == 'S'
+				s.Changes = append(s.Changes, c)
 			}
 		case strings.HasPrefix(f, "2 "): // 2 XY sub mH mI mW hH hI Xscore path, then origPath
 			if p := strings.SplitN(f, " ", 10); len(p) == 10 {

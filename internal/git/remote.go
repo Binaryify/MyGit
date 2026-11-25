@@ -65,13 +65,13 @@ func RepoName(url string) string {
 	return path.Base(url)
 }
 
-// Clone clones url into dir, a folder in parent, telling progress the
-// lines git reports as it goes.
+// Clone clones url into dir, a folder in parent, its submodules too (#54),
+// telling progress the lines git reports as it goes.
 func Clone(ctx context.Context, parent, url, dir string, progress func(string)) error {
 	pipe, w := io.Pipe()
 	done := make(chan error, 1)
 	go func() {
-		err := stream(ctx, Local, parent, io.Discard, w, "clone", "--progress", url, dir)
+		err := stream(ctx, Local, parent, io.Discard, w, "clone", "--progress", "--recurse-submodules", url, dir)
 		w.Close()
 		done <- err
 	}()

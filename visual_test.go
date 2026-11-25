@@ -1069,3 +1069,62 @@ func TestDumpTrashAndMarks(t *testing.T) {
 	prefs.ChangeWords = false
 	save("marks-long-letters")
 }
+
+// TestDumpSubmodules renders #54's into MYGIT_DUMP, as TestDumpThemes
+// does: a repository with its submodule as a section of its own, the
+// superproject's row of it chosen, a clone with it left empty, and the
+// menus' items, the system's, logged.
+func TestDumpSubmodules(t *testing.T) {
+	out := os.Getenv("MYGIT_DUMP")
+	if out == "" {
+		t.Skip()
+	}
+	blog := blogWithTheme(t)
+	os.WriteFile(filepath.Join(blog, "themes", "nivis", "README.md"), []byte("# nivis, changed\n"), 0o644)
+	ws, tt, settle := newWorkspace(t, blog)
+	save := func(tt *ui.Tester, name string) {
+		tt.Frame()
+		f, _ := os.Create(out + "/" + name + ".png")
+		png.Encode(f, tt.Image())
+		f.Close()
+	}
+	settle()
+	if err := tt.Click("README.md"); err != nil {
+		t.Fatal(err)
+	}
+	settle()
+	save(tt, "submodule-sections")
+	if err := tt.Click("themes"); err != nil {
+		t.Fatal(err)
+	}
+	settle()
+	save(tt, "submodule-change")
+	ws.activate(0)
+	settle()
+	if err := tt.Click("zola_blog"); err != nil { // the project's button
+		t.Fatal(err)
+	}
+	t.Logf("project menu: %q", tt.Menu())
+	if err := tt.ChooseMenuItem("查看的仓库", "nivis"); err != nil {
+		t.Fatal(err)
+	}
+	settle()
+	t.Logf("shown after choosing nivis: %s", ws.apps[ws.active].repo.Name())
+	if err := tt.Click("仓库"); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("repository menu: %q", tt.Menu())
+	tt.Key(0, ui.KeyEscape)
+	clone := filepath.Join(t.TempDir(), "zola_blog")
+	if b, err := exec.Command("git", "clone", "-q", blog, clone).CombinedOutput(); err != nil {
+		t.Fatalf("%v: %s", err, b)
+	}
+	// Its submodules all empty, it opens a window of its own.
+	r, err := git.Open(clone)
+	if err != nil {
+		t.Fatal(err)
+	}
+	one := newTesterOn(r)
+	one.settle()
+	save(one.Tester, "submodule-empty")
+}

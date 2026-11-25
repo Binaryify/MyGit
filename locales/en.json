@@ -684,6 +684,23 @@
     }
   },
   "hideRepoMenu": "Hide from Workspace",
+  "addSubmoduleMenu": "Add Submodule…",
+  "addSubmoduleTitle": "Add a submodule",
+  "addSubmoduleNote": "The URL of the repository to clone; the folder, left empty, takes the repository's name.",
+  "submodulePath": "Folder (optional)",
+  "opAddSubmodule": "Add submodule",
+  "updateSubmodules": "Initialize and Update Submodules",
+  "opUpdateSubmodules": "Update submodules",
+  "initSubmodules": "Initialize",
+  "submodulesEmpty": "{count, plural, one {# submodule isn't initialized, its folder empty} other {# submodules aren't initialized, their folders empty}}",
+  "@submodulesEmpty": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "repoShown": "Repository Shown",
   "hiddenReposCount": "{count, plural, one {# repository hidden} other {# repositories hidden}}",
   "@hiddenReposCount": {
     "placeholders": {

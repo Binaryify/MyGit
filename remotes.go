@@ -120,6 +120,7 @@ func (a *app) repoMenu(m *ui.Menu) {
 	if m.Item(loc.PullRequestsMenu()).Chosen() {
 		a.openPulls()
 	}
+	a.submoduleItems(m)
 	if a.local() && m.Item(loc.ShowInFolder()).Chosen() {
 		mygo.Shell.ShowItemInFolder(a.repo.Dir)
 	}

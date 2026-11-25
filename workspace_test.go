@@ -264,7 +264,8 @@ func TestIgnoredRepos(t *testing.T) {
 	for _, r := range repos {
 		names = append(names, r.Name())
 	}
-	if want := []string{"meta", "api", "web", "cli"}; !slices.Equal(names, want) {
+	// Its submodule follows it, a section of its own as VS Code's (#54).
+	if want := []string{"meta", "lib", "api", "web", "cli"}; !slices.Equal(names, want) {
 		t.Errorf("repositories %q, want %q", names, want)
 	}
 	for _, d := range listed {

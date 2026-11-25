@@ -18,6 +18,7 @@ func (a *app) leftPanel(c *ui.Context) {
 		if a.leftTab == 1 {
 			a.stashPanel(c)
 		} else {
+			a.submodulesRow(c)
 			a.changesPanel(c)
 		}
 	})

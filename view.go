@@ -1188,6 +1188,9 @@ func (a *app) lineButtons(c *ui.Context) {
 	if a.detail.patch == nil || !patch.Partial(*a.detail.patch) || prefs.whitespace().Any() || prefs.OneList {
 		return
 	}
+	if ch := a.detail.change; ch != nil && ch.Submodule {
+		return // a submodule's commit, no lines of a file to take apart (#54)
+	}
 	chosen := a.selectedLines()
 	none := chosen == nil || a.busy != "" || a.unsaved()
 	if a.detail.staged {
