@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -174,6 +176,89 @@ func TestScenarioDiscardAllChanges(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(tt.a.repo.Dir, "new.txt")); !os.IsNotExist(err) {
 		t.Fatalf("new.txt still there: %v", err)
+	}
+}
+
+// A changed file's menu moves it to the trash, a tracked one too, which
+// git then lists as deleted (#52).
+func TestScenarioTrashChangedFile(t *testing.T) {
+	tt := newTester(t)
+	old := trash
+	trash = os.Remove // what the trash does, without the trash
+	t.Cleanup(func() { trash = old })
+	tt.write(t, map[string]string{"main.go": "package main\n\n// changed\n"})
+	if err := tt.RightClick("main.go"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem(loc.TrashMenu(runtime.GOOS)); err != nil {
+		t.Fatal(err)
+	}
+	tt.Key(0, ui.KeyEnter) // Move to Trash, the default
+	tt.settle()
+	if _, err := os.Stat(filepath.Join(tt.a.repo.Dir, "main.go")); !os.IsNotExist(err) {
+		t.Fatalf("main.go still there: %v", err)
+	}
+	if c, ok := find(tt.a.unstaged, "main.go"); !ok || c.Work != 'D' || tt.a.errMsg != "" {
+		t.Fatalf("main.go after trashing: %+v, %v, %q", c, ok, tt.a.errMsg)
+	}
+}
+
+// The trash is called as each system calls it: Windows's Recycle Bin.
+func TestTrashNames(t *testing.T) {
+	for _, c := range []struct{ locale, os, want string }{
+		{"en", "darwin", "Move to Trash…"},
+		{"en", "windows", "Move to Recycle Bin…"},
+		{"en", "linux", "Move to Trash…"},
+		{"zh-Hans", "darwin", "移到废纸篓…"},
+		{"zh-Hans", "windows", "移到回收站…"},
+		{"zh-Hans", "linux", "移到回收站…"},
+		{"zh-Hant", "darwin", "移到垃圾桶…"},
+		{"zh-Hant", "windows", "移到資源回收筒…"},
+	} {
+		if got := loc.In(c.locale).TrashMenu(c.os); got != c.want {
+			t.Errorf("%s on %s: %q, want %q", c.locale, c.os, got, c.want)
+		}
+	}
+	if got := loc.In("zh-Hans").TrashTitle("windows"); got != "把文件移到回收站？" {
+		t.Errorf("title %q", got)
+	}
+}
+
+// A long file name is cut short, its mark kept in the sidebar, as words
+// too, not pushed out of it.
+func TestScenarioLongNameKeepsMark(t *testing.T) {
+	tt := newTester(t)
+	oldWords := prefs.ChangeWords
+	t.Cleanup(func() { prefs.ChangeWords = oldWords })
+	tt.write(t, map[string]string{"generated-by-ai-assistant-summary-report-final-v2.md": "x\n"})
+	for _, c := range []struct {
+		words bool
+		mark  string
+	}{{false, "U"}, {true, "未跟踪"}} {
+		prefs.ChangeWords = c.words
+		tt.Frame()
+		r, ok := tt.Find(c.mark)
+		if !ok || r.X+r.W > prefs.SidebarW {
+			t.Fatalf("mark %q at %+v, found %v; the sidebar %v wide", c.mark, r, ok, prefs.SidebarW)
+		}
+	}
+}
+
+// With the setting, the changes' marks are their names, unabbreviated,
+// not git's letters (#53).
+func TestScenarioChangeWords(t *testing.T) {
+	tt := newTester(t)
+	oldWords := prefs.ChangeWords
+	t.Cleanup(func() { prefs.ChangeWords = oldWords })
+	tt.write(t, map[string]string{"main.go": "package main\n\n// changed\n", "new.txt": "new\n"})
+	shows := func(s string) bool { return slices.Contains(tt.Texts(), s) }
+	if !shows("M") || shows("已修改") {
+		t.Fatalf("letters expected; texts %q", tt.Texts())
+	}
+	prefs.ChangeWords = true
+	tt.Frame()
+	if !shows("已修改") || !shows("未跟踪") || shows("M") || shows("U") {
+		t.Fatalf("words expected; texts %q", tt.Texts())
 	}
 }
 

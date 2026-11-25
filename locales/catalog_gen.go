@@ -526,34 +526,44 @@ func (msgs Messages) GitRewordEmpty() string {
 	return Catalog.Format(msgs.locale, "gitRewordEmpty", nil)
 }
 
-// TrashTitle says "Move the file to the Trash?"
+// TrashTitle says "Move the file to the {os, select, darwin {Trash} windows {Recycle Bin} other {Trash}}?"
 // in the language the app shows.
-func TrashTitle() string { return In(i18n.Locale()).TrashTitle() }
+func TrashTitle(os string) string { return In(i18n.Locale()).TrashTitle(os) }
 
-// TrashTitle says "Move the file to the Trash?"
+// TrashTitle says "Move the file to the {os, select, darwin {Trash} windows {Recycle Bin} other {Trash}}?"
 // in the language of msgs.
-func (msgs Messages) TrashTitle() string {
-	return Catalog.Format(msgs.locale, "trashTitle", nil)
+func (msgs Messages) TrashTitle(os string) string {
+	return Catalog.Format(msgs.locale, "trashTitle", map[string]any{"os": os})
 }
 
-// TrashMessage says "The untracked file “{path}” goes to the Trash."
+// TrashMessage says "“{path}” goes to the {os, select, darwin {Trash} windows {Recycle Bin} other {Trash}}."
 // in the language the app shows.
-func TrashMessage(path string) string { return In(i18n.Locale()).TrashMessage(path) }
+func TrashMessage(path string, os string) string { return In(i18n.Locale()).TrashMessage(path, os) }
 
-// TrashMessage says "The untracked file “{path}” goes to the Trash."
+// TrashMessage says "“{path}” goes to the {os, select, darwin {Trash} windows {Recycle Bin} other {Trash}}."
 // in the language of msgs.
-func (msgs Messages) TrashMessage(path string) string {
-	return Catalog.Format(msgs.locale, "trashMessage", map[string]any{"path": path})
+func (msgs Messages) TrashMessage(path string, os string) string {
+	return Catalog.Format(msgs.locale, "trashMessage", map[string]any{"path": path, "os": os})
 }
 
-// TrashButton says "Move to Trash"
+// TrashButton says "Move to {os, select, darwin {Trash} windows {Recycle Bin} other {Trash}}"
 // in the language the app shows.
-func TrashButton() string { return In(i18n.Locale()).TrashButton() }
+func TrashButton(os string) string { return In(i18n.Locale()).TrashButton(os) }
 
-// TrashButton says "Move to Trash"
+// TrashButton says "Move to {os, select, darwin {Trash} windows {Recycle Bin} other {Trash}}"
 // in the language of msgs.
-func (msgs Messages) TrashButton() string {
-	return Catalog.Format(msgs.locale, "trashButton", nil)
+func (msgs Messages) TrashButton(os string) string {
+	return Catalog.Format(msgs.locale, "trashButton", map[string]any{"os": os})
+}
+
+// TrashMenu says "Move to {os, select, darwin {Trash} windows {Recycle Bin} other {Trash}}…"
+// in the language the app shows.
+func TrashMenu(os string) string { return In(i18n.Locale()).TrashMenu(os) }
+
+// TrashMenu says "Move to {os, select, darwin {Trash} windows {Recycle Bin} other {Trash}}…"
+// in the language of msgs.
+func (msgs Messages) TrashMenu(os string) string {
+	return Catalog.Format(msgs.locale, "trashMenu", map[string]any{"os": os})
 }
 
 // DiscardTitle says "Discard changes?"
@@ -3992,6 +4002,26 @@ func (msgs Messages) StatusT() string {
 	return Catalog.Format(msgs.locale, "statusT", nil)
 }
 
+// ChangeWords says "Change marks as words"
+// in the language the app shows.
+func ChangeWords() string { return In(i18n.Locale()).ChangeWords() }
+
+// ChangeWords says "Change marks as words"
+// in the language of msgs.
+func (msgs Messages) ChangeWords() string {
+	return Catalog.Format(msgs.locale, "changeWords", nil)
+}
+
+// ChangeWordsHint says "M, A, D, U, R, C and T beside the files show as Modified, Added, Deleted, Untracked, Renamed, Copied and Type changed…"
+// in the language the app shows.
+func ChangeWordsHint() string { return In(i18n.Locale()).ChangeWordsHint() }
+
+// ChangeWordsHint says "M, A, D, U, R, C and T beside the files show as Modified, Added, Deleted, Untracked, Renamed, Copied and Type changed…"
+// in the language of msgs.
+func (msgs Messages) ChangeWordsHint() string {
+	return Catalog.Format(msgs.locale, "changeWordsHint", nil)
+}
+
 // SideWorktree says "Working tree"
 // in the language the app shows.
 func SideWorktree() string { return In(i18n.Locale()).SideWorktree() }
@@ -5314,13 +5344,13 @@ func (msgs Messages) DeleteTitle() string {
 	return Catalog.Format(msgs.locale, "deleteTitle", nil)
 }
 
-// DeleteMessage says "The untracked file “{path}” is deleted on {host} for good."
+// DeleteMessage says "“{path}” is deleted on {host} for good."
 // in the language the app shows.
 func DeleteMessage(path string, host string) string {
 	return In(i18n.Locale()).DeleteMessage(path, host)
 }
 
-// DeleteMessage says "The untracked file “{path}” is deleted on {host} for good."
+// DeleteMessage says "“{path}” is deleted on {host} for good."
 // in the language of msgs.
 func (msgs Messages) DeleteMessage(path string, host string) string {
 	return Catalog.Format(msgs.locale, "deleteMessage", map[string]any{"path": path, "host": host})

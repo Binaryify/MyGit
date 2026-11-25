@@ -234,16 +234,41 @@
   "gitMerges": "These commits include merges, which an interactive rebase would flatten: start after the last merge",
   "gitSquashFirst": "The first commit kept can't be melded into the one before it",
   "gitRewordEmpty": "A reworded commit needs its new message",
-  "trashTitle": "Move the file to the Trash?",
-  "trashMessage": "The untracked file “{path}” goes to the Trash.",
-  "@trashMessage": {
+  "trashTitle": "Move the file to the {os, select, darwin {Trash} windows {Recycle Bin} other {Trash}}?",
+  "@trashTitle": {
     "placeholders": {
-      "path": {
+      "os": {
         "type": "String"
       }
     }
   },
-  "trashButton": "Move to Trash",
+  "trashMessage": "“{path}” goes to the {os, select, darwin {Trash} windows {Recycle Bin} other {Trash}}.",
+  "@trashMessage": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      },
+      "os": {
+        "type": "String"
+      }
+    }
+  },
+  "trashButton": "Move to {os, select, darwin {Trash} windows {Recycle Bin} other {Trash}}",
+  "@trashButton": {
+    "placeholders": {
+      "os": {
+        "type": "String"
+      }
+    }
+  },
+  "trashMenu": "Move to {os, select, darwin {Trash} windows {Recycle Bin} other {Trash}}…",
+  "@trashMenu": {
+    "placeholders": {
+      "os": {
+        "type": "String"
+      }
+    }
+  },
   "discardTitle": "Discard changes?",
   "discardMessage": "The changes to “{path}” will be discarded. This can't be undone.",
   "@discardMessage": {
@@ -1013,6 +1038,8 @@
   "statusU": "Untracked",
   "statusConflict": "Conflict",
   "statusT": "Type changed",
+  "changeWords": "Change marks as words",
+  "changeWordsHint": "M, A, D, U, R, C and T beside the files show as Modified, Added, Deleted, Untracked, Renamed, Copied and Type changed; a conflict as Conflict.",
   "sideWorktree": "Working tree",
   "sideStaged": "Staged",
   "detailEmpty": "Choose a commit or a change to see its diff",
@@ -1413,7 +1440,7 @@
     }
   },
   "deleteTitle": "Delete the file?",
-  "deleteMessage": "The untracked file “{path}” is deleted on {host} for good.",
+  "deleteMessage": "“{path}” is deleted on {host} for good.",
   "@deleteMessage": {
     "placeholders": {
       "path": {

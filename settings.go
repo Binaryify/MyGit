@@ -32,6 +32,7 @@ type settings struct {
 	OneList        bool             `json:"oneList,omitempty"`        // the changes in one list, a check saying what the commit includes, as IDEA's (#37)
 	CommitAll      bool             `json:"commitAll,omitempty"`      // a commit's files show one after another (#44)
 	Annotate       bool             `json:"annotate,omitempty"`       // the diffs show who last changed their lines beside them (#51)
+	ChangeWords    bool             `json:"changeWords,omitempty"`    // the files' marks in the app's language, not git's letters (#53)
 	// The history's columns, as its menu sets them: the commit hash,
 	// tags and branches, and whether they show before the subject or
 	// after it.
@@ -232,6 +233,10 @@ func (d *settingsDialog) view(c *ui.Context, withShortcuts bool, closed func()) 
 					prefs.save()
 				}
 				ui.Text(c, loc.OneListHint()).FontSize(11).TextColor(t.TextMuted).Wrap()
+				if ui.Checkbox(c, &prefs.ChangeWords, loc.ChangeWords()).Changed() {
+					prefs.save()
+				}
+				ui.Text(c, loc.ChangeWordsHint()).FontSize(11).TextColor(t.TextMuted).Wrap()
 				ui.Text(c, loc.DiffSection()).Bold().TextColor(t.TextMuted)
 				ui.Checkbox(c, &prefs.Unified, loc.DiffUnified())
 				whitespaceSelect(c)

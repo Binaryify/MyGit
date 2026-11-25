@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -1018,4 +1019,53 @@ func TestDumpIssues(t *testing.T) {
 	tt.a.showCommit(0)
 	tt.settle()
 	save("commit-all")
+}
+
+// TestDumpTrashAndMarks renders #52's and #53's into MYGIT_DUMP, as
+// TestDumpThemes does: a changed file's menu moving it to the trash, the
+// asking, the file then deleted, and the marks as words with the setting.
+func TestDumpTrashAndMarks(t *testing.T) {
+	out := os.Getenv("MYGIT_DUMP")
+	if out == "" {
+		t.Skip()
+	}
+	old := trash
+	trash = os.Remove // what the trash does, without the trash
+	defer func() { trash = old }()
+	defer func(on bool) { prefs.ChangeWords = on }(prefs.ChangeWords)
+	tt := newTester(t)
+	save := func(name string) {
+		tt.Frame()
+		f, _ := os.Create(out + "/" + name + ".png")
+		png.Encode(f, tt.Image())
+		f.Close()
+	}
+	tt.write(t, map[string]string{"main.go": "package main\n\n// changed\n", "ai.txt": "generated\n"})
+	// The menus are the system's, not in the picture: their items logged.
+	tt.rightClickRow(t, "main.go")
+	t.Logf("menu of a changed file: %q", tt.Menu())
+	if err := tt.ChooseMenuItem(loc.TrashMenu(runtime.GOOS)); err != nil {
+		t.Fatal(err)
+	}
+	save("trash-ask")
+	tt.Key(0, ui.KeyEnter)
+	tt.settle()
+	save("trash-done")
+	tt.rightClickRow(t, "ai.txt")
+	t.Logf("menu of an untracked file: %q", tt.Menu())
+	tt.Key(0, ui.KeyEscape)
+	prefs.ChangeWords = true
+	save("marks-words")
+	tt.a.settings.open = true
+	save("marks-setting")
+	tt.a.settings.open = false
+	// Long names, the room the words take from them, letters beside.
+	tt.commitFiles(t, "Long names", map[string]string{"src/components/settings/NotificationPreferencesPanel.vue": "a\n"})
+	tt.write(t, map[string]string{
+		"src/components/settings/NotificationPreferencesPanel.vue": "b\n",
+		"generated-by-ai-assistant-summary-report-final-v2.md":     "x\n",
+	})
+	save("marks-long-words")
+	prefs.ChangeWords = false
+	save("marks-long-letters")
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"path"
+	"runtime"
 	"slices"
 	"strings"
 	"time"
@@ -1284,20 +1285,30 @@ func (a *app) unstage(c git.Change) {
 // trash moves a file to the trash.
 var trash = func(path string) error { return mygo.Shell.TrashItem(path) }
 
-// discard throws a change of the working tree away, once the user says so.
-func (a *app) discard(c git.Change) {
-	if c.Work == '?' && !a.local() { // no trash to reach over SSH: deleted
-		a.ask(loc.DeleteTitle(), loc.DeleteMessage(c.Path, a.repo.Host()), loc.DeleteButton(), func() {
-			a.run(loc.OpDiscard(), func(ctx context.Context) error { return a.repo.Remove(ctx, c.Path) }, nil)
+// onDisk tells whether a change's file is in the working tree, to trash.
+func onDisk(c git.Change) bool {
+	return !c.Conflict && c.Work != 'D' && (c.Work != 0 || c.Staged != 'D')
+}
+
+// trashFile moves a file of the working tree to the trash, once the user
+// says so, or over SSH, with no trash to reach, deletes it (#52); git then
+// lists a tracked one as deleted, to discard if it was a mistake.
+func (a *app) trashFile(path string) {
+	if !a.local() {
+		a.ask(loc.DeleteTitle(), loc.DeleteMessage(path, a.repo.Host()), loc.DeleteButton(), func() {
+			a.run(loc.OpDiscard(), func(ctx context.Context) error { return a.repo.Remove(ctx, path) }, nil)
 		})
 		return
 	}
+	a.ask(loc.TrashTitle(runtime.GOOS), loc.TrashMessage(path, runtime.GOOS), loc.TrashButton(runtime.GOOS), func() { // Windows's Recycle Bin
+		a.run(loc.OpDiscard(), func(context.Context) error { return trash(a.repo.Path(path)) }, nil)
+	})
+}
+
+// discard throws a change of the working tree away, once the user says so.
+func (a *app) discard(c git.Change) {
 	if c.Work == '?' { // a file git doesn't have: to the trash, where it can be found again
-		a.ask(loc.TrashTitle(), loc.TrashMessage(c.Path), loc.TrashButton(), func() {
-			a.run(loc.OpDiscard(), func(context.Context) error {
-				return trash(a.repo.Path(c.Path))
-			}, nil)
-		})
+		a.trashFile(c.Path)
 		return
 	}
 	if prefs.OneList && c.OldPath != "" { // a rename, put back as HEAD has it
@@ -1307,7 +1318,7 @@ func (a *app) discard(c git.Change) {
 		return
 	}
 	if prefs.OneList && c.Staged == 'A' { // added, not in HEAD: unstage it, then trash it
-		a.ask(loc.TrashTitle(), loc.TrashMessage(c.Path), loc.TrashButton(), func() {
+		a.ask(loc.TrashTitle(runtime.GOOS), loc.TrashMessage(c.Path, runtime.GOOS), loc.TrashButton(runtime.GOOS), func() {
 			a.run(loc.OpDiscard(), func(ctx context.Context) error {
 				if err := a.repo.Unstage(ctx, c.Path); err != nil {
 					return err

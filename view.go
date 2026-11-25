@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"runtime"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -522,7 +523,7 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 			name, dir := path.Base(ch.Path), path.Dir(ch.Path)
 			// The name in its change's color too, as VS Code's and IDEA's
 			// (#29); a generated file's stays muted, as wanted the less.
-			nameText := ui.Text(c, name).SingleLine().Shrink(0)
+			nameText := ui.Text(c, name).SingleLine().Shrink(1) // a long one cut short, the mark and buttons kept
 			if !chosen && isGenerated(ch.Path, a.genMarked, nil, nil) {
 				nameText.TextColor(t.TextMuted)
 			} else if !chosen {
@@ -554,12 +555,7 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 					}
 				}
 			}
-			letter := string(code)
-			if code == '?' {
-				letter = "U" // untracked, as VS Code says it
-			}
-			ui.Text(c, letter).Font("monospace").FontSize(11).Bold().TextColor(changeColor(t, code, chosen)).
-				Width(14).TextAlign(ui.Center).Tooltip(changeName(code))
+			changeMark(c, code, chosen)
 		})
 		row.ContextMenu(func(m *ui.Menu) {
 			if one {
@@ -569,8 +565,12 @@ func (a *app) changeSection(c *ui.Context, title string, staged, fill bool) {
 			} else if m.Item(map[bool]string{true: loc.Unstage(), false: loc.Stage()}[on]).Chosen() {
 				a.toggleStage(ch, on)
 			}
-			if (one || !on) && !ch.Conflict && m.Item(loc.DiscardMenu()).Chosen() {
+			// An untracked file's discarding is its trashing, offered once.
+			if (one || !on) && !ch.Conflict && ch.Work != '?' && m.Item(loc.DiscardMenu()).Chosen() {
 				a.discard(ch)
+			}
+			if onDisk(ch) && m.Item(map[bool]string{true: loc.TrashMenu(runtime.GOOS), false: loc.DeleteMenu()}[a.local()]).Chosen() {
+				a.trashFile(ch.Path)
 			}
 			m.Separator()
 			if ch.Work != '?' {
@@ -743,6 +743,23 @@ func changeColor(t *ui.Theme, code byte, chosen bool) ui.Color {
 		return pick(ui.RGB(228, 103, 107), ui.RGB(173, 7, 7))
 	}
 	return pick(ui.RGB(226, 192, 141), ui.RGB(137, 85, 3)) // modified
+}
+
+// changeMark draws the mark beside a changed file: git's letter, untracked
+// ones' U as VS Code has it, its name on hover; or with the setting the
+// name itself, unabbreviated (#53).
+func changeMark(c *ui.Context, code byte, chosen bool) {
+	t := c.Theme()
+	if prefs.ChangeWords {
+		ui.Text(c, changeName(code)).FontSize(11).Bold().TextColor(changeColor(t, code, chosen)).SingleLine().Shrink(0)
+		return
+	}
+	letter := string(code)
+	if code == '?' {
+		letter = "U"
+	}
+	ui.Text(c, letter).Font("monospace").FontSize(11).Bold().TextColor(changeColor(t, code, chosen)).
+		Width(14).TextAlign(ui.Center).Tooltip(changeName(code))
 }
 
 func changeName(code byte) string {
@@ -1070,7 +1087,7 @@ func (a *app) filesList(c *ui.Context) {
 			} else {
 				ui.Box(c).Size(22, 22)
 			}
-			nameText := ui.Text(c, path.Base(name)).SingleLine().Shrink(0)
+			nameText := ui.Text(c, path.Base(name)).SingleLine().Shrink(1) // a long one cut short, the mark and buttons kept
 			if (viewed || gen) && !chosen {
 				nameText.TextColor(t.TextMuted)
 			} else if !chosen {
@@ -1084,8 +1101,7 @@ func (a *app) filesList(c *ui.Context) {
 			if gen {
 				ui.Text(c, loc.GeneratedTag()).FontSize(10).TextColor(muted).Shrink(0)
 			}
-			ui.Text(c, string(code)).Font("monospace").FontSize(11).Bold().TextColor(changeColor(t, code, chosen)).
-				Width(14).TextAlign(ui.Center).Tooltip(changeName(code))
+			changeMark(c, code, chosen)
 		})
 	}).Grow(1).Basis(0)
 	if r := a.fileRow; l.Changed() && r >= 0 && r < n {
