@@ -692,6 +692,14 @@ func (a *app) showWhole(f editor.FilePatch, i int) {
 			return
 		}
 	}
+	// A file added, deleted or renamed, or too long, shows by its hunks
+	// alone: at once, with no worker's round trip leaving the diff empty
+	// for a frame (#55).
+	if !patch.Partial(f) || patchTooLong(f) {
+		a.detail.loading = false // a file chosen before may be loading still
+		a.showHunks(i)
+		return
+	}
 	gen, sel, old, now := a.detail.gen, i, a.detail.sides[0], a.detail.sides[1]
 	a.detail.loading = true
 	type result struct {
@@ -717,12 +725,18 @@ func (a *app) showWhole(f editor.FilePatch, i int) {
 			return
 		}
 		if sel < len(a.detail.files) {
-			d := patchDiff(a.detail.files[sel])
-			a.detail.diff = d
-			a.detail.starts = patchStarts(a.detail.files[sel])
-			a.openAtChange(d)
+			a.showHunks(sel)
 		}
 	})
+}
+
+// showHunks shows the diff of a file of the commit shown by its hunks
+// alone, as git prints them.
+func (a *app) showHunks(i int) {
+	f := a.detail.files[i]
+	d := patchDiff(f)
+	a.detail.diff, a.detail.starts = d, patchStarts(f)
+	a.openAtChange(d)
 }
 
 // openAtChange puts the caret at the change the file shown opens at, when

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os/exec"
 	"strconv"
 	"strings"
 	"testing"
@@ -168,6 +169,32 @@ func TestCommitKeepsTheFilesTexts(t *testing.T) {
 		tt.a.showFile(i)
 		if tt.a.detail.loading || tt.a.detail.diff == nil || !tt.a.detail.patchWhole {
 			t.Fatalf("%s waits for git: loading %v", name, tt.a.detail.loading)
+		}
+	}
+}
+
+// A commit's file added, deleted or renamed shows at once too, by its hunks,
+// its diff never empty for a frame as a modified one's is not (#55).
+func TestCommitShowsAddedDeletedRenamedAtOnce(t *testing.T) {
+	tt := newTester(t)
+	tt.commitFiles(t, "Before", map[string]string{"a.txt": linesOf(40), "gone.txt": linesOf(10), "old.txt": linesOf(20)})
+	for _, args := range [][]string{{"rm", "-q", "gone.txt"}, {"mv", "old.txt", "new.txt"}} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = tt.a.repo.Dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	tt.commitFiles(t, "All kinds", map[string]string{"a.txt": linesOf(40, 5), "added.txt": "a new file\n"})
+	tt.click(t, "All kinds")
+	d := &tt.a.detail
+	if len(d.files) != 4 {
+		t.Fatalf("%d files, want 4: %v", len(d.files), d.files)
+	}
+	for i, f := range d.files {
+		tt.a.showFile(i)
+		if d.loading || d.diff == nil {
+			t.Fatalf("%s waits for git: loading %v, diff %v", fileName(f), d.loading, d.diff != nil)
 		}
 	}
 }

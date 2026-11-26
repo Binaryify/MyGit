@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.46
+
+- 修复提交详情里点「新增」「已删除」「已重命名」的文件时差异区会闪一下（[#55](https://github.com/Binaryify/MyGit/issues/55)，感谢 [@georgewuw](https://github.com/georgewuw) 的反馈）：这类文件现在和「已修改」的文件一样，点下去立刻显示，不再先清空再等一轮后台加载
+
 ## 0.3.45
 
 以下改进来自 [@georgewuw](https://github.com/georgewuw) 在 [#54](https://github.com/Binaryify/MyGit/issues/54) 里的补充反馈，感谢！
