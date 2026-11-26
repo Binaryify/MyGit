@@ -57,6 +57,8 @@ func TestGenerateMessage(t *testing.T) {
 	if !tt.HasText(loc.AiStatusOff()) || tt.HasText(loc.AiKeyNotice()) || tt.HasText(loc.BaseURL()) {
 		t.Fatalf("settings: %q", tt.Texts())
 	}
+	tt.Scroll(600, 400, 0, 1200) // the AI's line below the fold, as the settings grew (#56)
+	tt.Frame()
 	tt.click(t, loc.AiSetUp())
 	tt.Frame()
 	if !tt.a.settings.ai.open || !tt.HasText(loc.AiKeyNotice()) || !tt.HasText(loc.BaseURL()) {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 
@@ -20,9 +21,10 @@ import (
 // settings are the choices kept between launches, shared by the windows,
 // in a JSON file.
 type settings struct {
-	Editor         string           `json:"editor"`          // the command opening files, "" for the system's app
-	Language       string           `json:"language"`        // the language chosen, "" for the system's
-	Theme          mygo.ThemeSource `json:"theme,omitempty"` // light or dark, "" for the system's
+	Editor         string           `json:"editor"`             // the command opening files, "" for the system's app
+	Terminal       string           `json:"terminal,omitempty"` // the terminal opening a repository's folder, an app's name on macOS, "" for the system's (#56)
+	Language       string           `json:"language"`           // the language chosen, "" for the system's
+	Theme          mygo.ThemeSource `json:"theme,omitempty"`    // light or dark, "" for the system's
 	Unified        bool             `json:"unified"`
 	Whitespace     string           `json:"whitespace,omitempty"`     // what the diffs leave out of whitespace changes, a whitespaceModes' key
 	FoldUnchanged  bool             `json:"foldUnchanged"`            // a changed file's lines away from its changes, as it shows whole
@@ -157,6 +159,25 @@ func editorChoices() []string {
 	return []string{loc.EditorSystem(), "code", "cursor", "zed", "subl", "idea", loc.EditorOther()}
 }
 
+// terminalPlaceholder and terminalHint say what the terminal's setting
+// takes on this system: an app's name on macOS, a command elsewhere.
+func terminalPlaceholder() string {
+	switch runtime.GOOS {
+	case "darwin":
+		return "Terminal"
+	case "windows":
+		return "wt"
+	}
+	return "x-terminal-emulator"
+}
+
+func terminalHint() string {
+	if runtime.GOOS == "darwin" {
+		return loc.TerminalHintApp()
+	}
+	return loc.TerminalHintCommand()
+}
+
 // scrollbarRoom is what a dialog's scrolling form leaves clear on its
 // right: the scroll bar's track, 12 DIPs, and a little more.
 const scrollbarRoom = 14
@@ -217,6 +238,9 @@ func (d *settingsDialog) view(c *ui.Context, withShortcuts bool, closed func()) 
 					ui.TextInput(c, &prefs.Editor).Placeholder(loc.EditorCommandPlaceholder()).Label(loc.EditorCommand())
 				}
 				ui.Text(c, loc.EditorLineHint()).FontSize(11).TextColor(t.TextMuted)
+				ui.Text(c, loc.TerminalSetting()).Bold().TextColor(t.TextMuted)
+				ui.TextInput(c, &prefs.Terminal).Placeholder(terminalPlaceholder()).Label(loc.TerminalSetting())
+				ui.Text(c, terminalHint()).FontSize(11).TextColor(t.TextMuted).Wrap()
 				ui.Text(c, loc.Language()).Bold().TextColor(t.TextMuted)
 				languageSelect(c)
 				ui.Text(c, loc.Appearance()).Bold().TextColor(t.TextMuted)

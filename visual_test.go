@@ -1128,3 +1128,66 @@ func TestDumpSubmodules(t *testing.T) {
 	one.settle()
 	save(one.Tester, "submodule-empty")
 }
+
+// TestDumpUpToDate renders the toast a pull with nothing to do shows into
+// MYGIT_DUMP, as TestDumpThemes does (#57).
+func TestDumpUpToDate(t *testing.T) {
+	out := os.Getenv("MYGIT_DUMP")
+	if out == "" {
+		t.Skip()
+	}
+	for _, dark := range []bool{false, true} {
+		tt := newTester(t)
+		tt.SetDark(dark)
+		origin := filepath.Join(t.TempDir(), "origin.git")
+		gitIn(t, tt.a.repo.Dir, "init", "-q", "--bare", "-b", "main", origin)
+		gitIn(t, tt.a.repo.Dir, "remote", "add", "origin", origin)
+		gitIn(t, tt.a.repo.Dir, "push", "-q", "-u", "origin", "main")
+		tt.a.refresh()
+		tt.settle()
+		tt.a.sync()
+		tt.settle()
+		tt.Advance(500 * time.Millisecond) // the toast slides in
+		name := out + "/uptodate-light.png"
+		if dark {
+			name = out + "/uptodate-dark.png"
+		}
+		f, _ := os.Create(name)
+		png.Encode(f, tt.Image())
+		f.Close()
+	}
+}
+
+// TestDumpPushTo renders the push dialog with a remote to choose and the
+// settings with the terminal's into MYGIT_DUMP, as TestDumpThemes does
+// (#56).
+func TestDumpPushTo(t *testing.T) {
+	out := os.Getenv("MYGIT_DUMP")
+	if out == "" {
+		t.Skip()
+	}
+	tt := newTester(t)
+	for _, name := range []string{"origin", "mirror"} {
+		dir := filepath.Join(t.TempDir(), name+".git")
+		gitIn(t, tt.a.repo.Dir, "init", "-q", "--bare", "-b", "main", dir)
+		gitIn(t, tt.a.repo.Dir, "remote", "add", name, dir)
+	}
+	gitIn(t, tt.a.repo.Dir, "push", "-q", "-u", "origin", "main")
+	tt.a.refresh()
+	tt.settle()
+	dump := func(name string) {
+		tt.Advance(500 * time.Millisecond)
+		f, _ := os.Create(out + "/" + name)
+		png.Encode(f, tt.Image())
+		f.Close()
+	}
+	tt.a.openPush()
+	tt.a.push.remote = "mirror"
+	tt.a.loadOutgoing()
+	tt.settle()
+	dump("pushto.png")
+	tt.a.push.open = false
+	tt.a.settings.open = true
+	tt.Frame()
+	dump("terminal-setting.png")
+}

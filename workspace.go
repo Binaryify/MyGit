@@ -316,7 +316,12 @@ func (ws *workspace) activate(i int) {
 	ws.active = i
 }
 
-func (ws *workspace) view(c *ui.Context) { ws.apps[ws.active].view(c) }
+func (ws *workspace) view(c *ui.Context) {
+	for _, a := range ws.apps { // a background repository's sync says too
+		a.showToast(c)
+	}
+	ws.apps[ws.active].view(c)
+}
 
 // sidebar is each repository's changes, one under the other.
 func (ws *workspace) sidebar(c *ui.Context) {

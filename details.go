@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/egoist/mygo/ui"
 
@@ -102,25 +104,70 @@ func (a *app) revealCommit(hash string) {
 		})
 }
 
-// pushPlan is the push dialog: the commits a push would send.
+// pushPlan is the push dialog: the remote pushed to and the commits a
+// push would send.
 type pushPlan struct {
 	open    bool
 	loading bool
+	remote  string
 	commits []git.Commit
 	force   bool
 }
 
 func (a *app) openPush() {
-	st := a.status
-	a.push = pushPlan{open: true, loading: true}
-	work(a, func(ctx context.Context) ([]git.Commit, error) { return a.repo.Outgoing(ctx, st) },
-		func(commits []git.Commit, err error) {
-			a.push.loading = false
-			a.push.commits = commits
-			if err != nil {
-				a.errMsg = err.Error()
-			}
-		})
+	a.push = pushPlan{open: true, remote: a.pushRemote()}
+	a.loadOutgoing()
+}
+
+// loadOutgoing reads the commits a push to the remote chosen would send.
+func (a *app) loadOutgoing() {
+	st, remote := a.status, a.push.remote
+	tracking := remote == a.upstreamRemote(st)
+	a.push.loading, a.push.commits = true, nil
+	work(a, func(ctx context.Context) ([]git.Commit, error) {
+		if tracking {
+			return a.repo.Outgoing(ctx, st)
+		}
+		return a.repo.OutgoingTo(ctx, remote, st.Branch)
+	}, func(commits []git.Commit, err error) {
+		if a.push.remote != remote { // another chosen meanwhile
+			return
+		}
+		a.push.loading = false
+		a.push.commits = commits
+		if err != nil {
+			a.errMsg = err.Error()
+		}
+	})
+}
+
+// upstreamRemote is the remote of the branch's upstream, "" with none: the
+// longest remote's name the upstream starts with, as names hold slashes.
+func (a *app) upstreamRemote(st git.Status) string {
+	name := ""
+	for _, r := range a.remoteURLs {
+		if strings.HasPrefix(st.Upstream, r.Name+"/") && len(r.Name) > len(name) {
+			name = r.Name
+		}
+	}
+	return name
+}
+
+// pushRemote is the remote a push goes to unless another is chosen: the
+// upstream's, or else origin, or else the only one there is.
+func (a *app) pushRemote() string {
+	if r := a.upstreamRemote(a.status); r != "" {
+		return r
+	}
+	for _, r := range a.remoteURLs {
+		if r.Name == "origin" {
+			return r.Name
+		}
+	}
+	if len(a.remoteURLs) > 0 {
+		return a.remoteURLs[0].Name
+	}
+	return "origin"
 }
 
 func (a *app) pushView(c *ui.Context) {
@@ -132,11 +179,29 @@ func (a *app) pushView(c *ui.Context) {
 	st := a.status
 	ui.Modal(c, &p.open, func() {
 		ui.Column(c).Gap(10).Width(560).Children(func() {
+			// The upstream's remote pushes as git does; another, or one
+			// with no upstream, under the branch's own name.
+			tracking := p.remote == a.upstreamRemote(st)
 			target := st.Upstream
-			if target == "" {
-				target = loc.NewRemoteBranch("origin/" + st.Branch)
+			if !tracking {
+				target = p.remote + "/" + st.Branch
+				if !slices.Contains(a.remotes, target) {
+					target = loc.NewRemoteBranch(target)
+				}
 			}
 			ui.Text(c, loc.PushTitle(st.Branch, target)).Bold().FontSize(15)
+			if len(a.remoteURLs) > 1 {
+				names := make([]string, len(a.remoteURLs))
+				for i, r := range a.remoteURLs {
+					names[i] = r.Name
+				}
+				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+					ui.Text(c, loc.PushTo())
+					if ui.Select(c, &p.remote, names).Label(loc.PushTo()).Grow(1).Changed() {
+						a.loadOutgoing()
+					}
+				})
+			}
 			switch {
 			case p.loading:
 				ui.Spinner(c).Size(16, 16)
@@ -155,9 +220,10 @@ func (a *app) pushView(c *ui.Context) {
 			}
 			ui.Checkbox(c, &p.force, loc.ForcePush())
 			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
-				if ui.Button(c, loc.PushTags()).Tooltip("git push origin --tags").Clicked() {
+				remote := p.remote
+				if ui.Button(c, loc.PushTags()).Tooltip("git push " + remote + " --tags").Clicked() {
 					p.open = false
-					a.run(loc.OpPushTags(), a.repo.PushTags, nil)
+					a.run(loc.OpPushTags(), func(ctx context.Context) error { return a.repo.PushTags(ctx, remote) }, nil)
 				}
 				ui.Box(c).Grow(1)
 				if ui.Button(c, loc.Cancel()).Clicked() {
@@ -170,7 +236,11 @@ func (a *app) pushView(c *ui.Context) {
 				if ui.PrimaryButton(c, label).Disabled(p.loading || a.busy != "").Clicked() {
 					p.open = false
 					force := p.force
-					a.run(label, func(ctx context.Context) error { return a.repo.Push(ctx, st, force) }, nil)
+					push := func(ctx context.Context) error { return a.repo.Push(ctx, st, force) }
+					if !tracking {
+						push = func(ctx context.Context) error { return a.repo.PushTo(ctx, st, remote, force) }
+					}
+					a.run(label, a.upToDate(push, "refs/remotes/"+remote+"/"+st.Branch), nil)
 				}
 			})
 		})

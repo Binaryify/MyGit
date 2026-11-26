@@ -642,5 +642,12 @@
   "historyCurrentBranch": "当前分支",
   "historyAllBranches": "所有分支",
   "historyBranchFilter": "显示哪些分支的提交",
-  "showFileAlone": "逐个文件查看"
+  "showFileAlone": "逐个文件查看",
+  "upToDate": "已是最新",
+  "pushTo": "推送到",
+  "openInTerminal": "在终端中打开",
+  "terminalSetting": "终端",
+  "terminalHintApp": "从仓库菜单（⋯）打开终端时用的应用，如 Ghostty、iTerm、Warp。留空使用系统自带的“终端”。",
+  "terminalHintCommand": "从仓库菜单（⋯）打开终端时在仓库目录下运行的命令。留空使用系统默认终端。",
+  "errTerminal": "无法打开终端：{error}"
 }

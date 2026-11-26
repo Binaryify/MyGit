@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.47
+
+以下改进来自 [@phh2008](https://github.com/phh2008) 的建议，感谢！
+
+- 推送到其他远程仓库（[#56](https://github.com/Binaryify/MyGit/issues/56)）：有多个远程仓库时，推送对话框多了「推送到」下拉框，选哪个就推到哪个仓库的同名分支，要推送的提交列表和「推送标签」也跟着换。推到上游以外的远程不会改动分支的上游；分支还没有上游时，选中的远程会成为它的上游
+- 在终端中打开（[#56](https://github.com/Binaryify/MyGit/issues/56)）：仓库菜单（⋯）里多了「在终端中打开」，在仓库目录打开终端，方便做 MyGit 里还做不了的操作。默认打开系统终端（macOS 是「终端」，Windows 优先用 Windows Terminal），也可以在设置里填 Ghostty、iTerm、Warp 等应用名，Windows / Linux 上填命令。通过 SSH 打开的远程仓库暂不提供
+- 拉取、合并、推送（包括「同步」）时如果已经是最新、没有任何变化，窗口底部会弹出「已是最新」的小气泡提示，几秒后自动消失（[#57](https://github.com/Binaryify/MyGit/issues/57)，感谢 [@phh2008](https://github.com/phh2008) 的建议）。以前这种情况什么都不显示，看不出操作有没有执行
+
 ## 0.3.46
 
 - 修复提交详情里点「新增」「已删除」「已重命名」的文件时差异区会闪一下（[#55](https://github.com/Binaryify/MyGit/issues/55)，感谢 [@georgewuw](https://github.com/georgewuw) 的反馈）：这类文件现在和「已修改」的文件一样，点下去立刻显示，不再先清空再等一轮后台加载

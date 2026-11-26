@@ -209,6 +209,21 @@ func (r *Repo) Outgoing(ctx context.Context, st Status) ([]Commit, error) {
 	if st.Upstream == "" {
 		rng = []string{"HEAD", "--not", "--remotes"}
 	}
+	return r.outgoing(ctx, rng)
+}
+
+// OutgoingTo are the commits pushing the branch to a remote under its own
+// name sends: those the remote's branch hasn't, or, the remote not having
+// the branch, those none of the remote's branches has (#56).
+func (r *Repo) OutgoingTo(ctx context.Context, remote, branch string) ([]Commit, error) {
+	ref := "refs/remotes/" + remote + "/" + branch
+	if _, err := r.Git(ctx, "rev-parse", "--verify", "-q", ref); err == nil {
+		return r.outgoing(ctx, []string{ref + "..HEAD"})
+	}
+	return r.outgoing(ctx, []string{"HEAD", "--not", "--remotes=" + remote})
+}
+
+func (r *Repo) outgoing(ctx context.Context, rng []string) ([]Commit, error) {
 	out, err := r.Git(ctx, append([]string{"log", "-z", "--format=" + logFormat}, rng...)...)
 	if err != nil {
 		return nil, err

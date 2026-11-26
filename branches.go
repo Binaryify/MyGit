@@ -332,7 +332,7 @@ func (a *app) mergeItems(m *ui.Menu, rev string) {
 		a.showCompare(loc.CompareTitle(cur, shortRev(rev)), "HEAD", rev)
 	}
 	if a.chose(m.Item(loc.MergeInto(cur))) {
-		a.run(loc.OpMerge(shortRev(rev)), func(ctx context.Context) error { return a.repo.Merge(ctx, rev) }, nil)
+		a.run(loc.OpMerge(shortRev(rev)), a.upToDate(func(ctx context.Context) error { return a.repo.Merge(ctx, rev) }), nil)
 	}
 	if a.chose(m.Item(loc.RebaseOnto(cur))) {
 		a.run(loc.OpRebaseOnto(shortRev(rev)), func(ctx context.Context) error { return a.repo.Rebase(ctx, rev) }, nil)

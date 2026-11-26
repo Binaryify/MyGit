@@ -114,6 +114,7 @@ type app struct {
 	busy     string // the operation running, as the toolbar says it
 	errMsg   string
 	notice   string // news that isn't an error, as an update check's
+	toast    string // a toast to show, said off the UI thread
 	trustDir string // a repository another user owns, dropped, to trust
 	// undoBranches are the local branches deleted while the app runs, which
 	// it offers to bring back until it quits, as IDEA does.
@@ -285,6 +286,7 @@ func (a *app) run(label string, fn func(ctx context.Context) error, then func())
 // runPull runs a pull, and when untracked files are in the way of files
 // it brings, offers to stash them and pull again, as they would be lost.
 func (a *app) runPull(label string, pull func(ctx context.Context) error) {
+	pull = a.upToDate(pull)
 	a.run(label, func(ctx context.Context) error {
 		err := pull(ctx)
 		files := git.UntrackedInTheWay(err)
@@ -303,6 +305,30 @@ func (a *app) runPull(label string, pull func(ctx context.Context) error) {
 		})
 		return nil
 	}, nil)
+}
+
+// upToDate runs fn, and when it moved neither HEAD, its upstream nor the
+// refs also named says so with a toast, as git's "Already up to date"
+// (#57).
+func (a *app) upToDate(fn func(ctx context.Context) error, also ...string) func(ctx context.Context) error {
+	return func(ctx context.Context) error {
+		before := a.repo.Tips(ctx, also...)
+		if err := fn(ctx); err != nil {
+			return err
+		}
+		if a.repo.Tips(ctx, also...) == before {
+			a.update(func() { a.toast = loc.UpToDate() })
+		}
+		return nil
+	}
+}
+
+// showToast shows the toast said, once.
+func (a *app) showToast(c *ui.Context) {
+	if a.toast != "" {
+		c.Toast(a.toast)
+		a.toast = ""
+	}
 }
 
 // listed lists items a line each, the first n of them and how many more.

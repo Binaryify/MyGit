@@ -55,18 +55,40 @@ func (r *Repo) Pull(ctx context.Context, mode PullMode) error {
 	return err
 }
 
+// Tips are where HEAD, its upstream and the refs also named point: a pull,
+// a merge or a push that had nothing to do leaves them as they were.
+func (r *Repo) Tips(ctx context.Context, also ...string) string {
+	out, _ := r.Git(ctx, append([]string{"rev-parse", "HEAD", "@{upstream}"}, also...)...)
+	return out
+}
+
 // Push sends the branch to its upstream, or to origin under its own name,
 // which becomes its upstream, when it has none. Forced, it overwrites the
 // remote's branch, if it is still where it was last fetched.
 func (r *Repo) Push(ctx context.Context, st Status, force bool) error {
+	if st.Upstream == "" && st.Branch != "" {
+		return r.PushTo(ctx, st, "origin", force)
+	}
 	args := []string{"push"}
 	if force {
 		args = append(args, "--force-with-lease")
 	}
-	if st.Upstream == "" && st.Branch != "" {
-		args = append(args, "-u", "origin", st.Branch)
-	}
 	_, err := r.Git(ctx, args...)
+	return err
+}
+
+// PushTo sends the branch to a remote under its own name, as Push does,
+// leaving its upstream as it is: the remote becomes it only when it has
+// none (#56).
+func (r *Repo) PushTo(ctx context.Context, st Status, remote string, force bool) error {
+	args := []string{"push"}
+	if force {
+		args = append(args, "--force-with-lease")
+	}
+	if st.Upstream == "" {
+		args = append(args, "-u")
+	}
+	_, err := r.Git(ctx, append(args, remote, st.Branch)...)
 	return err
 }
 
@@ -85,9 +107,9 @@ func (r *Repo) PushTag(ctx context.Context, name string) error {
 	return err
 }
 
-// PushTags sends every tag to origin.
-func (r *Repo) PushTags(ctx context.Context) error {
-	_, err := r.Git(ctx, "push", "origin", "--tags")
+// PushTags sends every tag to a remote.
+func (r *Repo) PushTags(ctx context.Context, remote string) error {
+	_, err := r.Git(ctx, "push", remote, "--tags")
 	return err
 }
 

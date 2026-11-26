@@ -23,6 +23,7 @@ const rowHeight = 26
 
 func (a *app) view(c *ui.Context) {
 	t := c.Theme()
+	a.showToast(c)
 	root := ui.Column(c).Fill().FontSize(12)
 	root.Children(func() {
 		a.toolbar(c)

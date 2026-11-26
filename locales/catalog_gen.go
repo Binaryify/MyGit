@@ -6501,3 +6501,73 @@ func ShowFileAlone() string { return In(i18n.Locale()).ShowFileAlone() }
 func (msgs Messages) ShowFileAlone() string {
 	return Catalog.Format(msgs.locale, "showFileAlone", nil)
 }
+
+// UpToDate says "Already up to date"
+// in the language the app shows.
+func UpToDate() string { return In(i18n.Locale()).UpToDate() }
+
+// UpToDate says "Already up to date"
+// in the language of msgs.
+func (msgs Messages) UpToDate() string {
+	return Catalog.Format(msgs.locale, "upToDate", nil)
+}
+
+// PushTo says "Push to"
+// in the language the app shows.
+func PushTo() string { return In(i18n.Locale()).PushTo() }
+
+// PushTo says "Push to"
+// in the language of msgs.
+func (msgs Messages) PushTo() string {
+	return Catalog.Format(msgs.locale, "pushTo", nil)
+}
+
+// OpenInTerminal says "Open in Terminal"
+// in the language the app shows.
+func OpenInTerminal() string { return In(i18n.Locale()).OpenInTerminal() }
+
+// OpenInTerminal says "Open in Terminal"
+// in the language of msgs.
+func (msgs Messages) OpenInTerminal() string {
+	return Catalog.Format(msgs.locale, "openInTerminal", nil)
+}
+
+// TerminalSetting says "Terminal"
+// in the language the app shows.
+func TerminalSetting() string { return In(i18n.Locale()).TerminalSetting() }
+
+// TerminalSetting says "Terminal"
+// in the language of msgs.
+func (msgs Messages) TerminalSetting() string {
+	return Catalog.Format(msgs.locale, "terminalSetting", nil)
+}
+
+// TerminalHintApp says "The app opening a repository's folder from its ⋯ menu, as Ghostty, iTerm or Warp. Empty opens Terminal."
+// in the language the app shows.
+func TerminalHintApp() string { return In(i18n.Locale()).TerminalHintApp() }
+
+// TerminalHintApp says "The app opening a repository's folder from its ⋯ menu, as Ghostty, iTerm or Warp. Empty opens Terminal."
+// in the language of msgs.
+func (msgs Messages) TerminalHintApp() string {
+	return Catalog.Format(msgs.locale, "terminalHintApp", nil)
+}
+
+// TerminalHintCommand says "The command run in a repository's folder from its ⋯ menu. Empty opens the system's terminal."
+// in the language the app shows.
+func TerminalHintCommand() string { return In(i18n.Locale()).TerminalHintCommand() }
+
+// TerminalHintCommand says "The command run in a repository's folder from its ⋯ menu. Empty opens the system's terminal."
+// in the language of msgs.
+func (msgs Messages) TerminalHintCommand() string {
+	return Catalog.Format(msgs.locale, "terminalHintCommand", nil)
+}
+
+// ErrTerminal says "Couldn't open the terminal: {error}"
+// in the language the app shows.
+func ErrTerminal(error string) string { return In(i18n.Locale()).ErrTerminal(error) }
+
+// ErrTerminal says "Couldn't open the terminal: {error}"
+// in the language of msgs.
+func (msgs Messages) ErrTerminal(error string) string {
+	return Catalog.Format(msgs.locale, "errTerminal", map[string]any{"error": error})
+}

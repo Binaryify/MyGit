@@ -141,6 +141,9 @@ func (a *app) repoItems(m *ui.Menu) {
 	if m.Item(loc.OpenRepoInEditor()).Chosen() {
 		a.openInEditor(a.repo.Dir, 0)
 	}
+	if a.local() && m.Item(loc.OpenInTerminal()).Chosen() {
+		a.openTerminal()
+	}
 	if a.ws != nil && m.Item(loc.HideRepoMenu()).Chosen() {
 		a.ws.hide(a)
 	}

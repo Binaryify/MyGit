@@ -1807,5 +1807,19 @@
   "historyCurrentBranch": "Current Branch",
   "historyAllBranches": "All Branches",
   "historyBranchFilter": "Show the commits of",
-  "showFileAlone": "Show One File at a Time"
+  "showFileAlone": "Show One File at a Time",
+  "upToDate": "Already up to date",
+  "pushTo": "Push to",
+  "openInTerminal": "Open in Terminal",
+  "terminalSetting": "Terminal",
+  "terminalHintApp": "The app opening a repository's folder from its ⋯ menu, as Ghostty, iTerm or Warp. Empty opens Terminal.",
+  "terminalHintCommand": "The command run in a repository's folder from its ⋯ menu. Empty opens the system's terminal.",
+  "errTerminal": "Couldn't open the terminal: {error}",
+  "@errTerminal": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

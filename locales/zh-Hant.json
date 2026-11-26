@@ -642,5 +642,12 @@
   "historyCurrentBranch": "目前分支",
   "historyAllBranches": "所有分支",
   "historyBranchFilter": "顯示哪些分支的提交",
-  "showFileAlone": "逐一檔案檢視"
+  "showFileAlone": "逐一檔案檢視",
+  "upToDate": "已是最新",
+  "pushTo": "推送到",
+  "openInTerminal": "在終端機中開啟",
+  "terminalSetting": "終端機",
+  "terminalHintApp": "從儲存庫選單（⋯）開啟終端機時用的應用程式，如 Ghostty、iTerm、Warp。留空使用系統內建的「終端機」。",
+  "terminalHintCommand": "從儲存庫選單（⋯）開啟終端機時在儲存庫目錄下執行的命令。留空使用系統預設終端機。",
+  "errTerminal": "無法開啟終端機：{error}"
 }
