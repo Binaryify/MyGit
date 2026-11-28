@@ -1024,6 +1024,7 @@ func (a *app) fileMenu(m *ui.Menu, path, rev string) {
 	if m.Item(loc.CopyPath()).Chosen() {
 		mygo.Clipboard.WriteText(path)
 	}
+	a.copyUnixPathItem(m, a.repo.Path(path))
 	if a.local() && m.Item(loc.ShowInFolder()).Chosen() {
 		mygo.Shell.ShowItemInFolder(a.repo.Path(path))
 	}

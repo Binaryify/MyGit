@@ -56,6 +56,7 @@ func (a *app) worktreeItems(m *ui.Menu, w git.Worktree) {
 	if a.chose(m.Item(loc.CopyPath())) {
 		mygo.Clipboard.WriteText(w.Dir)
 	}
+	a.copyUnixPathItem(m, w.Dir)
 	if !w.Main && !current {
 		m.Separator()
 		if a.chose(m.Item(loc.WorktreeRemove())) {

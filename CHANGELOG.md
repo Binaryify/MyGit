@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.48
+
+- Windows 上可以复制 Unix 格式的路径（[#58](https://github.com/Binaryify/MyGit/issues/58)，感谢 [@georgewuw](https://github.com/georgewuw) 的建议）：文件右键菜单和工作树菜单里，「复制路径」下面多了「复制 Unix 路径」，复制的是 Git Bash 里写法的完整路径，比如 `C:\Users\foo\a.txt` 会复制成 `/c/Users/foo/a.txt`，和 `cygpath -u` 一样。只在 Windows 上打开本地仓库时显示
+
 ## 0.3.47
 
 以下改进来自 [@phh2008](https://github.com/phh2008) 的建议，感谢！

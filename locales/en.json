@@ -1085,6 +1085,7 @@
   "fileHistory": "File History",
   "blame": "Blame",
   "copyPath": "Copy Path",
+  "copyUnixPath": "Copy Unix Path",
   "binaryFile": "Binary file",
   "noDiff": "No differences",
   "unstageLines": "Unstage Selected Lines",

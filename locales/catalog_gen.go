@@ -4232,6 +4232,16 @@ func (msgs Messages) CopyPath() string {
 	return Catalog.Format(msgs.locale, "copyPath", nil)
 }
 
+// CopyUnixPath says "Copy Unix Path"
+// in the language the app shows.
+func CopyUnixPath() string { return In(i18n.Locale()).CopyUnixPath() }
+
+// CopyUnixPath says "Copy Unix Path"
+// in the language of msgs.
+func (msgs Messages) CopyUnixPath() string {
+	return Catalog.Format(msgs.locale, "copyUnixPath", nil)
+}
+
 // BinaryFile says "Binary file"
 // in the language the app shows.
 func BinaryFile() string { return In(i18n.Locale()).BinaryFile() }

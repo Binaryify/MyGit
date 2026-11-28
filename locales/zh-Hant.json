@@ -418,6 +418,7 @@
   "fileHistory": "檔案歷史",
   "blame": "Blame（逐行追溯）",
   "copyPath": "複製路徑",
+  "copyUnixPath": "複製 Unix 路徑",
   "binaryFile": "二進位檔案",
   "noDiff": "沒有差異",
   "unstageLines": "取消暫存選取行",
